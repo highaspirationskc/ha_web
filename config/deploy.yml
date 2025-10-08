@@ -7,7 +7,7 @@ image: scottymoon/ha_web
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.1.51
+    - 72.60.169.146
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -18,8 +18,8 @@ servers:
 #
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
-  ssl: false
-  host: rideclub.app
+  ssl: true
+  host: api.highaspirationskc.org
 
 # Credentials for your image host.
 registry:
