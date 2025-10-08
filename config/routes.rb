@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
-  if Rails.env.development?
-    mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
-  end
+  # if Rails.env.development?
+  mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
+  # end
   post "/graphql", to: "graphql#execute"
 
   # Email confirmation
@@ -15,7 +15,7 @@ Rails.application.routes.draw do
     delete "logout", to: "sessions#destroy"
     get "dashboard", to: "dashboard#index"
 
-    resources :users, only: [:index, :show, :edit, :update] do
+    resources :users, only: [ :index, :show, :edit, :update ] do
       member do
         patch :activate
         patch :deactivate

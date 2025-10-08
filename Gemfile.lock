@@ -399,7 +399,7 @@ DEPENDENCIES
   brakeman
   capybara
   debug
-  graphiql-rails
+  graphiql-rails (~> 1.10)
   graphql (~> 2.5)
   importmap-rails
   jbuilder

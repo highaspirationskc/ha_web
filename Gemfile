@@ -65,7 +65,7 @@ group :test do
 end
 
 gem "graphql", "~> 2.5"
-gem "graphiql-rails", group: :development
+gem "graphiql-rails", "~> 1.10"
 
 gem "bcrypt", "~> 3.1"
 
