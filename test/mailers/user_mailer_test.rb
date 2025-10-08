@@ -7,12 +7,12 @@ class UserMailerTest < ActionMailer::TestCase
 
   test "confirmation_email sends to correct recipient" do
     mail = UserMailer.confirmation_email(@user)
-    assert_equal ["test@example.com"], mail.to
+    assert_equal [ "test@example.com" ], mail.to
   end
 
   test "confirmation_email has correct subject" do
     mail = UserMailer.confirmation_email(@user)
-    assert_equal "Confirm your Higher Aspirations account", mail.subject
+    assert_equal "Confirm your High Aspirations account", mail.subject
   end
 
   test "confirmation_email includes confirmation URL" do
@@ -28,6 +28,6 @@ class UserMailerTest < ActionMailer::TestCase
 
   test "confirmation_email has welcome message" do
     mail = UserMailer.confirmation_email(@user)
-    assert_match "Welcome to Higher Aspirations", mail.body.encoded
+    assert_match "Welcome to High Aspirations", mail.body.encoded
   end
 end

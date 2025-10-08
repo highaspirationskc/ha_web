@@ -5,7 +5,7 @@ class UserMailer < ApplicationMailer
 
     mail(
       to: user.email,
-      subject: "Confirm your Higher Aspirations account"
+      subject: "Confirm your High Aspirations account"
     )
   end
 end
