@@ -37,11 +37,11 @@
             </div>
 
             <!-- Sidebar component, swap this element with another sidebar if you like -->
-            <div class="relative flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
-              <div class="relative flex h-16 shrink-0 items-center">
-                <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600" alt="Your Company" class="h-8 w-auto" />
+            <div class="relative flex grow flex-col gap-y-5 bg-white px-6 pb-2">
+              <div class="relative flex h-20 shrink-0 items-center py-4">
+                <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "w-auto", style: "height: 52px;" %>
               </div>
-              <nav class="relative flex flex-1 flex-col">
+              <nav class="relative flex flex-1 flex-col overflow-y-auto">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
                   <li>
                     <ul role="list" class="-mx-2 space-y-1">
@@ -74,11 +74,11 @@
     <!-- Static sidebar for desktop -->
     <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
       <!-- Sidebar component, swap this element with another sidebar if you like -->
-      <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-        <div class="flex h-16 shrink-0 items-center">
-          <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600" alt="Your Company" class="h-8 w-auto" />
+      <div class="flex grow flex-col gap-y-5 border-r border-gray-200 bg-white px-6">
+        <div class="flex h-20 shrink-0 items-center py-4">
+          <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "w-auto", style: "height: 52px;" %>
         </div>
-        <nav class="flex flex-1 flex-col">
+        <nav class="flex flex-1 flex-col overflow-y-auto">
           <ul role="list" class="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" class="flex flex-1 flex-col gap-y-7">
