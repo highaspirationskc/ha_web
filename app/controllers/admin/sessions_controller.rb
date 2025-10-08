@@ -1,6 +1,4 @@
 class Admin::SessionsController < ApplicationController
-  layout false, only: :new
-
   def new
     # Render login form
   end
