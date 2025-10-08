@@ -1,4 +1,28 @@
 Rails.application.routes.draw do
+  if Rails.env.development?
+    mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
+  end
+  post "/graphql", to: "graphql#execute"
+
+  # Email confirmation
+  get "confirm/:token", to: "confirmations#confirm", as: :confirmation
+
+  # Admin namespace
+  namespace :admin do
+    root "dashboard#index"
+    get "login", to: "sessions#new"
+    post "login", to: "sessions#create"
+    delete "logout", to: "sessions#destroy"
+    get "dashboard", to: "dashboard#index"
+
+    resources :users, only: [:index, :show, :edit, :update] do
+      member do
+        patch :activate
+        patch :deactivate
+      end
+    end
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -10,5 +34,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "admin/sessions#new"
 end

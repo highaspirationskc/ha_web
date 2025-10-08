@@ -1,0 +1,16 @@
+<h1>Welcome to Higher Aspirations!</h1>
+
+<p>Hi <%= @user.email %>,</p>
+
+<p>Thank you for signing up! Please confirm your email address by clicking the link below:</p>
+
+<p>
+  <%= link_to "Confirm my account", @confirmation_url %>
+</p>
+
+<p>If you didn't create an account, you can safely ignore this email.</p>
+
+<p>
+  Thanks,<br>
+  The Higher Aspirations Team
+</p>
