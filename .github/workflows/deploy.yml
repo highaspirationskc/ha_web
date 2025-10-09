@@ -49,8 +49,13 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.HA_DEPLOY_KEY }}
 
+    - name: Create .kamal/secrets File 📁💥
+      run: |
+        mkdir -p .kamal
+        cat > .kamal/secrets <<EOF
+        KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+        RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
+        EOF
+
     - name: Deploy with Kamal 🚀
-      env:
-        KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-        RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
       run: bundle exec kamal deploy
