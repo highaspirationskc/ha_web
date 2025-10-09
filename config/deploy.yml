@@ -25,7 +25,7 @@ proxy:
 registry:
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
-  username: scottymoon
+  username: apphighaspirationskc
 
   # Always use an access token rather than real password when possible.
   password:
