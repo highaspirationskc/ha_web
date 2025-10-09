@@ -57,7 +57,7 @@ jobs:
     - name: Setup Kamal secrets
       run: |
         mkdir -p .kamal
-        cat <<EOF > .kamal/secrets
+        cat > .kamal/secrets <<EOF
         KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}
         RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
         EOF
