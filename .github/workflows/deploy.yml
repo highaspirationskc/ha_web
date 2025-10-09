@@ -53,10 +53,14 @@ jobs:
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.HA_DEPLOY_KEY }}
-        
-    - name: Deploy with Kamal
-      env:
-        KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-        RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+
+    - name: Setup Kamal secrets
       run: |
-        bundle exec kamal deploy
+        mkdir -p .kamal
+        cat <<EOF > .kamal/secrets
+        KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+        RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
+        EOF
+
+    - name: Deploy with Kamal
+      run: bundle exec kamal deploy
