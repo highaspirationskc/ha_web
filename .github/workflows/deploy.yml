@@ -18,16 +18,9 @@ jobs:
       with:
         ruby-version: 3.4.6
         bundler-cache: true
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
+
     - name: Install dependencies
-      run: |
-        bundle install
-        npm install
+      run: bundle install
         
     - name: Run tests
       env:
