@@ -22,9 +22,10 @@ jobs:
     - name: Install dependencies
       run: bundle install
         
-    - name: Run tests
+    - name: Run tests 🧪
       env:
         RAILS_ENV: test
+        # RAILS_MASTER_KEY is used here to allow tests to access test credentials
         RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
       run: |
         bin/rails db:create db:migrate
@@ -44,13 +45,16 @@ jobs:
         ruby-version: 3.4.6
         bundler-cache: true
         
-    - name: Setup SSH
+    - name: Setup SSH 🔑
       uses: webfactory/ssh-agent@v0.9.0
       with:
+        # 1. SSH Private Key for server access
         ssh-private-key: ${{ secrets.HA_DEPLOY_KEY }}
 
-    - name: Deploy with Kamal
+    - name: Deploy with Kamal 🚀
       run: bundle exec kamal deploy
       env:
+        # 2. Docker Registry Password/Token for image push/pull
         KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+        # 3. Rails Master Key for credential decryption during build and runtime
         RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
