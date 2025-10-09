@@ -34,10 +34,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     
-    env:
-      KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -53,6 +49,10 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.HA_DEPLOY_KEY }}
 
+    - name: Export Kamal Secrets to Shell 💥
+      run: |
+        echo "KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}" >> $GITHUB_ENV
+        echo "RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}" >> $GITHUB_ENV
+
     - name: Deploy with Kamal 🚀
-      # The 'env' block for this step is now removed because it's defined above
       run: bundle exec kamal deploy
