@@ -29,11 +29,6 @@ jobs:
       run: |
         bin/rails db:create db:migrate
         bin/rails test
-        
-    - name: Build assets
-      run: |
-        bin/rails assets:precompile
-        bin/rails tailwindcss:build
 
   deploy:
     needs: test
@@ -54,13 +49,8 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.HA_DEPLOY_KEY }}
 
-    - name: Setup Kamal secrets
-      run: |
-        mkdir -p .kamal
-        cat > .kamal/secrets <<EOF
-        KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-        RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
-        EOF
-
     - name: Deploy with Kamal
       run: bundle exec kamal deploy
+      env:
+        KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+        RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
