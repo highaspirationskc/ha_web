@@ -2,7 +2,7 @@
 service: ha_web
 
 # Name of the container image.
-image: scottymoon/ha_web
+image: apphighaspirationskc/ha_web
 
 # Deploy to these servers.
 servers:
