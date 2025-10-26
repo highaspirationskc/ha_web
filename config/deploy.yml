@@ -26,8 +26,8 @@ proxy:
   host: api.highaspirationskc.org
   healthcheck:
     path: /up
-    interval: 10s
-    timeout: 5s
+    interval: 10
+    timeout: 5
 
 # Credentials for your image host.
 registry:
