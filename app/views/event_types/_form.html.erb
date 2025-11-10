@@ -1,0 +1,32 @@
+<%= form_with(model: event_type, class: "contents") do |form| %>
+  <% if event_type.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(event_type.errors.count, "error") %> prohibited this event_type from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% event_type.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event_type.errors[:name].none?, "border-red-400 focus:outline-red-600": event_type.errors[:name].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :point_value %>
+    <%= form.number_field :point_value, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event_type.errors[:point_value].none?, "border-red-400 focus:outline-red-600": event_type.errors[:point_value].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :category %>
+    <%= form.number_field :category, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event_type.errors[:category].none?, "border-red-400 focus:outline-red-600": event_type.errors[:category].any?}] %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

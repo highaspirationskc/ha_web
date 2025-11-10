@@ -1,4 +1,12 @@
 Rails.application.routes.draw do
+  resources :user_relationships
+  resources :event_logs
+  resources :event_registrations
+  resources :events
+  resources :event_types
+  resources :test_models
+  resources :olympic_seasons
+  resources :teams
   # if Rails.env.development?
   mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
   # end

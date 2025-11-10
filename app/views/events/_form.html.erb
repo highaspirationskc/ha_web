@@ -1,0 +1,52 @@
+<%= form_with(model: event, class: "contents") do |form| %>
+  <% if event.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(event.errors.count, "error") %> prohibited this event from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% event.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:name].none?, "border-red-400 focus:outline-red-600": event.errors[:name].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :description %>
+    <%= form.textarea :description, rows: 4, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:description].none?, "border-red-400 focus:outline-red-600": event.errors[:description].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :event_date %>
+    <%= form.datetime_field :event_date, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:event_date].none?, "border-red-400 focus:outline-red-600": event.errors[:event_date].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :location %>
+    <%= form.text_field :location, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:location].none?, "border-red-400 focus:outline-red-600": event.errors[:location].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :image_url %>
+    <%= form.text_field :image_url, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:image_url].none?, "border-red-400 focus:outline-red-600": event.errors[:image_url].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :event_type_id %>
+    <%= form.text_field :event_type_id, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:event_type_id].none?, "border-red-400 focus:outline-red-600": event.errors[:event_type_id].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :created_by_id %>
+    <%= form.text_field :created_by_id, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": event.errors[:created_by_id].none?, "border-red-400 focus:outline-red-600": event.errors[:created_by_id].any?}] %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

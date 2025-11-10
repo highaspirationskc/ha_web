@@ -1,0 +1,42 @@
+<%= form_with(model: olympic_season, class: "contents") do |form| %>
+  <% if olympic_season.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(olympic_season.errors.count, "error") %> prohibited this olympic_season from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% olympic_season.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="my-5">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": olympic_season.errors[:name].none?, "border-red-400 focus:outline-red-600": olympic_season.errors[:name].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :start_month %>
+    <%= form.number_field :start_month, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": olympic_season.errors[:start_month].none?, "border-red-400 focus:outline-red-600": olympic_season.errors[:start_month].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :start_day %>
+    <%= form.number_field :start_day, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": olympic_season.errors[:start_day].none?, "border-red-400 focus:outline-red-600": olympic_season.errors[:start_day].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :end_month %>
+    <%= form.number_field :end_month, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": olympic_season.errors[:end_month].none?, "border-red-400 focus:outline-red-600": olympic_season.errors[:end_month].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :end_day %>
+    <%= form.number_field :end_day, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": olympic_season.errors[:end_day].none?, "border-red-400 focus:outline-red-600": olympic_season.errors[:end_day].any?}] %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

@@ -3,6 +3,21 @@ class User < ApplicationRecord
 
   has_many :tokens, dependent: :destroy
 
+  # Team relationship
+  belongs_to :team, optional: true
+
+  # User relationship associations
+  has_many :user_relationships, dependent: :destroy
+  has_many :reverse_relationships, class_name: "UserRelationship", foreign_key: :related_user_id, dependent: :destroy
+  has_many :mentees, through: :reverse_relationships, source: :user
+  has_many :mentors, through: :user_relationships, source: :related_user
+  has_many :parents, through: :user_relationships, source: :related_user
+
+  # Event associations
+  has_many :created_events, class_name: "Event", foreign_key: :created_by_id, dependent: :nullify
+  has_many :event_registrations, dependent: :destroy
+  has_many :event_logs, dependent: :destroy
+
   # TODO: Change default role logic - currently defaulting to admin for development
   enum :role, {
     volunteer: 0,
@@ -38,6 +53,10 @@ class User < ApplicationRecord
 
   def send_confirmation_email
     UserMailer.confirmation_email(self).deliver_later
+  end
+
+  def children
+    reverse_relationships.where(relationship_type: :parent).map(&:user)
   end
 
   private
