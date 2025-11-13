@@ -51,7 +51,8 @@
             <dt class="text-sm font-medium text-gray-500">Image URL</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
               <% if @event.image_url.present? %>
-                <%= link_to @event.image_url, @event.image_url, target: "_blank", class: "text-indigo-600 hover:text-indigo-900" %>
+                <% safe_url = @event.image_url.to_s %>
+                <%= link_to h(safe_url), h(safe_url), target: "_blank", class: "text-indigo-600 hover:text-indigo-900" %>
               <% else %>
                 —
               <% end %>

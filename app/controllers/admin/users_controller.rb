@@ -14,6 +14,10 @@ class Admin::UsersController < Admin::BaseController
 
   def create
     @user = User.new(user_params)
+    # Only allow role assignment by admins (not staff)
+    if params[:user][:role].present? && current_user.admin?
+      @user.role = params[:user][:role]
+    end
 
     if @user.save
       redirect_to admin_user_path(@user), notice: "User was successfully created."
@@ -30,6 +34,11 @@ class Admin::UsersController < Admin::BaseController
     # Remove password fields if they're blank (don't update password)
     if update_params[:password].blank?
       update_params = update_params.except(:password, :password_confirmation)
+    end
+
+    # Only allow role changes by admins (not staff) - handle separately from mass assignment
+    if params[:user][:role].present? && current_user.admin?
+      update_params[:role] = params[:user][:role]
     end
 
     if @user.update(update_params)
@@ -61,6 +70,6 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :role, :active, :team_id, :first_name, :last_name)
+    params.require(:user).permit(:email, :password, :password_confirmation, :active, :team_id, :first_name, :last_name)
   end
 end

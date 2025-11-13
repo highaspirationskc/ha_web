@@ -33,7 +33,8 @@
             <dt class="text-sm font-medium text-gray-500">Icon URL</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
               <% if @team.icon_url.present? %>
-                <%= link_to @team.icon_url, @team.icon_url, target: "_blank", class: "text-indigo-600 hover:text-indigo-900" %>
+                <% safe_url = @team.icon_url.to_s %>
+                <%= link_to h(safe_url), h(safe_url), target: "_blank", class: "text-indigo-600 hover:text-indigo-900" %>
               <% else %>
                 —
               <% end %>

@@ -46,7 +46,8 @@
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         <% if team.icon_url.present? %>
-                          <%= link_to team.icon_url, team.icon_url, target: "_blank", class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+                          <% safe_url = team.icon_url.to_s %>
+                          <%= link_to h(safe_url), h(safe_url), target: "_blank", class: "text-sm text-indigo-600 hover:text-indigo-900" %>
                         <% else %>
                           <span class="text-sm text-gray-500">—</span>
                         <% end %>
