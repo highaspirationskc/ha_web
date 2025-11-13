@@ -1,5 +1,5 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show, :edit, :update, :activate, :deactivate]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate]
 
   def index
     @users = User.order(created_at: :desc).page(params[:page])
@@ -8,15 +8,40 @@ class Admin::UsersController < Admin::BaseController
   def show
   end
 
+  def new
+    @user = User.new
+  end
+
+  def create
+    @user = User.new(user_params)
+
+    if @user.save
+      redirect_to admin_user_path(@user), notice: "User was successfully created."
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
   def edit
   end
 
   def update
-    if @user.update(user_params)
+    update_params = user_params
+    # Remove password fields if they're blank (don't update password)
+    if update_params[:password].blank?
+      update_params = update_params.except(:password, :password_confirmation)
+    end
+
+    if @user.update(update_params)
       redirect_to admin_user_path(@user), notice: "User updated successfully"
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def destroy
+    @user.destroy!
+    redirect_to admin_users_path, notice: "User was successfully destroyed.", status: :see_other
   end
 
   def activate
@@ -36,6 +61,6 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params
-    params.require(:user).permit(:email, :role, :active)
+    params.require(:user).permit(:email, :password, :password_confirmation, :role, :active, :team_id, :first_name, :last_name)
   end
 end

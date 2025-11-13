@@ -1,8 +1,8 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <div class="px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Edit User</h1>
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">New User</h1>
 
-    <%= form_with model: @user, url: admin_user_path(@user), method: :patch, class: "space-y-6" do |form| %>
+    <%= form_with model: @user, url: admin_users_path, class: "space-y-6" do |form| %>
       <% if @user.errors.any? %>
         <div class="rounded-md bg-red-50 p-4">
           <h3 class="text-sm font-medium text-red-800">
@@ -20,7 +20,7 @@
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
             <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
-            <p class="mt-1 text-sm text-gray-500">Update user details and permissions.</p>
+            <p class="mt-1 text-sm text-gray-500">Enter the details for this new user.</p>
           </div>
           <div class="mt-5 md:mt-0 md:col-span-2">
             <div class="grid grid-cols-6 gap-6">
@@ -40,9 +40,9 @@
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <%= form.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
+                <%= form.label :password, class: "block text-sm font-medium text-gray-700" %>
                 <%= form.password_field :password, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-                <p class="mt-1 text-xs text-gray-500">Leave blank to keep current password</p>
+                <p class="mt-1 text-xs text-gray-500">Must be at least 8 characters with uppercase, number, and special character</p>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -57,7 +57,7 @@
 
               <div class="col-span-6 sm:col-span-3">
                 <%= form.label :team_id, "Team", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)", selected: @user.team_id }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+                <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -73,10 +73,13 @@
       </div>
 
       <div class="flex justify-end space-x-3">
-        <%= link_to "Cancel", admin_user_path(@user), class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-        <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
-        <%= form.submit "Save Changes", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+        <%= link_to "Cancel", admin_users_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        <%= form.submit "Create User", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
       </div>
     <% end %>
+
+    <div class="mt-6">
+      <%= link_to "Back to Users", admin_users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+    </div>
   </div>
 </div>

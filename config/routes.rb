@@ -1,12 +1,4 @@
 Rails.application.routes.draw do
-  resources :user_relationships
-  resources :event_logs
-  resources :event_registrations
-  resources :events
-  resources :event_types
-  resources :test_models
-  resources :olympic_seasons
-  resources :teams
   # if Rails.env.development?
   mount GraphiQL::Rails::Engine, at: "/graphiql", graphql_path: "/graphql"
   # end
@@ -23,12 +15,20 @@ Rails.application.routes.draw do
     delete "logout", to: "sessions#destroy"
     get "dashboard", to: "dashboard#index"
 
-    resources :users, only: [ :index, :show, :edit, :update ] do
+    resources :users do
       member do
         patch :activate
         patch :deactivate
       end
     end
+
+    resources :events
+    resources :event_types
+    resources :event_registrations
+    resources :event_logs
+    resources :teams
+    resources :olympic_seasons
+    resources :user_relationships
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

@@ -44,6 +44,7 @@
         <%= button_to "Activate User", activate_admin_user_path(@user), method: :patch, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700" %>
       <% end %>
       <%= link_to "Back to Users", admin_users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+      <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
     </div>
   </div>
 </div>

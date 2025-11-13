@@ -1,0 +1,46 @@
+<%= form_with(model: event_registration, url: event_registration.persisted? ? admin_event_registration_path(event_registration) : admin_event_registrations_path, class: "space-y-6") do |form| %>
+  <% if event_registration.errors.any? %>
+    <div class="rounded-md bg-red-50 p-4">
+      <h3 class="text-sm font-medium text-red-800">
+        <%= pluralize(event_registration.errors.count, "error") %> prohibited this event registration from being saved:
+      </h3>
+      <ul class="list-disc list-inside text-sm text-red-700 mt-2">
+        <% event_registration.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Event Registration Information</h3>
+        <p class="mt-1 text-sm text-gray-500">Enter the details for this event registration.</p>
+      </div>
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div class="grid grid-cols-6 gap-6">
+          <div class="col-span-6 sm:col-span-3">
+            <%= form.label :event_id, "Event", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.collection_select :event_id, Event.all, :id, :name, { prompt: "Select an event" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+          </div>
+
+          <div class="col-span-6 sm:col-span-3">
+            <%= form.label :user_id, "User", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.collection_select :user_id, User.all, :id, :email, { prompt: "Select a user" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+          </div>
+
+          <div class="col-span-6">
+            <%= form.label :registration_date, "Registration Date", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.datetime_field :registration_date, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end space-x-3">
+    <%= link_to "Cancel", event_registration.persisted? ? admin_event_registration_path(event_registration) : admin_event_registrations_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+    <%= form.submit class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+  </div>
+<% end %>

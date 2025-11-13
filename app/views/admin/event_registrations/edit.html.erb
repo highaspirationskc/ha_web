@@ -1,0 +1,12 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Edit Event Registration</h1>
+
+    <%= render "form", event_registration: @event_registration %>
+
+    <div class="mt-6 flex space-x-4">
+      <%= link_to "Show Event Registration", admin_event_registration_path(@event_registration), class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+      <%= link_to "Back to Event Registrations", admin_event_registrations_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+    </div>
+  </div>
+</div>
