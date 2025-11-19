@@ -4,8 +4,8 @@ class HaWebSchema < GraphQL::Schema
   mutation(Types::MutationType)
   query(Types::QueryType)
 
-  # Disable introspection in production for security
-  disable_introspection_entry_points if Rails.env.production?
+  # Introspection enabled for GraphiQL access
+  # TODO: Disable in production before public launch: disable_introspection_entry_points if Rails.env.production?
 
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
