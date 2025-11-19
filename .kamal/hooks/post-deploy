@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Post-deploy hook to seed the database
+# TODO: Remove this before production deployment
+
+echo "Running database seed..."
+
+# Run seed command in the container
+# Note: This runs kamal from within the hook to execute commands in the deployed container
+kamal app exec -q "bin/rails db:seed"
+
+echo "Database seed completed"
