@@ -9,7 +9,7 @@ class Mutations::LogoutTest < ActiveSupport::TestCase
 
     @mutation = <<~GQL
       mutation {
-        logout(input: {}) {
+        logout {
           success
           message
         }
