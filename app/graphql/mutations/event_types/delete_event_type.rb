@@ -3,6 +3,9 @@
 module Mutations
   module EventTypes
     class DeleteEventType < AuthenticatedMutation
+      graphql_name "DeleteEventType"
+      description "Delete an event type"
+
       field :success, Boolean, null: false
       field :errors, [String], null: false
 

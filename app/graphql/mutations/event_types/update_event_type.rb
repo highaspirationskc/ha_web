@@ -3,6 +3,7 @@
 module Mutations
   module EventTypes
     class UpdateEventType < AuthenticatedMutation
+      graphql_name "UpdateEventType"
       description "Update an existing event type"
 
       argument :input, Types::UpdateEventTypeInput, required: true

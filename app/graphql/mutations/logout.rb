@@ -4,12 +4,10 @@ module Mutations
   class Logout < BaseMutation
     description "Log out the current user"
 
-    argument :input, Types::LogoutInput, required: true
-
     field :success, Boolean, null: false
     field :message, String, null: false
 
-    def resolve(input:)
+    def resolve
       current_user = context[:current_user]
 
       unless current_user

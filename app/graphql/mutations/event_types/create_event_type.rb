@@ -3,6 +3,7 @@
 module Mutations
   module EventTypes
     class CreateEventType < AuthenticatedMutation
+      graphql_name "CreateEventType"
       description "Create a new event type"
 
       argument :input, Types::CreateEventTypeInput, required: true
