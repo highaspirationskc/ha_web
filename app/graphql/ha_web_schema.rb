@@ -4,6 +4,9 @@ class HaWebSchema < GraphQL::Schema
   mutation(Types::MutationType)
   query(Types::QueryType)
 
+  # Disable auto-generation of input object types
+  disable_introspection_entry_points if Rails.env.test?
+
   # For batch-loading (see https://graphql-ruby.org/dataloader/overview.html)
   use GraphQL::Dataloader
 

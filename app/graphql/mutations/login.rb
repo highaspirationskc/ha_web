@@ -2,18 +2,18 @@
 
 module Mutations
   class Login < BaseMutation
-    argument :email, String, required: true
-    argument :password, String, required: true
-    argument :device_name, String, required: false
+    description "Authenticate a user and return a token"
+
+    argument :input, Types::LoginInput, required: true
 
     field :token, String, null: true
     field :user, Types::UserType, null: true
     field :errors, [String], null: true
 
-    def resolve(email:, password:, device_name: nil)
-      user = User.find_by(email: email.downcase.strip)
+    def resolve(input:)
+      user = User.find_by(email: input[:email].downcase.strip)
 
-      unless user&.authenticate(password)
+      unless user&.authenticate(input[:password])
         return {
           token: nil,
           user: nil,
@@ -29,7 +29,7 @@ module Mutations
         }
       end
 
-      token = AuthService.generate_token(user, device_name: device_name)
+      token = AuthService.generate_token(user, device_name: input[:device_name])
 
       {
         token: token,

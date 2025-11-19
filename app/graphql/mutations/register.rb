@@ -2,17 +2,18 @@
 
 module Mutations
   class Register < BaseMutation
-    argument :email, String, required: true
-    argument :password, String, required: true
+    description "Register a new user account"
+
+    argument :input, Types::RegisterInput, required: true
 
     field :success, Boolean, null: false
     field :message, String, null: false
     field :errors, [String], null: true
 
-    def resolve(email:, password:)
+    def resolve(input:)
       user = User.new(
-        email: email,
-        password: password,
+        email: input[:email],
+        password: input[:password],
         active: false
       )
 
