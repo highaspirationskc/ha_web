@@ -11,12 +11,11 @@ module Types
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
 
-    field :events, [Types::EventType], null: false do
-      argument :year, Integer, required: false
-    end
+    field :events, [Types::EventType], null: false, description: "Events for this season (filtered by year from query input)"
 
-    def events(year: nil)
-      return object.events unless year
+    def events
+      # Use year from input if provided, otherwise default to current year
+      year = object.current_year || Date.current.year
 
       # Build date range for this season in the specified year
       start_date = Date.new(year, object.start_month, object.start_day)

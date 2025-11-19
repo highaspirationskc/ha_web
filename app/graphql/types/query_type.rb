@@ -102,13 +102,18 @@ module Types
     def olympic_season(input: nil)
       require_authentication!
 
-      if input && input[:name]
+      season = if input && input[:name]
         # Find by name
         OlympicSeason.find_by(name: input[:name])
       else
         # Find current season
         find_current_olympic_season(Date.current)
       end
+
+      # Attach the year from input if provided (for filtering events)
+      season.current_year = input[:year] if season && input && input[:year]
+
+      season
     end
 
     # Event Registrations
