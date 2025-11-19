@@ -298,9 +298,9 @@ def create_event_participation(event, user, today, reg_days_before: 5)
       event_log.participated_at = event.event_date
       event_log.points_awarded = event.event_type.point_value
     end
-    return { registration: reg, log: log, points: event.event_type.point_value }
+    { registration: reg, log: log, points: event.event_type.point_value }
   else
-    return { registration: reg, log: nil, points: 0 }
+    { registration: reg, log: nil, points: 0 }
   end
 end
 

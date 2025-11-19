@@ -17,6 +17,13 @@ servers:
 deploy_timeout: 300  # Maximum time to wait for container to become healthy (seconds)
 drain_timeout: 30    # Time to wait for existing requests to complete before stopping old container (seconds)
 
+# Hooks to run on deploy (TODO: Remove db:seed before production)
+hooks:
+  post-deploy:
+    - path: bin/rails
+      host: all
+      command: db:seed
+
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
 # Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
 #
