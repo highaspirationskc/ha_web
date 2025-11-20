@@ -3,7 +3,11 @@ class Admin::EventsController < Admin::BaseController
 
   # GET /admin/events or /admin/events.json
   def index
-    @events = Event.all
+    # Get the start date for the calendar (defaults to current month)
+    @start_date = params[:start_date] ? Date.parse(params[:start_date]) : Date.current
+
+    # Get all events (simple_calendar will filter by the displayed month)
+    @events = Event.includes(:event_type).order(:event_date)
   end
 
   # GET /admin/events/1 or /admin/events/1.json

@@ -27,11 +27,6 @@ module Types
     field :update_olympic_season, mutation: Mutations::OlympicSeasons::UpdateOlympicSeason
     field :delete_olympic_season, mutation: Mutations::OlympicSeasons::DeleteOlympicSeason
 
-    # Event Registration mutations
-    field :create_event_registration, mutation: Mutations::EventRegistrations::CreateEventRegistration
-    field :update_event_registration, mutation: Mutations::EventRegistrations::UpdateEventRegistration
-    field :delete_event_registration, mutation: Mutations::EventRegistrations::DeleteEventRegistration
-
     # Event Log mutations
     field :create_event_log, mutation: Mutations::EventLogs::CreateEventLog
     field :update_event_log, mutation: Mutations::EventLogs::UpdateEventLog

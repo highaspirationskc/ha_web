@@ -6,4 +6,8 @@ class OlympicSeason < ApplicationRecord
   validates :start_day, presence: true
   validates :end_month, presence: true
   validates :end_day, presence: true
+
+  def self.current_season
+    OlympicSeasonService.current_season
+  end
 end

@@ -1,7 +1,6 @@
 class Event < ApplicationRecord
   belongs_to :event_type
   belongs_to :created_by, class_name: "User"
-  has_many :event_registrations, dependent: :destroy
   has_many :event_logs, dependent: :destroy
   has_many :users, through: :event_logs
 

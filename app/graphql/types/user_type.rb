@@ -14,7 +14,6 @@ module Types
 
     field :team, Types::TeamType, null: true
     field :created_events, [Types::EventType], null: false
-    field :event_registrations, [Types::EventRegistrationType], null: false
     field :event_logs, [Types::EventLogType], null: false
     field :user_relationships, [Types::UserRelationshipType], null: false
     field :mentees, [Types::UserType], null: false

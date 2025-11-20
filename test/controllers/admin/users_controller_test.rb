@@ -61,7 +61,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     login_as(@admin_user)
     get admin_user_path(@volunteer_user)
     assert_response :success
-    assert_select "h1", "User Details"
+    assert_select "nav[aria-label='Breadcrumb']"
     assert_select "dd", @volunteer_user.email
   end
 
@@ -74,7 +74,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     login_as(@admin_user)
     get edit_admin_user_path(@volunteer_user)
     assert_response :success
-    assert_select "h1", "Edit User"
+    assert_select "nav[aria-label='Breadcrumb']"
   end
 
   test "should update user with valid params" do
@@ -128,8 +128,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     end
     get admin_users_path
     assert_response :success
-    # Kaminari default is 25 per page
-    assert_select "tbody tr", count: 25
+    # Kaminari default is 15 per page
+    assert_select "tbody tr", count: 15
   end
 
   test "should update active status via checkbox" do

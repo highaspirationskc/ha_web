@@ -7,7 +7,7 @@ module Types
     argument :id, ID, required: true
     argument :event_id, ID, required: false
     argument :user_id, ID, required: false
-    argument :participated_at, GraphQL::Types::ISO8601Date, required: false
-    argument :points_awarded, Integer, required: false
+    argument :log_type, String, required: false, description: "Type of log entry: 'registered' or 'arrived'"
+    argument :logged_at, GraphQL::Types::ISO8601DateTime, required: false
   end
 end

@@ -17,19 +17,11 @@ module Types
       # Use year from input if provided, otherwise default to current year
       year = object.current_year || Date.current.year
 
-      # Build date range for this season in the specified year
-      start_date = Date.new(year, object.start_month, object.start_day)
+      # Use service to get date range
+      service = OlympicSeasonService.new(object)
+      date_range = service.date_range(year)
 
-      # Handle year-spanning seasons (e.g., Winter Dec-Feb)
-      end_year = if object.start_month > object.end_month
-        year + 1
-      else
-        year
-      end
-
-      end_date = Date.new(end_year, object.end_month, object.end_day)
-
-      Event.where(event_date: start_date..end_date)
+      Event.where(event_date: date_range)
     end
   end
 end

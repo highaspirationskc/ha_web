@@ -40,54 +40,72 @@ staff_user = User.find_or_create_by!(email: "staff@example.com") do |user|
   user.last_name = "User"
 end
 
-# Blue Team Users
-blue_mentor = User.find_or_create_by!(email: "blue.mentor@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :mentor
-  user.active = true
-  user.team = blue_team
-  user.first_name = "Blue"
-  user.last_name = "Mentor"
-end
-
-blue_mentee = User.find_or_create_by!(email: "blue.mentee@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :mentee
-  user.active = true
-  user.team = blue_team
-  user.first_name = "Blue"
-  user.last_name = "Mentee"
-end
-
+# Create parents (no team assignment)
 blue_parent = User.find_or_create_by!(email: "blue.parent@example.com") do |user|
   user.password = "Password1!"
   user.role = :parent
   user.active = true
-  user.team = blue_team
   user.first_name = "Blue"
   user.last_name = "Parent"
 end
 
-# Green Team Users
-green_mentor = User.find_or_create_by!(email: "green.mentor@example.com") do |user|
+green_parent = User.find_or_create_by!(email: "green.parent@example.com") do |user|
   user.password = "Password1!"
-  user.role = :mentor
+  user.role = :parent
   user.active = true
-  user.team = green_team
   user.first_name = "Green"
-  user.last_name = "Mentor"
+  user.last_name = "Parent"
 end
 
-green_mentee = User.find_or_create_by!(email: "green.mentee@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :mentee
-  user.active = true
-  user.team = green_team
-  user.first_name = "Green"
-  user.last_name = "Mentee"
+# Create mentors for each team (2-3 per team)
+teams_data = [
+  { team: blue_team, color: "Blue" },
+  { team: green_team, color: "Green" },
+  { team: yellow_team, color: "Yellow" },
+  { team: red_team, color: "Red" }
+]
+
+all_mentors = []
+all_mentees = []
+
+teams_data.each do |team_data|
+  team = team_data[:team]
+  color = team_data[:color]
+
+  # Create 2 mentors per team
+  2.times do |i|
+    mentor = User.find_or_create_by!(email: "#{color.downcase}.mentor#{i + 1}@example.com") do |user|
+      user.password = "Password1!"
+      user.role = :mentor
+      user.active = true
+      user.team = team
+      user.first_name = "#{color}"
+      user.last_name = "Mentor #{i + 1}"
+    end
+    all_mentors << mentor
+  end
+
+  # Create 7 mentees per team
+  7.times do |i|
+    mentee = User.find_or_create_by!(email: "#{color.downcase}.mentee#{i + 1}@example.com") do |user|
+      user.password = "Password1!"
+      user.role = :mentee
+      user.active = true
+      user.team = team
+      user.first_name = "#{color}"
+      user.last_name = "Mentee #{i + 1}"
+    end
+    all_mentees << mentee
+  end
 end
 
-puts "Created test users with email pattern: role@example.com and password: Password1!"
+# Keep references to first blue and green mentees for backward compatibility with event logs
+blue_mentee = User.find_by(email: "blue.mentee1@example.com")
+green_mentee = User.find_by(email: "green.mentee1@example.com")
+blue_mentor = User.find_by(email: "blue.mentor1@example.com")
+green_mentor = User.find_by(email: "green.mentor1@example.com")
+
+puts "Created test users: 2 parents, #{all_mentors.count} mentors, #{all_mentees.count} mentees (password: Password1!)"
 
 # Create Olympic Seasons
 winter_season = OlympicSeason.find_or_create_by!(name: "Winter") do |season|
@@ -122,377 +140,197 @@ puts "Created 4 olympic seasons"
 
 # Create Event Types
 workshop_type = EventType.find_or_create_by!(name: "Workshop") do |type|
-  type.point_value = 10
+  type.point_value = 1
   type.category = :org
 end
 
 mentoring_type = EventType.find_or_create_by!(name: "Mentoring Session") do |type|
-  type.point_value = 5
+  type.point_value = 1
   type.category = :user
 end
 
 competition_type = EventType.find_or_create_by!(name: "Competition") do |type|
-  type.point_value = 20
+  type.point_value = 1
   type.category = :org
 end
 
 community_service_type = EventType.find_or_create_by!(name: "Community Service") do |type|
-  type.point_value = 15
+  type.point_value = 1
   type.category = :org
 end
 
 study_session_type = EventType.find_or_create_by!(name: "Study Session") do |type|
-  type.point_value = 5
+  type.point_value = 1
   type.category = :user
 end
 
-puts "Created 5 event types"
+# Update existing event types to have point_value of 1
+EventType.update_all(point_value: 1)
 
-# Create Events dynamically based on current date
+puts "Created 5 event types (all with point_value: 1)"
+
+# Create Events dynamically - one event every Saturday for each season
 today = Date.current
 current_year = today.year
 
-# Determine what year to use for each season based on current date
-# Winter spans Dec-Feb, so if we're in Jan-Feb, use current year, otherwise use current year for Dec start
-winter_year = today.month <= 2 ? current_year : current_year
-spring_year = current_year
-summer_year = current_year
-fall_year = current_year
-
-# Past season events (guaranteed to be in the past)
-# Winter events (Dec-Feb of winter_year/winter_year+1)
-Event.find_or_create_by!(name: "Winter Robotics Workshop") do |event|
-  event.event_type = workshop_type
-  event.description = "Learn robotics basics in this winter workshop"
-  event.event_date = Date.new(winter_year, 1, 15)
-  event.location = "Main Lab"
-  event.created_by = admin_user
+# Helper to find all Saturdays in a date range
+def saturdays_in_range(start_date, end_date)
+  saturdays = []
+  current = start_date
+  # Find first Saturday
+  current += (6 - current.wday) % 7
+  while current <= end_date
+    saturdays << current
+    current += 7.days
+  end
+  saturdays
 end
 
-Event.find_or_create_by!(name: "Winter Study Session 1") do |event|
-  event.event_type = study_session_type
-  event.description = "Winter study session"
-  event.event_date = Date.new(winter_year, 1, 20)
-  event.location = "Library"
-  event.created_by = blue_mentor
+# Event types array for rotation
+event_types_array = [workshop_type, mentoring_type, competition_type, community_service_type, study_session_type]
+locations = ["Main Lab", "Library", "Community Center", "Meeting Room A", "Meeting Room B", "Competition Hall"]
+event_counter = 0
+
+seasons = [
+  { name: "Winter", season: winter_season, start_month: 12, end_month: 2 },
+  { name: "Spring", season: spring_season, start_month: 3, end_month: 5 },
+  { name: "Summer", season: summer_season, start_month: 6, end_month: 8 },
+  { name: "Fall", season: fall_season, start_month: 9, end_month: 11 }
+]
+
+all_events = []
+
+seasons.each do |season_data|
+  # Calculate season date range
+  if season_data[:start_month] > season_data[:end_month]
+    # Season spans years (Winter: Dec-Feb)
+    if today.month <= season_data[:end_month]
+      # We're in the end of the season (Jan-Feb)
+      start_date = Date.new(current_year - 1, season_data[:start_month], 1)
+      end_date = Date.new(current_year, season_data[:end_month], -1)
+    else
+      # We're before or in the start of the season
+      start_date = Date.new(current_year, season_data[:start_month], 1)
+      end_date = Date.new(current_year + 1, season_data[:end_month], -1)
+    end
+  else
+    # Season within same year
+    start_date = Date.new(current_year, season_data[:start_month], 1)
+    end_date = Date.new(current_year, season_data[:end_month], -1)
+  end
+
+  # Find all Saturdays in this season
+  saturdays = saturdays_in_range(start_date, end_date)
+
+  # Create an event for each Saturday
+  saturdays.each_with_index do |saturday, index|
+    event_type = event_types_array[event_counter % event_types_array.length]
+    location = locations[event_counter % locations.length]
+
+    event = Event.find_or_create_by!(
+      event_date: saturday,
+      event_type: event_type
+    ) do |e|
+      e.name = "#{season_data[:name]} #{event_type.name} - Week #{index + 1}"
+      e.description = "#{season_data[:name]} season event - #{event_type.name}"
+      e.location = location
+      e.created_by = [admin_user, staff_user, all_mentors.sample].compact.sample
+    end
+
+    all_events << event
+    event_counter += 1
+  end
 end
 
-Event.find_or_create_by!(name: "Winter Study Session 2") do |event|
-  event.event_type = study_session_type
-  event.description = "Winter study session"
-  event.event_date = Date.new(winter_year, 2, 10)
-  event.location = "Library"
-  event.created_by = green_mentor
+puts "Created #{all_events.length} events (one per Saturday for each season, current date: #{today})"
+
+# Separate events into past and future, and by season
+past_events = all_events.select { |event| event.event_date < today }
+future_events = all_events.select { |event| event.event_date >= today }
+
+# Get current season events (past)
+current_season_name = @current_season&.name || OlympicSeason.current_season&.name
+current_season_past_events = past_events.select do |event|
+  event.name.start_with?(current_season_name) if current_season_name
 end
 
-# Spring events (Mar-May)
-Event.find_or_create_by!(name: "Spring Workshop") do |event|
-  event.event_type = workshop_type
-  event.description = "Spring coding workshop"
-  event.event_date = Date.new(spring_year, 3, 15)
-  event.location = "Main Lab"
-  event.created_by = staff_user
+# Get other season past events
+other_season_past_events = past_events.reject do |event|
+  event.name.start_with?(current_season_name) if current_season_name
 end
-
-Event.find_or_create_by!(name: "Spring Coding Competition") do |event|
-  event.event_type = competition_type
-  event.description = "Annual spring coding competition"
-  event.event_date = Date.new(spring_year, 4, 20)
-  event.location = "Competition Hall"
-  event.created_by = staff_user
-end
-
-Event.find_or_create_by!(name: "Spring Mentoring Session") do |event|
-  event.event_type = mentoring_type
-  event.description = "Spring mentoring session"
-  event.event_date = Date.new(spring_year, 5, 10)
-  event.location = "Meeting Room B"
-  event.created_by = blue_mentor
-end
-
-# Summer events (Jun-Aug)
-Event.find_or_create_by!(name: "Summer Workshop") do |event|
-  event.event_type = workshop_type
-  event.description = "Summer robotics workshop"
-  event.event_date = Date.new(summer_year, 6, 15)
-  event.location = "Main Lab"
-  event.created_by = admin_user
-end
-
-Event.find_or_create_by!(name: "Summer Science Fair") do |event|
-  event.event_type = competition_type
-  event.description = "Summer science fair showcase"
-  event.event_date = Date.new(summer_year, 7, 10)
-  event.location = "Exhibition Center"
-  event.created_by = admin_user
-end
-
-# Fall events (Sep-Nov)
-Event.find_or_create_by!(name: "Fall Community Service") do |event|
-  event.event_type = community_service_type
-  event.description = "Fall community service day"
-  event.event_date = Date.new(fall_year, 9, 15)
-  event.location = "Community Center"
-  event.created_by = staff_user
-end
-
-Event.find_or_create_by!(name: "Fall Workshop 1") do |event|
-  event.event_type = workshop_type
-  event.description = "Fall coding workshop"
-  event.event_date = Date.new(fall_year, 10, 10)
-  event.location = "Main Lab"
-  event.created_by = staff_user
-end
-
-Event.find_or_create_by!(name: "Fall Workshop 2") do |event|
-  event.event_type = workshop_type
-  event.description = "Fall robotics workshop"
-  event.event_date = Date.new(fall_year, 10, 25)
-  event.location = "Main Lab"
-  event.created_by = admin_user
-end
-
-# Future event (always in the future)
-Event.find_or_create_by!(name: "Upcoming Mentoring Session") do |event|
-  event.event_type = mentoring_type
-  event.description = "Future mentoring session"
-  event.event_date = today + 14.days
-  event.location = "Meeting Room A"
-  event.created_by = blue_mentor
-end
-
-puts "Created 12 events (current date: #{today})"
-
-# Create Event Registrations and Logs dynamically
-# Only create logs for events that have already happened (event_date < today)
-winter_workshop = Event.find_by(name: "Winter Robotics Workshop")
-winter_study_1 = Event.find_by(name: "Winter Study Session 1")
-winter_study_2 = Event.find_by(name: "Winter Study Session 2")
-spring_workshop = Event.find_by(name: "Spring Workshop")
-spring_competition = Event.find_by(name: "Spring Coding Competition")
-spring_mentoring = Event.find_by(name: "Spring Mentoring Session")
-summer_workshop = Event.find_by(name: "Summer Workshop")
-summer_fair = Event.find_by(name: "Summer Science Fair")
-fall_service = Event.find_by(name: "Fall Community Service")
-fall_workshop_1 = Event.find_by(name: "Fall Workshop 1")
-fall_workshop_2 = Event.find_by(name: "Fall Workshop 2")
-upcoming_mentoring = Event.find_by(name: "Upcoming Mentoring Session")
 
 registration_count = 0
 event_log_count = 0
-blue_mentee_points = 0
-green_mentee_points = 0
 
-# Helper method to create registration and log if event is in the past
+# Helper method to create registration and arrival log if event is in the past
 def create_event_participation(event, user, today, reg_days_before: 5)
   return nil unless event
 
-  # Create registration
-  reg = EventRegistration.find_or_create_by!(event: event, user: user) do |registration|
-    registration.registration_date = event.event_date - reg_days_before.days
+  # Create registration log
+  reg_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :registered) do |log|
+    log.logged_at = event.event_date - reg_days_before.days
   end
 
-  # Only create event log if event has already happened
+  # Only create arrival log if event has already happened
   if event.event_date < today
-    log = EventLog.find_or_create_by!(event: event, user: user) do |event_log|
-      event_log.participated_at = event.event_date
-      event_log.points_awarded = event.event_type.point_value
+    arrival_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :arrived) do |log|
+      log.logged_at = event.event_date
     end
-    { registration: reg, log: log, points: event.event_type.point_value }
+    { registration: reg_log, arrival: arrival_log, points: event.event_type.point_value }
   else
-    { registration: reg, log: nil, points: 0 }
+    { registration: reg_log, arrival: nil, points: 0 }
   end
 end
 
-# Winter season participation
-if winter_workshop
-  result = create_event_participation(winter_workshop, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
+# Randomize event participation for all mentees
+all_mentees.each do |mentee|
+  # Each mentee participates in 1 to ALL current season events (allowing perfect participation)
+  if current_season_past_events.any?
+    num_current_events = rand(1..current_season_past_events.length)
+    selected_current_events = current_season_past_events.sample(num_current_events)
+
+    selected_current_events.each do |event|
+      result = create_event_participation(event, mentee, today, reg_days_before: rand(3..10))
+      registration_count += 1
+      event_log_count += 1 if result[:arrival]
+    end
   end
 
-  result = create_event_participation(winter_workshop, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
+  # 50% chance to also participate in 1-5 events from other seasons (for variety)
+  if rand < 0.5 && other_season_past_events.any?
+    num_other_events = rand(1..[5, other_season_past_events.length].min)
+    selected_other_events = other_season_past_events.sample(num_other_events)
 
-if winter_study_1
-  result = create_event_participation(winter_study_1, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
-  end
-end
-
-if winter_study_2
-  result = create_event_participation(winter_study_2, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-# Spring season participation
-if spring_workshop
-  result = create_event_participation(spring_workshop, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
+    selected_other_events.each do |event|
+      result = create_event_participation(event, mentee, today, reg_days_before: rand(3..10))
+      registration_count += 1
+      event_log_count += 1 if result[:arrival]
+    end
   end
 
-  result = create_event_participation(spring_workshop, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
+  # Register for a few future events (10% chance per future event)
+  future_events.sample([future_events.length, 2].min).each do |event|
+    next unless rand < 0.1
 
-if spring_competition
-  result = create_event_participation(spring_competition, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
+    EventLog.find_or_create_by!(event: event, user: mentee, log_type: :registered) do |log|
+      log.logged_at = [today, event.event_date - 7.days].max
+    end
+    registration_count += 1
   end
-
-  result = create_event_participation(spring_competition, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-if spring_mentoring
-  result = create_event_participation(spring_mentoring, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-# Summer season participation
-if summer_workshop
-  result = create_event_participation(summer_workshop, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
-  end
-
-  result = create_event_participation(summer_workshop, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-if summer_fair
-  result = create_event_participation(summer_fair, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
-  end
-
-  result = create_event_participation(summer_fair, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-# Fall season participation (current season - only log if event has passed)
-if fall_service
-  result = create_event_participation(fall_service, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
-  end
-
-  result = create_event_participation(fall_service, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-if fall_workshop_1
-  result = create_event_participation(fall_workshop_1, blue_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    blue_mentee_points += result[:points]
-  end
-
-  result = create_event_participation(fall_workshop_1, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-if fall_workshop_2
-  # Blue mentee registered but didn't attend
-  EventRegistration.find_or_create_by!(event: fall_workshop_2, user: blue_mentee) do |reg|
-    reg.registration_date = fall_workshop_2.event_date - 5.days
-  end
-  registration_count += 1
-
-  result = create_event_participation(fall_workshop_2, green_mentee, today)
-  registration_count += 1
-  if result[:log]
-    event_log_count += 1
-    green_mentee_points += result[:points]
-  end
-end
-
-# Future event - register but no logs yet
-if upcoming_mentoring
-  EventRegistration.find_or_create_by!(event: upcoming_mentoring, user: blue_mentee) do |reg|
-    reg.registration_date = today
-  end
-  registration_count += 1
-
-  EventRegistration.find_or_create_by!(event: upcoming_mentoring, user: green_mentee) do |reg|
-    reg.registration_date = today
-  end
-  registration_count += 1
 end
 
 puts "Created #{registration_count} event registrations"
 puts "Created #{event_log_count} event logs (only for past events)"
-puts "Blue Team Mentee (#{blue_mentee.email}) total points: #{blue_mentee_points}"
-puts "Green Team Mentee (#{green_mentee.email}) total points: #{green_mentee_points}"
 
-# Create User Relationships
+# Create User Relationships (only mentor relationships, since parents are not on teams)
 UserRelationship.find_or_create_by!(user: blue_mentee, related_user: blue_mentor) do |rel|
   rel.relationship_type = :mentor
-end
-
-UserRelationship.find_or_create_by!(user: blue_mentee, related_user: blue_parent) do |rel|
-  rel.relationship_type = :parent
 end
 
 UserRelationship.find_or_create_by!(user: green_mentee, related_user: green_mentor) do |rel|
   rel.relationship_type = :mentor
 end
 
-puts "Created 3 user relationships"
+puts "Created 2 user relationships"
 
 puts "Seeding completed!"

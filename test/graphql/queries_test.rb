@@ -16,7 +16,6 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
   def teardown
     # Clean up after tests
     EventLog.destroy_all
-    EventRegistration.destroy_all
     Event.destroy_all
     EventType.destroy_all
     OlympicSeason.destroy_all
@@ -247,35 +246,13 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     assert_includes result["errors"].first["message"], "Authentication required"
   end
 
-  test "event_registrations query returns all registrations" do
-    query = <<~GQL
-      query {
-        eventRegistrations {
-          id
-          registrationDate
-          event {
-            name
-          }
-          user {
-            email
-          }
-        }
-      }
-    GQL
-
-    result = execute_graphql(query, context: { current_user: @user })
-    registrations = result.dig("data", "eventRegistrations")
-
-    assert_not_nil registrations
-    assert registrations.length > 0
-  end
-
   test "event_logs query returns all logs" do
     query = <<~GQL
       query {
         eventLogs {
           id
-          participatedAt
+          logType
+          loggedAt
           pointsAwarded
           event {
             name

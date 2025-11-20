@@ -124,43 +124,8 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  # Event Registration mutations
-  test "createEventRegistration mutation creates a registration" do
-    event = Event.create!(
-      name: "Test Event",
-      event_date: Date.current + 1.day,
-      event_type: @event_type,
-      created_by: @user
-    )
-
-    mutation = <<~GQL
-      mutation($input: CreateEventRegistrationInput!) {
-        createEventRegistration(input: $input) {
-          eventRegistration {
-            id
-            registrationDate
-          }
-          errors
-        }
-      }
-    GQL
-
-    result = execute_graphql(mutation, variables: {
-      input: {
-        eventId: event.id,
-        userId: @user.id
-      }
-    }, context: { current_user: @user })
-
-    registration_data = result.dig("data", "createEventRegistration", "eventRegistration")
-    errors = result.dig("data", "createEventRegistration", "errors")
-
-    assert_not_nil registration_data
-    assert_empty errors
-  end
-
   # Event Log mutations
-  test "createEventLog mutation creates a log entry" do
+  test "createEventLog mutation creates a log entry with arrived type" do
     event = Event.create!(
       name: "Test Event",
       event_date: Date.current,
@@ -173,7 +138,8 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
         createEventLog(input: $input) {
           eventLog {
             id
-            participatedAt
+            logType
+            loggedAt
             pointsAwarded
           }
           errors
@@ -185,8 +151,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
       input: {
         eventId: event.id,
         userId: @user.id,
-        participatedAt: Date.current.to_s,
-        pointsAwarded: 10
+        logType: "arrived"
       }
     }, context: { current_user: @user })
 
@@ -194,7 +159,8 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     errors = result.dig("data", "createEventLog", "errors")
 
     assert_not_nil log_data
-    assert_equal 10, log_data["pointsAwarded"]
+    assert_equal "arrived", log_data["logType"]
+    assert_equal @event_type.point_value, log_data["pointsAwarded"]
     assert_empty errors
   end
 

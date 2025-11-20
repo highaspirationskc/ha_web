@@ -116,21 +116,6 @@ module Types
       season
     end
 
-    # Event Registrations
-    field :event_registrations, [Types::EventRegistrationType], null: false, description: "List all event registrations"
-    def event_registrations
-      require_authentication!
-      EventRegistration.all
-    end
-
-    field :event_registration, Types::EventRegistrationType, null: true, description: "Get an event registration by ID" do
-      argument :id, ID, required: true
-    end
-    def event_registration(id:)
-      require_authentication!
-      EventRegistration.find_by(id: id)
-    end
-
     # Event Logs
     field :event_logs, [Types::EventLogType], null: false, description: "List all event logs"
     def event_logs
@@ -191,34 +176,12 @@ module Types
 
     def find_current_olympic_season(date)
       OlympicSeason.all.find do |season|
-        date_in_season?(date, season)
-      end
-    end
-
-    def date_in_season?(date, season)
-      month = date.month
-      day = date.day
-
-      if season.start_month <= season.end_month
-        # Season within same year (e.g., March to August)
-        (month > season.start_month || (month == season.start_month && day >= season.start_day)) &&
-          (month < season.end_month || (month == season.end_month && day <= season.end_day))
-      else
-        # Season spans year boundary (e.g., November to February)
-        (month > season.start_month || (month == season.start_month && day >= season.start_day)) ||
-          (month < season.end_month || (month == season.end_month && day <= season.end_day))
+        OlympicSeasonService.new(season).includes_date?(date)
       end
     end
 
     def calculate_season_end_date(season, year)
-      # If season spans year boundary, end date is in next year
-      end_year = if season.start_month > season.end_month
-        year + 1
-      else
-        year
-      end
-
-      Date.new(end_year, season.end_month, season.end_day)
+      OlympicSeasonService.new(season).end_date(year)
     end
   end
 end

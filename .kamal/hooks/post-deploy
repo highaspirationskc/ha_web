@@ -3,10 +3,10 @@
 # Post-deploy hook to seed the database
 # TODO: Remove this before production deployment
 
-echo "Running database seed..."
+echo "Running database seed:replant (this will wipe and reseed all data)..."
 
-# Run seed command in the container
+# Run seed:replant command in the container to completely refresh test data
 # Note: This runs kamal from within the hook to execute commands in the deployed container
-kamal app exec -q "bin/rails db:seed"
+kamal app exec -q "bin/rails db:seed:replant"
 
-echo "Database seed completed"
+echo "Database seed:replant completed"

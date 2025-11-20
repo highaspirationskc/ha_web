@@ -10,28 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_10_072915) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_20_011919) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
-    t.datetime "participated_at", null: false
+    t.integer "log_type", default: 0, null: false
+    t.datetime "logged_at", null: false
     t.integer "points_awarded", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["event_id", "log_type"], name: "index_event_logs_on_event_id_and_log_type"
     t.index ["event_id"], name: "index_event_logs_on_event_id"
+    t.index ["log_type"], name: "index_event_logs_on_log_type"
     t.index ["user_id"], name: "index_event_logs_on_user_id"
-  end
-
-  create_table "event_registrations", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.integer "event_id", null: false
-    t.datetime "registration_date", null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["event_id", "user_id"], name: "index_event_registrations_on_event_id_and_user_id", unique: true
-    t.index ["event_id"], name: "index_event_registrations_on_event_id"
-    t.index ["registration_date"], name: "index_event_registrations_on_registration_date"
-    t.index ["user_id"], name: "index_event_registrations_on_user_id"
   end
 
   create_table "event_types", force: :cascade do |t|
@@ -125,8 +116,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_10_072915) do
 
   add_foreign_key "event_logs", "events"
   add_foreign_key "event_logs", "users"
-  add_foreign_key "event_registrations", "events"
-  add_foreign_key "event_registrations", "users"
   add_foreign_key "events", "event_types"
   add_foreign_key "events", "users", column: "created_by_id"
   add_foreign_key "tokens", "users"

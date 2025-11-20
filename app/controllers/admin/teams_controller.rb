@@ -8,6 +8,15 @@ class Admin::TeamsController < Admin::BaseController
 
   # GET /admin/teams/1 or /admin/teams/1.json
   def show
+    @current_season = OlympicSeason.current_season
+
+    # Calculate points for each user on this team
+    @user_points = @team.users.map do |user|
+      {
+        user: user,
+        points: user.total_points
+      }
+    end.sort_by { |up| -up[:points] }
   end
 
   # GET /admin/teams/new
