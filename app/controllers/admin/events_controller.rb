@@ -12,6 +12,16 @@ class Admin::EventsController < Admin::BaseController
 
   # GET /admin/events/1 or /admin/events/1.json
   def show
+    # Paginate registered and checked-in users separately
+    @registered_logs = @event.event_logs.registered
+                             .includes(:user)
+                             .order(logged_at: :desc)
+                             .page(params[:registered_page]).per(10)
+
+    @arrived_logs = @event.event_logs.arrived
+                          .includes(:user)
+                          .order(logged_at: :desc)
+                          .page(params[:arrived_page]).per(10)
   end
 
   # GET /admin/events/new

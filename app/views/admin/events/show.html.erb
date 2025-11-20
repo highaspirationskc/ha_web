@@ -115,8 +115,8 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @event.event_logs.registered.any? %>
-                    <% @event.event_logs.registered.includes(:user).each do |log| %>
+                  <% if @registered_logs.any? %>
+                    <% @registered_logs.each do |log| %>
                       <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <div class="text-sm font-medium text-gray-900"><%= log.user.first_name %> <%= log.user.last_name %></div>
@@ -148,6 +148,11 @@
           </div>
         </div>
       </div>
+      <% if @registered_logs.total_pages > 1 %>
+        <div class="mt-4 flex justify-center">
+          <%= paginate @registered_logs, param_name: :registered_page %>
+        </div>
+      <% end %>
     </div>
 
     <!-- Arrived Users (Checked In) -->
@@ -182,8 +187,8 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @event.event_logs.arrived.any? %>
-                    <% @event.event_logs.arrived.includes(:user).each do |log| %>
+                  <% if @arrived_logs.any? %>
+                    <% @arrived_logs.each do |log| %>
                       <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <div class="text-sm font-medium text-gray-900"><%= log.user.first_name %> <%= log.user.last_name %></div>
@@ -220,6 +225,11 @@
           </div>
         </div>
       </div>
+      <% if @arrived_logs.total_pages > 1 %>
+        <div class="mt-4 flex justify-center">
+          <%= paginate @arrived_logs, param_name: :arrived_page %>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>
