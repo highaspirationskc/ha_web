@@ -80,6 +80,11 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Relationship
                     </th>
+                    <% if @can_manage_family_members %>
+                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    <% end %>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -97,11 +102,16 @@
                             <%= family_member.relationship_type.titleize %>
                           </span>
                         </td>
+                        <% if @can_manage_family_members %>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <%= button_to "Remove", remove_family_member_admin_user_path(@user, family_member_id: family_member.id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Are you sure you want to remove this parent/guardian?" } %>
+                          </td>
+                        <% end %>
                       </tr>
                     <% end %>
                   <% else %>
                     <tr>
-                      <td colspan="2" class="px-6 py-4 text-center text-sm text-gray-500">No parents/guardians</td>
+                      <td colspan="<%= @can_manage_family_members ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No parents/guardians</td>
                     </tr>
                   <% end %>
                 </tbody>
@@ -110,6 +120,24 @@
           </div>
         </div>
       </div>
+
+      <!-- Add Parent/Guardian Form -->
+      <% if @can_manage_family_members && @available_users_for_family.any? %>
+        <div class="mt-4 bg-white shadow sm:rounded-lg p-4">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Add Parent/Guardian</h4>
+          <%= form_with url: add_family_member_admin_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
+            <div class="flex-grow">
+              <%= f.label :related_user_id, "Select Parent", class: "block text-sm font-medium text-gray-700" %>
+              <%= f.select :related_user_id, @available_users_for_family.map { |u| ["#{u.first_name} #{u.last_name} (#{u.email})", u.id] }, { prompt: "Choose a parent..." }, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+            </div>
+            <div>
+              <%= f.label :relationship_type, "Relationship", class: "block text-sm font-medium text-gray-700" %>
+              <%= f.select :relationship_type, @allowed_relationship_types, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+            </div>
+            <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     <% end %>
   </div>

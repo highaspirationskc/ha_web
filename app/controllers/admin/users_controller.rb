@@ -13,6 +13,9 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def show
+    @available_users_for_family = available_users_for_family
+    @allowed_relationship_types = allowed_relationship_types
+    @can_manage_family_members = can_manage_family_members?
   end
 
   def new
@@ -30,12 +33,9 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def edit
-    @available_users_for_family = available_users_for_family
-    @allowed_relationship_types = allowed_relationship_types
     @can_edit_profile = can_edit_profile?
     @can_edit_password = can_edit_password?
     @can_edit_role_and_team = can_edit_role_and_team?
-    @can_manage_family_members = can_manage_family_members?
   end
 
   def update
@@ -54,12 +54,9 @@ class Admin::UsersController < Admin::BaseController
     if @user.update(permitted)
       redirect_to admin_user_path(@user), notice: "User updated successfully"
     else
-      @available_users_for_family = available_users_for_family
-      @allowed_relationship_types = allowed_relationship_types
       @can_edit_profile = can_edit_profile?
       @can_edit_password = can_edit_password?
       @can_edit_role_and_team = can_edit_role_and_team?
-      @can_manage_family_members = can_manage_family_members?
       render :edit, status: :unprocessable_entity
     end
   end
@@ -82,14 +79,14 @@ class Admin::UsersController < Admin::BaseController
   def add_family_member
     # Only mentees can have parents/guardians added
     unless @user.mentee?
-      redirect_to edit_admin_user_path(@user), alert: "Can only add parents/guardians to mentees"
+      redirect_to admin_user_path(@user), alert: "Can only add parents/guardians to mentees"
       return
     end
 
     parent_user = User.find_by(id: params[:related_user_id])
 
     unless parent_user
-      redirect_to edit_admin_user_path(@user), alert: "Parent not found"
+      redirect_to admin_user_path(@user), alert: "Parent not found"
       return
     end
 
@@ -101,9 +98,9 @@ class Admin::UsersController < Admin::BaseController
     )
 
     if family_member.save
-      redirect_to edit_admin_user_path(@user), notice: "Parent/guardian added successfully"
+      redirect_to admin_user_path(@user), notice: "Parent/guardian added successfully"
     else
-      redirect_to edit_admin_user_path(@user), alert: family_member.errors.full_messages.join(", ")
+      redirect_to admin_user_path(@user), alert: family_member.errors.full_messages.join(", ")
     end
   end
 
@@ -111,9 +108,9 @@ class Admin::UsersController < Admin::BaseController
     family_member = @user.reverse_family_members.find_by(id: params[:family_member_id])
 
     if family_member&.destroy
-      redirect_to edit_admin_user_path(@user), notice: "Family member removed successfully"
+      redirect_to admin_user_path(@user), notice: "Family member removed successfully"
     else
-      redirect_to edit_admin_user_path(@user), alert: "Could not remove family member"
+      redirect_to admin_user_path(@user), alert: "Could not remove family member"
     end
   end
 
