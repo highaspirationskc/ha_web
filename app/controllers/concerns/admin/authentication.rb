@@ -4,8 +4,7 @@ module Admin
 
     included do
       before_action :require_authentication
-      before_action :require_admin_or_staff
-      helper_method :current_user
+      helper_method :current_user, :superuser?
     end
 
     private
@@ -20,9 +19,13 @@ module Admin
       end
     end
 
-    def require_admin_or_staff
-      unless current_user&.admin? || current_user&.staff?
-        redirect_to root_path, alert: "You don't have permission to access this page"
+    def superuser?
+      current_user&.admin? || current_user&.staff?
+    end
+
+    def require_superuser
+      unless superuser?
+        redirect_to admin_dashboard_path, alert: "You don't have permission to access this page"
       end
     end
   end

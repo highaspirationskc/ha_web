@@ -1,4 +1,5 @@
 class Admin::EventTypesController < Admin::BaseController
+  before_action :require_superuser
   before_action :set_event_type, only: %i[ show edit update destroy ]
 
   # GET /admin/event_types or /admin/event_types.json

@@ -1,4 +1,5 @@
 class Admin::EventLogsController < Admin::BaseController
+  before_action :require_superuser
   before_action :set_event_log, only: %i[ show edit update destroy ]
 
   # GET /admin/event_logs or /admin/event_logs.json

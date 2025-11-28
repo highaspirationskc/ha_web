@@ -20,6 +20,8 @@ Rails.application.routes.draw do
         patch :activate
         patch :deactivate
       end
+      post :add_relationship, on: :member
+      delete :remove_relationship, on: :member
     end
 
     resources :events

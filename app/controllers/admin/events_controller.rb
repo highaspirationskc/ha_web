@@ -1,4 +1,5 @@
 class Admin::EventsController < Admin::BaseController
+  before_action :require_superuser
   before_action :set_event, only: %i[ show edit update destroy ]
 
   # GET /admin/events or /admin/events.json

@@ -40,66 +40,176 @@
         </div>
       <% end %>
 
-      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <div class="md:grid md:grid-cols-3 md:gap-6">
-          <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
-            <p class="mt-1 text-sm text-gray-500">Update user details and permissions.</p>
-          </div>
-          <div class="mt-5 md:mt-0 md:col-span-2">
-            <div class="grid grid-cols-6 gap-6">
-              <div class="col-span-6 sm:col-span-4">
-                <%= form.label :email, class: "block text-sm font-medium text-gray-700" %>
-                <%= form.email_field :email, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-              </div>
+      <% if @can_edit_profile || @can_edit_password || @can_edit_role_and_team %>
+        <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+          <div class="md:grid md:grid-cols-3 md:gap-6">
+            <div class="md:col-span-1">
+              <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
+              <p class="mt-1 text-sm text-gray-500">
+                <% if @can_edit_profile %>
+                  Update user details and permissions.
+                <% else %>
+                  Update your password.
+                <% end %>
+              </p>
+            </div>
+            <div class="mt-5 md:mt-0 md:col-span-2">
+              <div class="grid grid-cols-6 gap-6">
+                <% if @can_edit_profile %>
+                  <div class="col-span-6 sm:col-span-4">
+                    <%= form.label :email, class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.email_field :email, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+                  </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.text_field :first_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-              </div>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.text_field :first_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+                  </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.text_field :last_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-              </div>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.text_field :last_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+                  </div>
+                <% end %>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.password_field :password, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-                <p class="mt-1 text-xs text-gray-500">Leave blank to keep current password</p>
-              </div>
+                <% if @can_edit_password %>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.password_field :password, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+                    <p class="mt-1 text-xs text-gray-500">Leave blank to keep current password</p>
+                  </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :password_confirmation, "Password Confirmation", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.password_field :password_confirmation, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-              </div>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :password_confirmation, "Password Confirmation", class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.password_field :password_confirmation, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+                  </div>
+                <% end %>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :role, class: "block text-sm font-medium text-gray-700" %>
-                <%= form.select :role, User.roles.keys.map { |k| [k.titleize, k] }, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-              </div>
+                <% if @can_edit_role_and_team %>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :role, class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.select :role, User.roles.keys.map { |k| [k.titleize, k] }, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                  </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :team_id, "Team", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)", selected: @user.team_id }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
-              </div>
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= form.label :team_id, "Team", class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)", selected: @user.team_id }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+                  </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Status</label>
-                <div class="mt-2">
-                  <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
-                  <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
-                </div>
+                  <div class="col-span-6 sm:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <div class="mt-2">
+                      <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
+                      <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
+                    </div>
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="flex justify-end space-x-3">
-        <%= link_to "Cancel", admin_user_path(@user), class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-        <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
-        <%= form.submit "Save Changes", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+        <div class="flex justify-end space-x-3">
+          <%= link_to "Cancel", admin_user_path(@user), class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+          <% if @can_edit_role_and_team %>
+            <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
+          <% end %>
+          <%= form.submit "Save Changes", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Relationships Section -->
+    <% if %w[mentor mentee parent].include?(@user.role) && @can_manage_relationships %>
+      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6 mt-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Relationships</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              <% case @user.role %>
+              <% when "mentor" %>
+                Manage mentees for this mentor.
+              <% when "mentee" %>
+                Manage parent for this mentee.
+              <% when "parent" %>
+                Manage children for this parent.
+              <% end %>
+            </p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <!-- Existing Relationships -->
+            <% relationships = @user.user_relationships.includes(:related_user) + @user.reverse_relationships.includes(:user) %>
+            <% if relationships.any? %>
+              <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Current Relationships</h4>
+                <div class="space-y-2">
+                  <% @user.user_relationships.includes(:related_user).each do |relationship| %>
+                    <div class="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-md">
+                      <div>
+                        <span class="text-sm font-medium text-gray-900">
+                          <%= relationship.related_user.first_name %> <%= relationship.related_user.last_name %>
+                        </span>
+                        <span class="text-sm text-gray-500">(<%= relationship.related_user.email %>)</span>
+                        <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <%= relationship.relationship_type == "mentor" ? "Mentee" : "Child" %>
+                        </span>
+                      </div>
+                      <%= button_to "Remove", remove_relationship_admin_user_path(@user, relationship_id: relationship.id), method: :delete, class: "text-sm text-red-600 hover:text-red-900", data: { confirm: "Are you sure you want to remove this relationship?" } %>
+                    </div>
+                  <% end %>
+                  <% @user.reverse_relationships.includes(:user).each do |relationship| %>
+                    <%
+                      inverse_type = case relationship.relationship_type
+                      when "parent" then "Parent"
+                      when "mentor" then "Mentor"
+                      else relationship.relationship_type.titleize
+                      end
+                    %>
+                    <div class="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-md">
+                      <div>
+                        <span class="text-sm font-medium text-gray-900">
+                          <%= relationship.user.first_name %> <%= relationship.user.last_name %>
+                        </span>
+                        <span class="text-sm text-gray-500">(<%= relationship.user.email %>)</span>
+                        <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          <%= inverse_type %>
+                        </span>
+                      </div>
+                      <%= button_to "Remove", remove_relationship_admin_user_path(@user, relationship_id: relationship.id), method: :delete, class: "text-sm text-red-600 hover:text-red-900", data: { confirm: "Are you sure you want to remove this relationship?" } %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <!-- Add Relationship Form -->
+            <% if @available_users_for_relationship.any? %>
+              <% border_class = relationships.any? ? "border-t border-gray-200 pt-4" : "" %>
+              <div class="<%= border_class %>">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Add Relationship</h4>
+                <%= form_with url: add_relationship_admin_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
+                  <div class="flex-grow">
+                    <%= f.label :related_user_id, "Select User", class: "block text-sm font-medium text-gray-700" %>
+                    <%= f.select :related_user_id, @available_users_for_relationship.map { |u| ["#{u.first_name} #{u.last_name} (#{u.email})", u.id] }, { prompt: "Choose a user..." }, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                  </div>
+                  <% if @allowed_relationship_types.length == 1 %>
+                    <%= f.hidden_field :relationship_type, value: @allowed_relationship_types.first.last %>
+                  <% else %>
+                    <div>
+                      <%= f.label :relationship_type, "Relationship", class: "block text-sm font-medium text-gray-700" %>
+                      <%= f.select :relationship_type, @allowed_relationship_types, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                    </div>
+                  <% end %>
+                  <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+                <% end %>
+              </div>
+            <% elsif @user.mentor? && @user.team_id.nil? %>
+              <p class="text-sm text-gray-500">Assign this mentor to a team to manage mentees.</p>
+            <% elsif relationships.empty? %>
+              <p class="text-sm text-gray-500">No users available to add as relationships.</p>
+            <% end %>
+          </div>
+        </div>
       </div>
     <% end %>
   </div>

@@ -1,4 +1,5 @@
 class Admin::UserRelationshipsController < Admin::BaseController
+  before_action :require_superuser
   before_action :set_user_relationship, only: %i[ show edit update destroy ]
 
   # GET /admin/user_relationships or /admin/user_relationships.json

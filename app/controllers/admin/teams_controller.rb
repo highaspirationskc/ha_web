@@ -1,4 +1,5 @@
 class Admin::TeamsController < Admin::BaseController
+  before_action :require_superuser
   before_action :set_team, only: %i[ show edit update destroy ]
 
   # GET /admin/teams or /admin/teams.json
