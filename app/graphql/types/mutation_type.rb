@@ -7,6 +7,11 @@ module Types
     field :login, mutation: Mutations::Login
     field :logout, mutation: Mutations::Logout
 
+    # User mutations
+    field :create_user, mutation: Mutations::Users::CreateUser
+    field :update_user, mutation: Mutations::Users::UpdateUser
+    field :delete_user, mutation: Mutations::Users::DeleteUser
+
     # Team mutations
     field :create_team, mutation: Mutations::Teams::CreateTeam
     field :update_team, mutation: Mutations::Teams::UpdateTeam

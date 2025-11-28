@@ -1,0 +1,534 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class UsersMutationsTest < ActiveSupport::TestCase
+  def setup
+    @team = Team.create!(name: "Test Team", color: :blue)
+
+    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
+    @admin.activate!
+
+    @staff = User.create!(email: "staff@example.com", password: "Password123!", role: :staff)
+    @staff.activate!
+
+    @mentor = User.create!(email: "mentor@example.com", password: "Password123!", role: :mentor, team: @team)
+    @mentor.activate!
+
+    @mentee = User.create!(email: "mentee@example.com", password: "Password123!", role: :mentee)
+    @mentee.activate!
+  end
+
+  # CreateUser tests
+
+  test "admin can create user" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            email
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newuser@example.com",
+        password: "Password123!",
+        role: "mentee"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal "newuser@example.com", user["email"]
+    assert_equal "mentee", user["role"]
+    assert_empty errors
+  end
+
+  test "admin can create user with team" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            email
+            team {
+              id
+              name
+            }
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newmentee@example.com",
+        password: "Password123!",
+        role: "mentee",
+        teamId: @team.id.to_s
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal @team.name, user.dig("team", "name")
+    assert_empty errors
+  end
+
+  test "staff can create user" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            email
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newuser2@example.com",
+        password: "Password123!"
+      }
+    }, context: { current_user: @staff })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_empty errors
+  end
+
+  test "mentor cannot create user" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newuser@example.com",
+        password: "Password123!"
+      }
+    }, context: { current_user: @mentor })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_nil user
+    assert_includes errors, "You don't have permission to create users"
+  end
+
+  test "mentee cannot create user" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newuser@example.com",
+        password: "Password123!"
+      }
+    }, context: { current_user: @mentee })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_nil user
+    assert_includes errors, "You don't have permission to create users"
+  end
+
+  test "create user requires authentication" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newuser@example.com",
+        password: "Password123!"
+      }
+    }, context: {})
+
+    assert_nil result.dig("data", "createUser")
+    assert_includes result["errors"].first["message"], "Authentication required"
+  end
+
+  # UpdateUser tests
+
+  test "admin can update any user" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+            firstName
+            lastName
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        firstName: "Updated",
+        lastName: "Name"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_not_nil user
+    assert_equal "Updated", user["firstName"]
+    assert_equal "Name", user["lastName"]
+    assert_empty errors
+  end
+
+  test "admin can update user team" do
+    other_team = Team.create!(name: "Other Team", color: :red)
+
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+            team {
+              id
+              name
+            }
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        teamId: other_team.id.to_s
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_not_nil user
+    assert_equal other_team.name, user.dig("team", "name")
+    assert_empty errors
+  end
+
+  test "admin can update user role" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        role: "volunteer"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_not_nil user
+    assert_equal "volunteer", user["role"]
+    assert_empty errors
+  end
+
+  test "staff can update any user" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+            firstName
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        firstName: "StaffUpdated"
+      }
+    }, context: { current_user: @staff })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_not_nil user
+    assert_equal "StaffUpdated", user["firstName"]
+    assert_empty errors
+  end
+
+  test "mentor cannot update other users" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        firstName: "Hacked"
+      }
+    }, context: { current_user: @mentor })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_nil user
+    assert_includes errors, "You don't have permission to update this user"
+  end
+
+  test "user can update own password" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        password: "NewPassword123!"
+      }
+    }, context: { current_user: @mentee })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_not_nil user
+    assert_empty errors
+  end
+
+  test "user cannot update own role" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: @mentee.id.to_s,
+        role: "admin"
+      }
+    }, context: { current_user: @mentee })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_nil user
+    assert_includes errors, "You don't have permission to update this user"
+  end
+
+  test "update user returns error for non-existent user" do
+    mutation = <<~GQL
+      mutation($input: UpdateUserInput!) {
+        updateUser(input: $input) {
+          user {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        id: "99999",
+        firstName: "Test"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "updateUser", "user")
+    errors = result.dig("data", "updateUser", "errors")
+
+    assert_nil user
+    assert_includes errors, "User not found"
+  end
+
+  # DeleteUser tests
+
+  test "admin can delete user" do
+    user_to_delete = User.create!(email: "delete@example.com", password: "Password123!")
+
+    mutation = <<~GQL
+      mutation($id: ID!) {
+        deleteUser(id: $id) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      id: user_to_delete.id.to_s
+    }, context: { current_user: @admin })
+
+    success = result.dig("data", "deleteUser", "success")
+    errors = result.dig("data", "deleteUser", "errors")
+
+    assert success
+    assert_empty errors
+    assert_nil User.find_by(id: user_to_delete.id)
+  end
+
+  test "staff can delete user" do
+    user_to_delete = User.create!(email: "delete2@example.com", password: "Password123!")
+
+    mutation = <<~GQL
+      mutation($id: ID!) {
+        deleteUser(id: $id) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      id: user_to_delete.id.to_s
+    }, context: { current_user: @staff })
+
+    success = result.dig("data", "deleteUser", "success")
+    errors = result.dig("data", "deleteUser", "errors")
+
+    assert success
+    assert_empty errors
+  end
+
+  test "mentor cannot delete users" do
+    mutation = <<~GQL
+      mutation($id: ID!) {
+        deleteUser(id: $id) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      id: @mentee.id.to_s
+    }, context: { current_user: @mentor })
+
+    success = result.dig("data", "deleteUser", "success")
+    errors = result.dig("data", "deleteUser", "errors")
+
+    assert_not success
+    assert_includes errors, "You don't have permission to delete users"
+  end
+
+  test "mentee cannot delete users" do
+    mutation = <<~GQL
+      mutation($id: ID!) {
+        deleteUser(id: $id) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      id: @mentor.id.to_s
+    }, context: { current_user: @mentee })
+
+    success = result.dig("data", "deleteUser", "success")
+    errors = result.dig("data", "deleteUser", "errors")
+
+    assert_not success
+    assert_includes errors, "You don't have permission to delete users"
+  end
+
+  test "delete user returns error for non-existent user" do
+    mutation = <<~GQL
+      mutation($id: ID!) {
+        deleteUser(id: $id) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      id: "99999"
+    }, context: { current_user: @admin })
+
+    success = result.dig("data", "deleteUser", "success")
+    errors = result.dig("data", "deleteUser", "errors")
+
+    assert_not success
+    assert_includes errors, "User not found"
+  end
+
+  private
+
+  def execute_graphql(query, variables: {}, context: {})
+    HaWebSchema.execute(query, variables: variables, context: context)
+  end
+end
