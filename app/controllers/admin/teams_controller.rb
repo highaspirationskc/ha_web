@@ -1,6 +1,6 @@
 class Admin::TeamsController < Admin::BaseController
   before_action :require_superuser
-  before_action :set_team, only: %i[ show edit update destroy ]
+  before_action :set_team, only: %i[ show edit update destroy add_member remove_member ]
 
   # GET /admin/teams or /admin/teams.json
   def index
@@ -65,6 +65,32 @@ class Admin::TeamsController < Admin::BaseController
       format.html { redirect_to admin_teams_path, notice: "Team was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
     end
+  end
+
+  # POST /admin/teams/1/add_member
+  def add_member
+    user = User.find_by(id: params[:user_id])
+
+    unless user
+      redirect_to admin_team_path(@team), alert: "User not found"
+      return
+    end
+
+    user.update!(team: @team)
+    redirect_to admin_team_path(@team), notice: "#{user.email} added to team"
+  end
+
+  # DELETE /admin/teams/1/remove_member
+  def remove_member
+    user = User.find_by(id: params[:user_id])
+
+    unless user
+      redirect_to admin_team_path(@team), alert: "User not found"
+      return
+    end
+
+    user.update!(team: nil)
+    redirect_to admin_team_path(@team), notice: "#{user.email} removed from team"
   end
 
   private

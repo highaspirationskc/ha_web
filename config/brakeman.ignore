@@ -3,27 +3,27 @@
     {
       "warning_type": "Mass Assignment",
       "warning_code": 105,
-      "fingerprint": "f517a08746151e2492f50560c8452b43372d8768cbbe5567e3ed0cde7ff941d1",
+      "fingerprint": "c275f6584f0acb70563868a92c04b9f2464928f8ebe22583a11020b65c87b58a",
       "check_name": "PermitAttributes",
       "message": "Potentially dangerous key allowed for mass assignment",
       "file": "app/controllers/admin/users_controller.rb",
-      "line": 39,
+      "line": 211,
       "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
-      "code": "params.require(:user).permit(:email, :role, :active)",
+      "code": "params.require(:user).permit(:email, :password, :password_confirmation, :active, :team_id, :first_name, :last_name, :role)",
       "render_path": null,
       "location": {
         "type": "method",
         "class": "Admin::UsersController",
-        "method": "user_params"
+        "method": "user_params_for_create"
       },
       "user_input": ":role",
       "confidence": "Medium",
       "cwe_id": [
         915
       ],
-      "note": "Admin-only endpoint with proper authorization"
+      "note": "Superuser-only endpoint - only admin/staff can create users with role assignment"
     }
   ],
-  "updated": "2025-10-09 00:00:00 +0000",
+  "updated": "2025-11-27 00:00:00 +0000",
   "brakeman_version": "7.1.0"
 }

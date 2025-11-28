@@ -28,7 +28,12 @@ Rails.application.routes.draw do
     resources :event_types
     resources :event_registrations
     resources :event_logs
-    resources :teams
+    resources :teams do
+      member do
+        post :add_member
+        delete :remove_member
+      end
+    end
     resources :olympic_seasons
     resources :family_members
   end
