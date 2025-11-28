@@ -322,15 +322,16 @@ end
 puts "Created #{registration_count} event registrations"
 puts "Created #{event_log_count} event logs (only for past events)"
 
-# Create User Relationships (only mentor relationships, since parents are not on teams)
-UserRelationship.find_or_create_by!(user: blue_mentee, related_user: blue_mentor) do |rel|
-  rel.relationship_type = :mentor
+# Create Family Members (parent-child relationships)
+# Mentors/volunteers see mentees via team membership, not family_members
+FamilyMember.find_or_create_by!(user: blue_parent, related_user: blue_mentee) do |fm|
+  fm.relationship_type = :parent
 end
 
-UserRelationship.find_or_create_by!(user: green_mentee, related_user: green_mentor) do |rel|
-  rel.relationship_type = :mentor
+FamilyMember.find_or_create_by!(user: green_parent, related_user: green_mentee) do |fm|
+  fm.relationship_type = :parent
 end
 
-puts "Created 2 user relationships"
+puts "Created 2 family member relationships"
 
 puts "Seeding completed!"

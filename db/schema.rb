@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_20_011919) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_28_013552) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -49,6 +49,17 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_20_011919) do
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
   end
 
+  create_table "family_members", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "related_user_id", null: false
+    t.integer "relationship_type", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["related_user_id"], name: "index_family_members_on_related_user_id"
+    t.index ["user_id", "related_user_id"], name: "index_family_members_on_user_id_and_related_user_id", unique: true
+    t.index ["user_id"], name: "index_family_members_on_user_id"
+  end
+
   create_table "olympic_seasons", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "end_day", null: false
@@ -84,17 +95,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_20_011919) do
     t.index ["user_id"], name: "index_tokens_on_user_id"
   end
 
-  create_table "user_relationships", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.integer "related_user_id", null: false
-    t.integer "relationship_type", null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["related_user_id"], name: "index_user_relationships_on_related_user_id"
-    t.index ["user_id", "related_user_id"], name: "index_user_relationships_on_user_id_and_related_user_id", unique: true
-    t.index ["user_id"], name: "index_user_relationships_on_user_id"
-  end
-
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.string "avatar_url"
@@ -118,8 +118,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_20_011919) do
   add_foreign_key "event_logs", "users"
   add_foreign_key "events", "event_types"
   add_foreign_key "events", "users", column: "created_by_id"
+  add_foreign_key "family_members", "users"
+  add_foreign_key "family_members", "users", column: "related_user_id"
   add_foreign_key "tokens", "users"
-  add_foreign_key "user_relationships", "users"
-  add_foreign_key "user_relationships", "users", column: "related_user_id"
   add_foreign_key "users", "teams"
 end

@@ -15,10 +15,13 @@ module Types
     field :team, Types::TeamType, null: true
     field :created_events, [Types::EventType], null: false
     field :event_logs, [Types::EventLogType], null: false
-    field :user_relationships, [Types::UserRelationshipType], null: false
-    field :mentees, [Types::UserType], null: false
-    field :mentors, [Types::UserType], null: false
-    field :parents, [Types::UserType], null: false
-    field :children, [Types::UserType], null: false
+    field :family_members, [Types::FamilyMemberType], null: false
+
+    # Team-based relationships (for mentors/volunteers)
+    field :team_mentees, [Types::UserType], null: false, description: "Mentees on the same team (for mentors/volunteers)"
+
+    # Parent-child relationships (via FamilyMember)
+    field :parents, [Types::UserType], null: false, description: "Parents/guardians of this mentee"
+    field :children, [Types::UserType], null: false, description: "Children (mentees) of this parent"
   end
 end

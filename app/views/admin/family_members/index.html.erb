@@ -1,8 +1,8 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <div class="px-4 py-6 sm:px-0">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">User Relationships</h1>
-      <%= link_to "New User Relationship", new_admin_user_relationship_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+      <h1 class="text-3xl font-bold text-gray-900">Family Members</h1>
+      <%= link_to "New Family Member", new_admin_family_member_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
     </div>
 
     <% if notice.present? %>
@@ -19,10 +19,10 @@
               <thead class="bg-gray-50">
                 <tr>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
+                    Parent/Guardian
                   </th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Related User
+                    Child
                   </th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Relationship Type
@@ -33,30 +33,30 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <% if @user_relationships.any? %>
-                  <% @user_relationships.each do |relationship| %>
+                <% if @family_members.any? %>
+                  <% @family_members.each do |family_member| %>
                     <tr>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900"><%= relationship.user.email %></div>
+                        <div class="text-sm font-medium text-gray-900"><%= family_member.user.email %></div>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900"><%= relationship.related_user.email %></div>
+                        <div class="text-sm text-gray-900"><%= family_member.related_user.email %></div>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          <%= relationship.relationship_type.titleize %>
+                          <%= family_member.relationship_type.titleize %>
                         </span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <%= link_to "View", admin_user_relationship_path(relationship), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
-                        <%= link_to "Edit", edit_admin_user_relationship_path(relationship), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
-                        <%= button_to "Delete", admin_user_relationship_path(relationship), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure?" }, form: { class: "inline" } %>
+                        <%= link_to "View", admin_family_member_path(family_member), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                        <%= link_to "Edit", edit_admin_family_member_path(family_member), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                        <%= button_to "Delete", admin_family_member_path(family_member), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure?" }, form: { class: "inline" } %>
                       </td>
                     </tr>
                   <% end %>
                 <% else %>
                   <tr>
-                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No user relationships found.</td>
+                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No family members found.</td>
                   </tr>
                 <% end %>
               </tbody>

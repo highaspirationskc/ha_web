@@ -131,19 +131,19 @@ module Types
       EventLog.find_by(id: id)
     end
 
-    # User Relationships
-    field :user_relationships, [Types::UserRelationshipType], null: false, description: "List all user relationships"
-    def user_relationships
+    # Family Members
+    field :family_members, [Types::FamilyMemberType], null: false, description: "List all family member relationships"
+    def family_members
       require_authentication!
-      UserRelationship.all
+      FamilyMember.all
     end
 
-    field :user_relationship, Types::UserRelationshipType, null: true, description: "Get a user relationship by ID" do
+    field :family_member, Types::FamilyMemberType, null: true, description: "Get a family member by ID" do
       argument :id, ID, required: true
     end
-    def user_relationship(id:)
+    def family_member(id:)
       require_authentication!
-      UserRelationship.find_by(id: id)
+      FamilyMember.find_by(id: id)
     end
 
     # Users

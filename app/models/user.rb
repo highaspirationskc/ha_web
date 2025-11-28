@@ -6,12 +6,9 @@ class User < ApplicationRecord
   # Team relationship
   belongs_to :team, optional: true
 
-  # User relationship associations
-  has_many :user_relationships, dependent: :destroy
-  has_many :reverse_relationships, class_name: "UserRelationship", foreign_key: :related_user_id, dependent: :destroy
-  has_many :mentees, through: :reverse_relationships, source: :user
-  has_many :mentors, through: :user_relationships, source: :related_user
-  has_many :parents, through: :user_relationships, source: :related_user
+  # Family member associations (parent-child relationships)
+  has_many :family_members, dependent: :destroy
+  has_many :reverse_family_members, class_name: "FamilyMember", foreign_key: :related_user_id, dependent: :destroy
 
   # Event associations
   has_many :created_events, class_name: "Event", foreign_key: :created_by_id, dependent: :nullify
@@ -54,8 +51,30 @@ class User < ApplicationRecord
     UserMailer.confirmation_email(self).deliver_later
   end
 
+  # Parent-child relationships (via FamilyMember)
   def children
-    reverse_relationships.where(relationship_type: :parent).map(&:user)
+    return User.none unless parent?
+    User.where(id: family_members.where(relationship_type: :parent).select(:related_user_id))
+  end
+
+  def parents
+    return User.none unless mentee?
+    User.where(id: reverse_family_members.where(relationship_type: :parent).select(:user_id))
+  end
+
+  # Team-based access (for mentors/volunteers to see mentees on their team)
+  def team_mentees
+    return User.none unless (mentor? || volunteer?) && team_id
+    User.where(team_id: team_id, role: :mentee)
+  end
+
+  # Permission check - can this user manage another user?
+  def can_manage?(other_user)
+    return true if self == other_user
+    return true if admin? || staff?
+    return true if (mentor? || volunteer?) && team_id && other_user.team_id == team_id
+    return true if parent? && children.exists?(other_user.id)
+    false
   end
 
   # Calculate total points for a given date range

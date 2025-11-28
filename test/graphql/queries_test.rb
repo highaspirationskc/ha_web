@@ -19,7 +19,7 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     Event.destroy_all
     EventType.destroy_all
     OlympicSeason.destroy_all
-    UserRelationship.destroy_all
+    FamilyMember.destroy_all
     User.destroy_all
     Team.destroy_all
   end
@@ -271,10 +271,10 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     assert logs.length > 0
   end
 
-  test "user_relationships query returns all relationships" do
+  test "family_members query returns all relationships" do
     query = <<~GQL
       query {
-        userRelationships {
+        familyMembers {
           id
           relationshipType
           user {
@@ -288,7 +288,7 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     GQL
 
     result = execute_graphql(query, context: { current_user: @user })
-    relationships = result.dig("data", "userRelationships")
+    relationships = result.dig("data", "familyMembers")
 
     assert_not_nil relationships
     assert relationships.length > 0

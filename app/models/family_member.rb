@@ -1,8 +1,10 @@
-class UserRelationship < ApplicationRecord
+class FamilyMember < ApplicationRecord
   belongs_to :user
   belongs_to :related_user, class_name: "User"
 
-  enum :relationship_type, { mentor: 0, parent: 1, guardian: 2 }
+  # Only parent-child family relationships are tracked here
+  # Mentor/volunteer relationships are based on team membership
+  enum :relationship_type, { parent: 0, guardian: 1 }
 
   validates :user_id, presence: true
   validates :related_user_id, presence: true

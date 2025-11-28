@@ -32,9 +32,9 @@ module Types
     field :update_event_log, mutation: Mutations::EventLogs::UpdateEventLog
     field :delete_event_log, mutation: Mutations::EventLogs::DeleteEventLog
 
-    # User Relationship mutations
-    field :create_user_relationship, mutation: Mutations::UserRelationships::CreateUserRelationship
-    field :update_user_relationship, mutation: Mutations::UserRelationships::UpdateUserRelationship
-    field :delete_user_relationship, mutation: Mutations::UserRelationships::DeleteUserRelationship
+    # Family Member mutations
+    field :create_family_member, mutation: Mutations::FamilyMembers::CreateFamilyMember
+    field :update_family_member, mutation: Mutations::FamilyMembers::UpdateFamilyMember
+    field :delete_family_member, mutation: Mutations::FamilyMembers::DeleteFamilyMember
   end
 end

@@ -19,9 +19,9 @@ Rails.application.routes.draw do
       member do
         patch :activate
         patch :deactivate
+        post :add_family_member
+        delete :remove_family_member
       end
-      post :add_relationship, on: :member
-      delete :remove_relationship, on: :member
     end
 
     resources :events
@@ -30,7 +30,7 @@ Rails.application.routes.draw do
     resources :event_logs
     resources :teams
     resources :olympic_seasons
-    resources :user_relationships
+    resources :family_members
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

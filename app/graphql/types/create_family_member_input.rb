@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Types
-  class CreateUserRelationshipInput < Types::BaseInputObject
-    description "Input for creating a user relationship"
+  class CreateFamilyMemberInput < Types::BaseInputObject
+    description "Input for creating a family member relationship"
 
     argument :user_id, ID, required: true
     argument :related_user_id, ID, required: true

@@ -1,12 +1,12 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_relationship, :remove_relationship]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show]
   before_action :authorize_edit, only: [:edit, :update]
   before_action :authorize_create, only: [:new, :create]
   before_action :authorize_destroy, only: [:destroy]
   before_action :authorize_activation, only: [:activate, :deactivate]
-  before_action :authorize_relationship_management, only: [:add_relationship, :remove_relationship]
+  before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member]
 
   def index
     @users = users_for_current_user.order(created_at: :desc).page(params[:page])
@@ -30,12 +30,12 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def edit
-    @available_users_for_relationship = available_users_for_relationship
+    @available_users_for_family = available_users_for_family
     @allowed_relationship_types = allowed_relationship_types
     @can_edit_profile = can_edit_profile?
     @can_edit_password = can_edit_password?
     @can_edit_role_and_team = can_edit_role_and_team?
-    @can_manage_relationships = can_manage_relationships?
+    @can_manage_family_members = can_manage_family_members?
   end
 
   def update
@@ -54,12 +54,12 @@ class Admin::UsersController < Admin::BaseController
     if @user.update(permitted)
       redirect_to admin_user_path(@user), notice: "User updated successfully"
     else
-      @available_users_for_relationship = available_users_for_relationship
+      @available_users_for_family = available_users_for_family
       @allowed_relationship_types = allowed_relationship_types
       @can_edit_profile = can_edit_profile?
       @can_edit_password = can_edit_password?
       @can_edit_role_and_team = can_edit_role_and_team?
-      @can_manage_relationships = can_manage_relationships?
+      @can_manage_family_members = can_manage_family_members?
       render :edit, status: :unprocessable_entity
     end
   end
@@ -79,39 +79,41 @@ class Admin::UsersController < Admin::BaseController
     redirect_to admin_user_path(@user), notice: "User deactivated successfully"
   end
 
-  def add_relationship
-    related_user = User.find_by(id: params[:related_user_id])
-
-    unless related_user
-      redirect_to edit_admin_user_path(@user), alert: "User not found"
+  def add_family_member
+    # Only mentees can have parents/guardians added
+    unless @user.mentee?
+      redirect_to edit_admin_user_path(@user), alert: "Can only add parents/guardians to mentees"
       return
     end
 
-    # If mentor is adding a mentee, assign mentee to mentor's team
-    if current_user.mentor? && @user == current_user && related_user.mentee?
-      related_user.update(team_id: current_user.team_id)
+    parent_user = User.find_by(id: params[:related_user_id])
+
+    unless parent_user
+      redirect_to edit_admin_user_path(@user), alert: "Parent not found"
+      return
     end
 
-    relationship = @user.user_relationships.build(
-      related_user_id: related_user.id,
+    # FamilyMember: user is the parent, related_user is the child (mentee)
+    family_member = FamilyMember.new(
+      user_id: parent_user.id,
+      related_user_id: @user.id,
       relationship_type: params[:relationship_type]
     )
 
-    if relationship.save
-      redirect_to edit_admin_user_path(@user), notice: "Relationship added successfully"
+    if family_member.save
+      redirect_to edit_admin_user_path(@user), notice: "Parent/guardian added successfully"
     else
-      redirect_to edit_admin_user_path(@user), alert: relationship.errors.full_messages.join(", ")
+      redirect_to edit_admin_user_path(@user), alert: family_member.errors.full_messages.join(", ")
     end
   end
 
-  def remove_relationship
-    relationship = @user.user_relationships.find_by(id: params[:relationship_id]) ||
-                   @user.reverse_relationships.find_by(id: params[:relationship_id])
+  def remove_family_member
+    family_member = @user.reverse_family_members.find_by(id: params[:family_member_id])
 
-    if relationship&.destroy
-      redirect_to edit_admin_user_path(@user), notice: "Relationship removed successfully"
+    if family_member&.destroy
+      redirect_to edit_admin_user_path(@user), notice: "Family member removed successfully"
     else
-      redirect_to edit_admin_user_path(@user), alert: "Could not remove relationship"
+      redirect_to edit_admin_user_path(@user), alert: "Could not remove family member"
     end
   end
 
@@ -132,19 +134,13 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def authorize_show
-    return if superuser?
-    return if @user == current_user
-    return if current_user.mentor? && current_user.team_id && @user.team_id == current_user.team_id
-    return if current_user.parent? && current_user.children.include?(@user)
+    return if current_user.can_manage?(@user)
 
     redirect_to admin_users_path, alert: "You don't have permission to view this user"
   end
 
   def authorize_edit
-    return if superuser?
-    return if @user == current_user # Can always edit self (for password)
-    return if current_user.mentor? && current_user.team_id && @user.team_id == current_user.team_id
-    return if current_user.parent? && current_user.children.include?(@user)
+    return if current_user.can_manage?(@user)
 
     redirect_to admin_users_path, alert: "You don't have permission to edit this user"
   end
@@ -167,12 +163,11 @@ class Admin::UsersController < Admin::BaseController
     redirect_to admin_users_path, alert: "You don't have permission to activate/deactivate users"
   end
 
-  def authorize_relationship_management
+  def authorize_family_member_management
+    # Only superusers can manage family members
     return if superuser?
-    # Mentors can manage relationships for themselves (adding mentees to their team)
-    return if current_user.mentor? && @user == current_user && current_user.team_id
 
-    redirect_to admin_users_path, alert: "You don't have permission to manage relationships"
+    redirect_to admin_users_path, alert: "You don't have permission to manage family members"
   end
 
   # Permission check methods for views
@@ -190,22 +185,23 @@ class Admin::UsersController < Admin::BaseController
     superuser?
   end
 
-  def can_manage_relationships?
-    return true if superuser?
-    # Mentors can add mentees to their team
-    return true if current_user.mentor? && @user == current_user && current_user.team_id
-    false
+  def can_manage_family_members?
+    # Only superusers can manage family members
+    superuser?
   end
 
   # Scoped user list based on current user's permissions
   def users_for_current_user
     return User.all if superuser?
 
-    if current_user.mentor? && current_user.team_id
-      User.where(team_id: current_user.team_id).or(User.where(id: current_user.id))
+    if (current_user.mentor? || current_user.volunteer?) && current_user.team_id
+      # Mentors/volunteers can see themselves and all mentees on their team
+      User.where(team_id: current_user.team_id, role: :mentee).or(User.where(id: current_user.id))
     elsif current_user.parent?
+      # Parents can see themselves and their children
       User.where(id: [current_user.id] + current_user.children.pluck(:id))
     else
+      # Everyone else can only see themselves
       User.where(id: current_user.id)
     end
   end
@@ -228,42 +224,19 @@ class Admin::UsersController < Admin::BaseController
     params.require(:user).permit(permitted)
   end
 
-  def available_users_for_relationship
-    return [] unless can_manage_relationships?
+  def available_users_for_family
+    return [] unless can_manage_family_members?
+    return [] unless @user.mentee?
 
-    if superuser?
-      # Admin/staff editing a mentor: show all mentees to add to mentor's team
-      if @user.mentor? && @user.team_id
-        User.where(role: :mentee).where.not(id: @user.id)
-      # Admin/staff editing a parent: show all mentees to add as children
-      elsif @user.parent?
-        User.where(role: :mentee).where.not(id: @user.id)
-      # Admin/staff editing a mentee: show all parents to link
-      elsif @user.mentee?
-        User.where(role: :parent).where.not(id: @user.id)
-      else
-        []
-      end
-    elsif current_user.mentor? && @user == current_user
-      # Mentor adding mentees to their team
-      User.where(role: :mentee).where.not(id: @user.id)
-    else
-      []
-    end
+    # Get existing parent/guardian IDs to exclude
+    existing_parent_ids = @user.reverse_family_members.pluck(:user_id)
+    User.where(role: :parent).where.not(id: existing_parent_ids)
   end
 
   def allowed_relationship_types
-    return [] unless can_manage_relationships?
+    return [] unless can_manage_family_members?
+    return [] unless @user.mentee?
 
-    case @user.role
-    when "mentor"
-      [["Mentee", "mentor"]]
-    when "mentee"
-      [["Parent", "parent"]]
-    when "parent"
-      [["Child", "parent"]]
-    else
-      []
-    end
+    [["Parent", "parent"], ["Guardian", "guardian"]]
   end
 end
