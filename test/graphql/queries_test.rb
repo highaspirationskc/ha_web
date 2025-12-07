@@ -166,8 +166,9 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     season = result.dig("data", "olympicSeason")
 
     assert_not_nil season
-    # Today is Nov 19, which should be in Fall season (Sep-Nov)
-    assert_equal "Fall", season["name"]
+    # Should return whatever the current season is based on today's date
+    expected_season = OlympicSeasonService.current_season
+    assert_equal expected_season.name, season["name"]
   end
 
   test "olympic_season query returns season by name" do
