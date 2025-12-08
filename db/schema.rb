@@ -10,23 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_28_013552) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_08_072645) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
-    t.integer "log_type", default: 0, null: false
+    t.string "log_type", default: "registered", null: false
     t.datetime "logged_at", null: false
     t.integer "points_awarded", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["event_id", "log_type"], name: "index_event_logs_on_event_id_and_log_type"
     t.index ["event_id"], name: "index_event_logs_on_event_id"
-    t.index ["log_type"], name: "index_event_logs_on_log_type"
+    t.index ["event_id"], name: "index_event_logs_on_event_id_and_log_type"
     t.index ["user_id"], name: "index_event_logs_on_user_id"
   end
 
   create_table "event_types", force: :cascade do |t|
-    t.integer "category", null: false
+    t.string "category", null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.integer "point_value", null: false
@@ -51,13 +50,65 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_28_013552) do
 
   create_table "family_members", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "related_user_id", null: false
-    t.integer "relationship_type", null: false
+    t.integer "guardian_id", null: false
+    t.integer "mentee_id", null: false
+    t.string "relationship_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["guardian_id", "mentee_id"], name: "index_family_members_on_guardian_id_and_mentee_id", unique: true
+    t.index ["guardian_id"], name: "index_family_members_on_guardian_id"
+    t.index ["mentee_id"], name: "index_family_members_on_mentee_id"
+  end
+
+  create_table "guardians", force: :cascade do |t|
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["related_user_id"], name: "index_family_members_on_related_user_id"
-    t.index ["user_id", "related_user_id"], name: "index_family_members_on_user_id_and_related_user_id", unique: true
-    t.index ["user_id"], name: "index_family_members_on_user_id"
+    t.index ["user_id"], name: "index_guardians_on_user_id", unique: true
+  end
+
+  create_table "mentees", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "mentor_id"
+    t.integer "team_id"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["mentor_id"], name: "index_mentees_on_mentor_id"
+    t.index ["team_id"], name: "index_mentees_on_team_id"
+    t.index ["user_id"], name: "index_mentees_on_user_id", unique: true
+  end
+
+  create_table "mentors", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_mentors_on_user_id", unique: true
+  end
+
+  create_table "message_recipients", force: :cascade do |t|
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.boolean "is_read", default: false, null: false
+    t.integer "message_id", null: false
+    t.integer "recipient_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id", "recipient_id"], name: "index_message_recipients_on_message_id_and_recipient_id", unique: true
+    t.index ["message_id"], name: "index_message_recipients_on_message_id"
+    t.index ["recipient_id", "is_read"], name: "index_message_recipients_on_recipient_id_and_is_read"
+    t.index ["recipient_id"], name: "index_message_recipients_on_recipient_id"
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.integer "author_id", null: false
+    t.datetime "created_at", null: false
+    t.text "message", null: false
+    t.integer "parent_id"
+    t.integer "reply_mode", default: 1, null: false
+    t.string "subject", null: false
+    t.boolean "support", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_messages_on_author_id"
+    t.index ["created_at"], name: "index_messages_on_created_at"
+    t.index ["parent_id"], name: "index_messages_on_parent_id"
   end
 
   create_table "olympic_seasons", force: :cascade do |t|
@@ -70,8 +121,16 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_28_013552) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "staff", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "permission_level", default: "standard", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_staff_on_user_id", unique: true
+  end
+
   create_table "teams", force: :cascade do |t|
-    t.integer "color", null: false
+    t.string "color", null: false
     t.datetime "created_at", null: false
     t.string "icon_url"
     t.string "name", null: false
@@ -105,21 +164,32 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_28_013552) do
     t.string "first_name"
     t.string "last_name"
     t.string "password_digest", null: false
-    t.integer "role", default: 5, null: false
-    t.integer "team_id"
     t.datetime "updated_at", null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["role"], name: "index_users_on_role"
-    t.index ["team_id"], name: "index_users_on_team_id"
   end
 
-  add_foreign_key "event_logs", "events"
-  add_foreign_key "event_logs", "users"
+  create_table "volunteers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_volunteers_on_user_id", unique: true
+  end
+
   add_foreign_key "events", "event_types"
   add_foreign_key "events", "users", column: "created_by_id"
-  add_foreign_key "family_members", "users"
-  add_foreign_key "family_members", "users", column: "related_user_id"
+  add_foreign_key "family_members", "guardians"
+  add_foreign_key "family_members", "mentees"
+  add_foreign_key "guardians", "users"
+  add_foreign_key "mentees", "mentors"
+  add_foreign_key "mentees", "teams"
+  add_foreign_key "mentees", "users"
+  add_foreign_key "mentors", "users"
+  add_foreign_key "message_recipients", "messages"
+  add_foreign_key "message_recipients", "users", column: "recipient_id"
+  add_foreign_key "messages", "messages", column: "parent_id"
+  add_foreign_key "messages", "users", column: "author_id"
+  add_foreign_key "staff", "users"
   add_foreign_key "tokens", "users"
-  add_foreign_key "users", "teams"
+  add_foreign_key "volunteers", "users"
 end

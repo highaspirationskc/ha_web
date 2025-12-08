@@ -23,41 +23,42 @@ end
 
 puts "Created 4 teams"
 
-# Create test users for each role with team assignments
-admin_user = User.find_or_create_by!(email: "admin@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :admin
-  user.active = true
-  user.first_name = "Admin"
-  user.last_name = "User"
+# Helper method to create user with role profile
+def create_user_with_role(email:, password: "Password1!", first_name:, last_name:, active: true, &block)
+  user = User.find_or_create_by!(email: email) do |u|
+    u.password = password
+    u.first_name = first_name
+    u.last_name = last_name
+  end
+  user.update!(active: active) if active && !user.active?
+  yield(user) if block_given?
+  user
 end
 
-staff_user = User.find_or_create_by!(email: "staff@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :staff
-  user.active = true
-  user.first_name = "Staff"
-  user.last_name = "User"
+# Create admin user
+admin_user = create_user_with_role(email: "admin@example.com", first_name: "Admin", last_name: "User") do |user|
+  Staff.find_or_create_by!(user: user) { |s| s.permission_level = :admin }
 end
 
-# Create parents (no team assignment)
-blue_parent = User.find_or_create_by!(email: "blue.parent@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :parent
-  user.active = true
-  user.first_name = "Blue"
-  user.last_name = "Parent"
+# Create staff user
+staff_user = create_user_with_role(email: "staff@example.com", first_name: "Staff", last_name: "User") do |user|
+  Staff.find_or_create_by!(user: user) { |s| s.permission_level = :standard }
 end
 
-green_parent = User.find_or_create_by!(email: "green.parent@example.com") do |user|
-  user.password = "Password1!"
-  user.role = :parent
-  user.active = true
-  user.first_name = "Green"
-  user.last_name = "Parent"
+# Create guardians (no team assignment)
+blue_guardian_user = create_user_with_role(email: "blue.parent@example.com", first_name: "Blue", last_name: "Parent") do |user|
+  Guardian.find_or_create_by!(user: user)
 end
+blue_guardian = blue_guardian_user.guardian
 
-# Create mentors for each team (2-3 per team)
+green_guardian_user = create_user_with_role(email: "green.parent@example.com", first_name: "Green", last_name: "Parent") do |user|
+  Guardian.find_or_create_by!(user: user)
+end
+green_guardian = green_guardian_user.guardian
+
+puts "Created 2 guardians"
+
+# Create mentors and mentees for each team
 teams_data = [
   { team: blue_team, color: "Blue" },
   { team: green_team, color: "Green" },
@@ -67,6 +68,7 @@ teams_data = [
 
 all_mentors = []
 all_mentees = []
+all_mentee_users = []
 
 teams_data.each do |team_data|
   team = team_data[:team]
@@ -74,38 +76,38 @@ teams_data.each do |team_data|
 
   # Create 2 mentors per team
   2.times do |i|
-    mentor = User.find_or_create_by!(email: "#{color.downcase}.mentor#{i + 1}@example.com") do |user|
-      user.password = "Password1!"
-      user.role = :mentor
-      user.active = true
-      user.team = team
-      user.first_name = "#{color}"
-      user.last_name = "Mentor #{i + 1}"
+    mentor_user = create_user_with_role(
+      email: "#{color.downcase}.mentor#{i + 1}@example.com",
+      first_name: color,
+      last_name: "Mentor #{i + 1}"
+    ) do |user|
+      Mentor.find_or_create_by!(user: user)
     end
-    all_mentors << mentor
+    all_mentors << mentor_user.mentor
   end
 
   # Create 7 mentees per team
   7.times do |i|
-    mentee = User.find_or_create_by!(email: "#{color.downcase}.mentee#{i + 1}@example.com") do |user|
-      user.password = "Password1!"
-      user.role = :mentee
-      user.active = true
-      user.team = team
-      user.first_name = "#{color}"
-      user.last_name = "Mentee #{i + 1}"
+    mentee_user = create_user_with_role(
+      email: "#{color.downcase}.mentee#{i + 1}@example.com",
+      first_name: color,
+      last_name: "Mentee #{i + 1}"
+    ) do |user|
+      mentee = Mentee.find_or_create_by!(user: user)
+      mentee.update!(team: team) if mentee.team != team
     end
-    all_mentees << mentee
+    all_mentees << mentee_user.mentee
+    all_mentee_users << mentee_user
   end
 end
 
 # Keep references to first blue and green mentees for backward compatibility with event logs
-blue_mentee = User.find_by(email: "blue.mentee1@example.com")
-green_mentee = User.find_by(email: "green.mentee1@example.com")
-blue_mentor = User.find_by(email: "blue.mentor1@example.com")
-green_mentor = User.find_by(email: "green.mentor1@example.com")
+blue_mentee_user = User.find_by(email: "blue.mentee1@example.com")
+green_mentee_user = User.find_by(email: "green.mentee1@example.com")
+blue_mentor_user = User.find_by(email: "blue.mentor1@example.com")
+green_mentor_user = User.find_by(email: "green.mentor1@example.com")
 
-puts "Created test users: 2 parents, #{all_mentors.count} mentors, #{all_mentees.count} mentees (password: Password1!)"
+puts "Created test users: 2 guardians, #{all_mentors.count} mentors, #{all_mentees.count} mentees (password: Password1!)"
 
 # Create Olympic Seasons
 winter_season = OlympicSeason.find_or_create_by!(name: "Winter") do |season|
@@ -234,7 +236,7 @@ seasons.each do |season_data|
       e.name = "#{season_data[:name]} #{event_type.name} - Week #{index + 1}"
       e.description = "#{season_data[:name]} season event - #{event_type.name}"
       e.location = location
-      e.created_by = [admin_user, staff_user, all_mentors.sample].compact.sample
+      e.created_by = [admin_user, staff_user, all_mentors.sample&.user].compact.sample
     end
 
     all_events << event
@@ -283,14 +285,14 @@ def create_event_participation(event, user, today, reg_days_before: 5)
 end
 
 # Randomize event participation for all mentees
-all_mentees.each do |mentee|
+all_mentee_users.each do |mentee_user|
   # Each mentee participates in 1 to ALL current season events (allowing perfect participation)
   if current_season_past_events.any?
     num_current_events = rand(1..current_season_past_events.length)
     selected_current_events = current_season_past_events.sample(num_current_events)
 
     selected_current_events.each do |event|
-      result = create_event_participation(event, mentee, today, reg_days_before: rand(3..10))
+      result = create_event_participation(event, mentee_user, today, reg_days_before: rand(3..10))
       registration_count += 1
       event_log_count += 1 if result[:arrival]
     end
@@ -302,7 +304,7 @@ all_mentees.each do |mentee|
     selected_other_events = other_season_past_events.sample(num_other_events)
 
     selected_other_events.each do |event|
-      result = create_event_participation(event, mentee, today, reg_days_before: rand(3..10))
+      result = create_event_participation(event, mentee_user, today, reg_days_before: rand(3..10))
       registration_count += 1
       event_log_count += 1 if result[:arrival]
     end
@@ -312,7 +314,7 @@ all_mentees.each do |mentee|
   future_events.sample([future_events.length, 2].min).each do |event|
     next unless rand < 0.1
 
-    EventLog.find_or_create_by!(event: event, user: mentee, log_type: :registered) do |log|
+    EventLog.find_or_create_by!(event: event, user: mentee_user, log_type: :registered) do |log|
       log.logged_at = [today, event.event_date - 7.days].max
     end
     registration_count += 1
@@ -322,14 +324,17 @@ end
 puts "Created #{registration_count} event registrations"
 puts "Created #{event_log_count} event logs (only for past events)"
 
-# Create Family Members (parent-child relationships)
-# Mentors/volunteers see mentees via team membership, not family_members
-FamilyMember.find_or_create_by!(user: blue_parent, related_user: blue_mentee) do |fm|
-  fm.relationship_type = :parent
+# Create Family Members (guardian-mentee relationships)
+if blue_mentee_user&.mentee && blue_guardian
+  FamilyMember.find_or_create_by!(guardian: blue_guardian, mentee: blue_mentee_user.mentee) do |fm|
+    fm.relationship_type = :parent
+  end
 end
 
-FamilyMember.find_or_create_by!(user: green_parent, related_user: green_mentee) do |fm|
-  fm.relationship_type = :parent
+if green_mentee_user&.mentee && green_guardian
+  FamilyMember.find_or_create_by!(guardian: green_guardian, mentee: green_mentee_user.mentee) do |fm|
+    fm.relationship_type = :parent
+  end
 end
 
 puts "Created 2 family member relationships"

@@ -1,32 +1,46 @@
-<%= form_with(model: team, class: "contents") do |form| %>
+<%= form_with(model: team, url: team.persisted? ? team_path(team) : teams_path, class: "space-y-6") do |form| %>
   <% if team.errors.any? %>
-    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
-      <h2><%= pluralize(team.errors.count, "error") %> prohibited this team from being saved:</h2>
-
-      <ul class="list-disc ml-6">
-        <% team.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+    <div class="rounded-md bg-red-50 p-4">
+      <h3 class="text-sm font-medium text-red-800">
+        <%= pluralize(team.errors.count, "error") %> prohibited this team from being saved:
+      </h3>
+      <ul class="list-disc list-inside text-sm text-red-700 mt-2">
+        <% team.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
-  <div class="my-5">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": team.errors[:name].none?, "border-red-400 focus:outline-red-600": team.errors[:name].any?}] %>
+  <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+      <div class="md:col-span-1">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Team Information</h3>
+        <p class="mt-1 text-sm text-gray-500">Enter the details for this team.</p>
+      </div>
+      <div class="mt-5 md:mt-0 md:col-span-2">
+        <div class="grid grid-cols-6 gap-6">
+          <div class="col-span-6">
+            <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.text_field :name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+          </div>
+
+          <div class="col-span-6 sm:col-span-3">
+            <%= form.label :color, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.select :color, Team.colors.keys.map { |k| [k.titleize, k] }, {}, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+          </div>
+
+          <div class="col-span-6 sm:col-span-3">
+            <%= form.label :icon_url, "Icon URL", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.url_field :icon_url, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="my-5">
-    <%= form.label :color %>
-    <%= form.number_field :color, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": team.errors[:color].none?, "border-red-400 focus:outline-red-600": team.errors[:color].any?}] %>
-  </div>
-
-  <div class="my-5">
-    <%= form.label :icon_url %>
-    <%= form.text_field :icon_url, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": team.errors[:icon_url].none?, "border-red-400 focus:outline-red-600": team.errors[:icon_url].any?}] %>
-  </div>
-
-  <div class="inline">
-    <%= form.submit class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  <div class="flex justify-end space-x-3">
+    <%= link_to "Cancel", team.persisted? ? team_path(team) : teams_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+    <%= form.submit class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
   </div>
 <% end %>

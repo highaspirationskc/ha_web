@@ -5,8 +5,7 @@ require "test_helper"
 class GraphQL::MutationsTest < ActiveSupport::TestCase
   def setup
     # Create authenticated user
-    @user = User.create!(email: "test@example.com", password: "Password123!", role: :admin)
-    @user.activate!
+    @user = create_user(email: "test@example.com")
     @token = AuthService.generate_token(@user)
 
     # Create test data

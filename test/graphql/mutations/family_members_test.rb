@@ -6,23 +6,15 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
   def setup
     @team = Team.create!(name: "Test Team", color: :blue)
 
-    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin.activate!
+    @admin = create_user(email: "admin@example.com")
+    @staff = create_staff_user(email: "staff@example.com")
+    @mentor = create_mentor_user(email: "mentor@example.com")
+    @mentee_user = create_mentee_user(email: "mentee@example.com")
+    @guardian_user = create_guardian_user(email: "guardian@example.com")
 
-    @staff = User.create!(email: "staff@example.com", password: "Password123!", role: :staff)
-    @staff.activate!
-
-    @mentor = User.create!(email: "mentor@example.com", password: "Password123!", role: :mentor, team: @team)
-    @mentor.activate!
-
-    @mentee = User.create!(email: "mentee@example.com", password: "Password123!", role: :mentee)
-    @mentee.activate!
-
-    @mentee_on_team = User.create!(email: "mentee2@example.com", password: "Password123!", role: :mentee, team: @team)
-    @mentee_on_team.activate!
-
-    @parent = User.create!(email: "parent@example.com", password: "Password123!", role: :parent)
-    @parent.activate!
+    # Get the role profile models for creating family members
+    @mentee = @mentee_user.mentee
+    @guardian = @guardian_user.guardian
   end
 
   # CreateFamilyMember tests
@@ -43,8 +35,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
     }, context: { current_user: @admin })
@@ -72,8 +64,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
     }, context: { current_user: @staff })
@@ -86,7 +78,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  test "admin can create guardian family member" do
+  test "admin can create grandparent family member" do
     mutation = <<~GQL
       mutation($input: CreateFamilyMemberInput!) {
         createFamilyMember(input: $input) {
@@ -101,9 +93,9 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
-        relationshipType: "guardian"
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
+        relationshipType: "grandparent"
       }
     }, context: { current_user: @admin })
 
@@ -111,7 +103,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     errors = result.dig("data", "createFamilyMember", "errors")
 
     assert_not_nil family_member
-    assert_equal "guardian", family_member["relationshipType"]
+    assert_equal "grandparent", family_member["relationshipType"]
     assert_empty errors
   end
 
@@ -129,8 +121,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
     }, context: { current_user: @mentor })
@@ -142,7 +134,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     assert_includes errors, "You don't have permission to create this relationship"
   end
 
-  test "parent cannot create family members" do
+  test "guardian cannot create family members" do
     mutation = <<~GQL
       mutation($input: CreateFamilyMemberInput!) {
         createFamilyMember(input: $input) {
@@ -156,11 +148,11 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
-    }, context: { current_user: @parent })
+    }, context: { current_user: @guardian_user })
 
     family_member = result.dig("data", "createFamilyMember", "familyMember")
     errors = result.dig("data", "createFamilyMember", "errors")
@@ -183,11 +175,11 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
-    }, context: { current_user: @mentee })
+    }, context: { current_user: @mentee_user })
 
     family_member = result.dig("data", "createFamilyMember", "familyMember")
     errors = result.dig("data", "createFamilyMember", "errors")
@@ -201,8 +193,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
   test "admin can delete any family member" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -229,8 +221,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
   test "staff can delete any family member" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -257,8 +249,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
   test "mentor cannot delete family members" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -282,10 +274,10 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     assert_includes errors, "You don't have permission to delete this relationship"
   end
 
-  test "parent cannot delete family members" do
+  test "guardian cannot delete family members" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -300,7 +292,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       id: family_member.id.to_s
-    }, context: { current_user: @parent })
+    }, context: { current_user: @guardian_user })
 
     success = result.dig("data", "deleteFamilyMember", "success")
     errors = result.dig("data", "deleteFamilyMember", "errors")
@@ -311,8 +303,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
   test "mentee cannot delete family members" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -327,7 +319,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       id: family_member.id.to_s
-    }, context: { current_user: @mentee })
+    }, context: { current_user: @mentee_user })
 
     success = result.dig("data", "deleteFamilyMember", "success")
     errors = result.dig("data", "deleteFamilyMember", "errors")
@@ -340,8 +332,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
   test "admin can update any family member" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -360,7 +352,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         id: family_member.id.to_s,
-        relationshipType: "guardian"
+        relationshipType: "grandparent"
       }
     }, context: { current_user: @admin })
 
@@ -368,14 +360,14 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     errors = result.dig("data", "updateFamilyMember", "errors")
 
     assert_not_nil updated
-    assert_equal "guardian", updated["relationshipType"]
+    assert_equal "grandparent", updated["relationshipType"]
     assert_empty errors
   end
 
   test "staff can update any family member" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -394,7 +386,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         id: family_member.id.to_s,
-        relationshipType: "guardian"
+        relationshipType: "grandparent"
       }
     }, context: { current_user: @staff })
 
@@ -402,14 +394,14 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     errors = result.dig("data", "updateFamilyMember", "errors")
 
     assert_not_nil updated
-    assert_equal "guardian", updated["relationshipType"]
+    assert_equal "grandparent", updated["relationshipType"]
     assert_empty errors
   end
 
   test "mentor cannot update family members" do
     family_member = FamilyMember.create!(
-      user: @parent,
-      related_user: @mentee,
+      guardian: @guardian,
+      mentee: @mentee,
       relationship_type: :parent
     )
 
@@ -427,7 +419,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         id: family_member.id.to_s,
-        relationshipType: "guardian"
+        relationshipType: "grandparent"
       }
     }, context: { current_user: @mentor })
 
@@ -454,8 +446,8 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
 
     result = execute_graphql(mutation, variables: {
       input: {
-        userId: @parent.id.to_s,
-        relatedUserId: @mentee.id.to_s,
+        guardianId: @guardian.id.to_s,
+        menteeId: @mentee.id.to_s,
         relationshipType: "parent"
       }
     }, context: {})

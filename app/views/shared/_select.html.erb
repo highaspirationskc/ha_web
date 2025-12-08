@@ -1,0 +1,30 @@
+<%#
+  Styled select partial - consistent dropdown styling
+
+  Local variables:
+    - name: form field name (e.g., "relationship_type")
+    - label: label text
+    - options: options for select (array of [text, value] or options_for_select result)
+    - selected: currently selected value (optional)
+    - prompt: prompt text for blank option (optional)
+    - required: whether field is required (optional, defaults to false)
+%>
+<% required ||= false %>
+
+<div>
+  <% if local_assigns[:label] %>
+    <%= label_tag name, label, class: "block text-sm font-medium text-gray-700" %>
+  <% end %>
+  <div class="<%= 'mt-1' if local_assigns[:label] %> relative">
+    <%= select_tag name,
+        options.is_a?(String) ? options.html_safe : options_for_select(options, selected),
+        prompt: local_assigns[:prompt],
+        required: required,
+        class: "block w-full py-2 pl-3 pr-10 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm appearance-none" %>
+    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+  </div>
+</div>

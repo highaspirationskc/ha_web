@@ -12,7 +12,6 @@ class Mutations::LoginTest < ActiveSupport::TestCase
           user {
             id
             email
-            role
             active
           }
           errors
@@ -39,7 +38,6 @@ class Mutations::LoginTest < ActiveSupport::TestCase
 
     user_data = result.dig("data", "login", "user")
     assert_equal "test@example.com", user_data["email"]
-    assert_equal "admin", user_data["role"]
     assert user_data["active"]
   end
 

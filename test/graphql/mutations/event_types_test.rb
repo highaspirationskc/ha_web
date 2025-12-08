@@ -4,8 +4,7 @@ require "test_helper"
 
 class EventTypesMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin.activate!
+    @admin = create_user(email: "admin@example.com")
 
     @event_type = EventType.create!(name: "Existing Type", point_value: 5, category: :org)
   end

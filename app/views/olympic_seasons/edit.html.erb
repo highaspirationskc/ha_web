@@ -1,10 +1,31 @@
-<% content_for :title, "Editing olympic season" %>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <%= link_to olympic_seasons_path, class: "inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600" do %>
+            Olympic Seasons
+          <% end %>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+            </svg>
+            <%= link_to @olympic_season.name, olympic_season_path(@olympic_season), class: "ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600 md:ml-2" %>
+          </div>
+        </li>
+        <li aria-current="page">
+          <div class="flex items-center">
+            <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+            </svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Edit</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
 
-<div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing olympic season</h1>
-
-  <%= render "form", olympic_season: @olympic_season %>
-
-  <%= link_to "Show this olympic season", @olympic_season, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to olympic seasons", olympic_seasons_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
+    <%= render "form", olympic_season: @olympic_season %>
+  </div>
 </div>

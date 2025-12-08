@@ -6,17 +6,10 @@ class UsersMutationsTest < ActiveSupport::TestCase
   def setup
     @team = Team.create!(name: "Test Team", color: :blue)
 
-    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin.activate!
-
-    @staff = User.create!(email: "staff@example.com", password: "Password123!", role: :staff)
-    @staff.activate!
-
-    @mentor = User.create!(email: "mentor@example.com", password: "Password123!", role: :mentor, team: @team)
-    @mentor.activate!
-
-    @mentee = User.create!(email: "mentee@example.com", password: "Password123!", role: :mentee)
-    @mentee.activate!
+    @admin = create_user(email: "admin@example.com")
+    @staff = create_staff_user(email: "staff@example.com")
+    @mentor = create_mentor_user(email: "mentor@example.com")
+    @mentee = create_mentee_user(email: "mentee@example.com")
   end
 
   # CreateUser tests
@@ -28,7 +21,6 @@ class UsersMutationsTest < ActiveSupport::TestCase
           user {
             id
             email
-            role
           }
           errors
         }
@@ -38,8 +30,7 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser@example.com",
-        password: "Password123!",
-        role: "mentee"
+        password: "Password123!"
       }
     }, context: { current_user: @admin })
 
@@ -48,41 +39,6 @@ class UsersMutationsTest < ActiveSupport::TestCase
 
     assert_not_nil user
     assert_equal "newuser@example.com", user["email"]
-    assert_equal "mentee", user["role"]
-    assert_empty errors
-  end
-
-  test "admin can create user with team" do
-    mutation = <<~GQL
-      mutation($input: CreateUserInput!) {
-        createUser(input: $input) {
-          user {
-            id
-            email
-            team {
-              id
-              name
-            }
-          }
-          errors
-        }
-      }
-    GQL
-
-    result = execute_graphql(mutation, variables: {
-      input: {
-        email: "newmentee@example.com",
-        password: "Password123!",
-        role: "mentee",
-        teamId: @team.id.to_s
-      }
-    }, context: { current_user: @admin })
-
-    user = result.dig("data", "createUser", "user")
-    errors = result.dig("data", "createUser", "errors")
-
-    assert_not_nil user
-    assert_equal @team.name, user.dig("team", "name")
     assert_empty errors
   end
 
@@ -221,67 +177,6 @@ class UsersMutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  test "admin can update user team" do
-    other_team = Team.create!(name: "Other Team", color: :red)
-
-    mutation = <<~GQL
-      mutation($input: UpdateUserInput!) {
-        updateUser(input: $input) {
-          user {
-            id
-            team {
-              id
-              name
-            }
-          }
-          errors
-        }
-      }
-    GQL
-
-    result = execute_graphql(mutation, variables: {
-      input: {
-        id: @mentee.id.to_s,
-        teamId: other_team.id.to_s
-      }
-    }, context: { current_user: @admin })
-
-    user = result.dig("data", "updateUser", "user")
-    errors = result.dig("data", "updateUser", "errors")
-
-    assert_not_nil user
-    assert_equal other_team.name, user.dig("team", "name")
-    assert_empty errors
-  end
-
-  test "admin can update user role" do
-    mutation = <<~GQL
-      mutation($input: UpdateUserInput!) {
-        updateUser(input: $input) {
-          user {
-            id
-            role
-          }
-          errors
-        }
-      }
-    GQL
-
-    result = execute_graphql(mutation, variables: {
-      input: {
-        id: @mentee.id.to_s,
-        role: "volunteer"
-      }
-    }, context: { current_user: @admin })
-
-    user = result.dig("data", "updateUser", "user")
-    errors = result.dig("data", "updateUser", "errors")
-
-    assert_not_nil user
-    assert_equal "volunteer", user["role"]
-    assert_empty errors
-  end
-
   test "staff can update any user" do
     mutation = <<~GQL
       mutation($input: UpdateUserInput!) {
@@ -362,7 +257,7 @@ class UsersMutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  test "user cannot update own role" do
+  test "user cannot update other fields for themselves" do
     mutation = <<~GQL
       mutation($input: UpdateUserInput!) {
         updateUser(input: $input) {
@@ -377,7 +272,7 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         id: @mentee.id.to_s,
-        role: "admin"
+        firstName: "HackedName"
       }
     }, context: { current_user: @mentee })
 

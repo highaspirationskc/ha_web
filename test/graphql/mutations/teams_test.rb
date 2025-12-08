@@ -4,14 +4,9 @@ require "test_helper"
 
 class TeamsMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin.activate!
-
-    @staff = User.create!(email: "staff@example.com", password: "Password123!", role: :staff)
-    @staff.activate!
-
-    @mentor = User.create!(email: "mentor@example.com", password: "Password123!", role: :mentor)
-    @mentor.activate!
+    @admin = create_user(email: "admin@example.com")
+    @staff = create_staff_user(email: "staff@example.com")
+    @mentor = create_mentor_user(email: "mentor@example.com")
 
     @team = Team.create!(name: "Existing Team", color: :blue)
   end

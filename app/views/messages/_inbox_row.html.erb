@@ -1,0 +1,30 @@
+<% thread_messages = message.thread_messages.includes(:author) %>
+<% latest_message = thread_messages.last %>
+<% has_unread = user.message_recipients.where(message_id: thread_messages.map(&:id)).unread.exists? %>
+<tr id="inbox-row-<%= message.id %>" class="hover:bg-gray-50">
+  <td class="px-3 py-3">
+    <div class="flex items-center">
+      <%= link_to message_path(message), class: "text-sm text-indigo-600 hover:text-indigo-900 #{has_unread ? 'font-bold' : ''}" do %>
+        <%= message.subject %>
+      <% end %>
+      <% if message.support? %>
+        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Support</span>
+      <% end %>
+      <% if has_unread %>
+        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">New</span>
+      <% end %>
+    </div>
+  </td>
+  <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+    <%= latest_message.author.first_name %> <%= latest_message.author.last_name %>
+  </td>
+  <td class="px-3 py-3 text-sm text-gray-500">
+    <%= message.recipients_display_for(user) %>
+  </td>
+  <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+    <%= time_ago_in_words(latest_message.created_at) %> ago
+  </td>
+  <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+    <%= button_to "Archive", archive_message_path(message), method: :post, class: "text-gray-600 hover:text-gray-900", form: { class: "inline" } %>
+  </td>
+</tr>

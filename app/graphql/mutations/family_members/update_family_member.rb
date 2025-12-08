@@ -15,7 +15,7 @@ module Mutations
 
         return { family_member: nil, errors: ["Family member not found"] } unless family_member
 
-        unless superuser?
+        unless staff_member?
           return { family_member: nil, errors: ["You don't have permission to update this relationship"] }
         end
 
@@ -28,8 +28,8 @@ module Mutations
 
       private
 
-      def superuser?
-        current_user.admin? || current_user.staff?
+      def staff_member?
+        current_user.staff.present?
       end
     end
   end

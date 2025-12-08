@@ -1,32 +1,33 @@
-class EventRegistrationsController < ApplicationController
+class EventRegistrationsController < AuthenticatedController
+  before_action { require_navigation_access(:events) }
   before_action :set_event_registration, only: %i[ show edit update destroy ]
 
-  # GET /event_registrations or /event_registrations.json
+  # GET /admin/event_registrations or /admin/event_registrations.json
   def index
     @event_registrations = EventRegistration.all
   end
 
-  # GET /event_registrations/1 or /event_registrations/1.json
+  # GET /admin/event_registrations/1 or /admin/event_registrations/1.json
   def show
   end
 
-  # GET /event_registrations/new
+  # GET /admin/event_registrations/new
   def new
     @event_registration = EventRegistration.new
   end
 
-  # GET /event_registrations/1/edit
+  # GET /admin/event_registrations/1/edit
   def edit
   end
 
-  # POST /event_registrations or /event_registrations.json
+  # POST /admin/event_registrations or /admin/event_registrations.json
   def create
     @event_registration = EventRegistration.new(event_registration_params)
 
     respond_to do |format|
       if @event_registration.save
-        format.html { redirect_to @event_registration, notice: "Event registration was successfully created." }
-        format.json { render :show, status: :created, location: @event_registration }
+        format.html { redirect_to event_registration_path(@event_registration), notice: "Event registration was successfully created." }
+        format.json { render :show, status: :created, location: event_registration_path(@event_registration) }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @event_registration.errors, status: :unprocessable_entity }
@@ -34,12 +35,12 @@ class EventRegistrationsController < ApplicationController
     end
   end
 
-  # PATCH/PUT /event_registrations/1 or /event_registrations/1.json
+  # PATCH/PUT /admin/event_registrations/1 or /admin/event_registrations/1.json
   def update
     respond_to do |format|
       if @event_registration.update(event_registration_params)
-        format.html { redirect_to @event_registration, notice: "Event registration was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @event_registration }
+        format.html { redirect_to event_registration_path(@event_registration), notice: "Event registration was successfully updated.", status: :see_other }
+        format.json { render :show, status: :ok, location: event_registration_path(@event_registration) }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @event_registration.errors, status: :unprocessable_entity }
@@ -47,7 +48,7 @@ class EventRegistrationsController < ApplicationController
     end
   end
 
-  # DELETE /event_registrations/1 or /event_registrations/1.json
+  # DELETE /admin/event_registrations/1 or /admin/event_registrations/1.json
   def destroy
     @event_registration.destroy!
 

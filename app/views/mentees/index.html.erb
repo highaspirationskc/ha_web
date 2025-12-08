@@ -1,0 +1,93 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">My Mentees</h1>
+    </div>
+
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="rounded-md bg-red-50 p-4 mb-6">
+        <p class="text-sm font-medium text-red-800"><%= alert %></p>
+      </div>
+    <% end %>
+
+    <!-- Add Mentee -->
+    <% if @available_mentees.any? %>
+      <div class="bg-white shadow sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-base font-semibold text-gray-900">Add a Mentee</h3>
+          <div class="mt-4 max-w-xl">
+            <%= form_with url: mentees_path, method: :post, class: "flex items-end gap-4" do |f| %>
+              <div class="flex-1">
+                <%= render "shared/combobox",
+                    name: "mentee_id",
+                    label: "Select Mentee",
+                    options: @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
+                    placeholder: "Search available mentees..." %>
+              </div>
+              <%= f.submit "Add Mentee", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Current Mentees -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Current Mentees (<%= @mentees.count %>)</h3>
+      </div>
+      <div class="border-t border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+              <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% if @mentees.any? %>
+              <% @mentees.each do |mentee| %>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900"><%= mentee.user.first_name %> <%= mentee.user.last_name %></div>
+                    <div class="text-sm text-gray-500"><%= mentee.user.email %></div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <% if mentee.team %>
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee.team.color %>-100 text-<%= mentee.team.color %>-800">
+                        <%= mentee.team.name %>
+                      </span>
+                    <% else %>
+                      <span class="text-sm text-gray-500">—</span>
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      <%= mentee.user.total_points %> pts
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <%= link_to "View", mentee_path(mentee), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                    <%= button_to "Remove", mentee_path(mentee), method: :delete, class: "text-red-600 hover:text-red-900", form: { class: "inline" }, data: { confirm: "Are you sure you want to remove this mentee?" } %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">You have no mentees assigned yet.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
