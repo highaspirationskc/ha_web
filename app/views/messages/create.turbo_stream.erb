@@ -1,0 +1,28 @@
+<% thread_count = @message.thread_root.thread_messages.count %>
+<%= turbo_stream.append "thread-messages" do %>
+  <%= render "message", message: @message %>
+<% end %>
+
+<%= turbo_stream.replace "thread-message-count" do %>
+  <p id="thread-message-count" class="mt-1 text-sm text-gray-500">
+    <%= thread_count %> message<%= thread_count == 1 ? '' : 's' %> in this thread
+  </p>
+<% end %>
+
+<%= turbo_stream.replace "new_message" do %>
+  <%= form_with model: Message.new, url: messages_path, method: :post, class: "space-y-4" do |f| %>
+    <%= f.hidden_field :parent_id, value: @message.thread_root.id %>
+    <%= f.hidden_field :subject, value: @message.subject %>
+    <% @message.recipients.each do |recipient| %>
+      <input type="hidden" name="message[recipient_ids][]" value="<%= recipient.id %>">
+    <% end %>
+
+    <div>
+      <%= f.text_area :message, rows: 4, required: true, placeholder: "Write your reply...", class: "block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= f.submit "Send Reply", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+    </div>
+  <% end %>
+<% end %>

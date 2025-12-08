@@ -10,8 +10,6 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
 
     # Link guardian to mentee
     FamilyMember.create!(mentee: @mentee.mentee, guardian: @guardian.guardian, relationship_type: "parent")
-
-    @support_user = create_support_user
   end
 
   def login_as(user)
@@ -147,10 +145,13 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
         message: {
           subject: "Support request",
           message: "Need help",
-          recipient_ids: [@support_user.id]
+          recipient_ids: ["support"]
         }
       }
     end
+
+    message = Message.last
+    assert message.support?
   end
 
   test "sending to mentee auto-adds guardians" do
@@ -191,19 +192,34 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
     assert_equal original, reply.parent
   end
 
-  # Support inbox tests
-  test "staff can view support inbox" do
-    message = Message.create!(author: @mentee, subject: "Help", message: "Need help")
-    message.recipients << @support_user
+  # Support message tests
+  test "support message adds all staff as recipients" do
+    login_as(@mentee)
 
-    login_as(@staff)
-    get support_messages_path
-    assert_response :success
+    assert_difference "Message.count", 1 do
+      post messages_path, params: {
+        message: {
+          subject: "Support request",
+          message: "Need help",
+          recipient_ids: ["support"]
+        }
+      }
+    end
+
+    message = Message.last
+    assert message.support?
+    assert message.reply_to_all?
+    assert_includes message.recipients, @staff
+    assert_includes message.recipients, @admin
   end
 
-  test "non-staff cannot view support inbox" do
-    login_as(@mentee)
-    get support_messages_path
-    assert_redirected_to dashboard_path
+  test "support messages appear in staff inbox" do
+    message = Message.create!(author: @mentee, subject: "Help", message: "Need help", support: true)
+    message.recipients << @staff
+
+    login_as(@staff)
+    get messages_path
+    assert_response :success
+    assert_select "span", text: "Support"
   end
 end

@@ -67,9 +67,7 @@
                               <path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                             Messages
-                            <% if unread_message_count > 0 %>
-                              <span class="ml-auto w-5 min-w-max whitespace-nowrap rounded-full bg-indigo-600 px-2 py-0.5 text-center text-xs font-medium text-white ring-1 ring-inset ring-indigo-500"><%= unread_message_count %></span>
-                            <% end %>
+                            <span id="unread-badge-mobile" class="<%= unread_message_count > 0 ? '' : 'hidden' %> ml-auto w-5 min-w-max whitespace-nowrap rounded-full bg-indigo-600 px-2 py-0.5 text-center text-xs font-medium text-white ring-1 ring-inset ring-indigo-500"><%= unread_message_count %></span>
                             <svg data-collapsible-nav-target="icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-auto h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200">
                               <path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
                             </svg>
@@ -90,13 +88,6 @@
                                 Archived
                               <% end %>
                             </li>
-                            <% if current_user.can?(:support_inbox, :messages) %>
-                              <li>
-                                <%= link_to support_messages_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path == '/messages/support' ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
-                                  Support
-                                <% end %>
-                              </li>
-                            <% end %>
                           </ul>
                         </li>
                       <% end %>
@@ -200,9 +191,7 @@
                             <path d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" stroke-linecap="round" stroke-linejoin="round" />
                           </svg>
                           Messages
-                          <% if unread_message_count > 0 %>
-                            <span class="ml-auto w-5 min-w-max whitespace-nowrap rounded-full bg-indigo-600 px-2 py-0.5 text-center text-xs font-medium text-white ring-1 ring-inset ring-indigo-500"><%= unread_message_count %></span>
-                          <% end %>
+                          <span id="unread-badge-desktop" class="<%= unread_message_count > 0 ? '' : 'hidden' %> ml-auto w-5 min-w-max whitespace-nowrap rounded-full bg-indigo-600 px-2 py-0.5 text-center text-xs font-medium text-white ring-1 ring-inset ring-indigo-500"><%= unread_message_count %></span>
                           <svg data-collapsible-nav-target="icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-auto h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200">
                             <path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
                           </svg>
@@ -223,13 +212,6 @@
                               Archived
                             <% end %>
                           </li>
-                          <% if current_user.can?(:support_inbox, :messages) %>
-                            <li>
-                              <%= link_to support_messages_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path == '/messages/support' ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
-                                Support
-                              <% end %>
-                            </li>
-                          <% end %>
                         </ul>
                       </li>
                     <% end %>
@@ -331,6 +313,9 @@
 
     <main class="py-10 lg:pl-72">
       <div class="px-4 sm:px-6 lg:px-8">
+        <% if current_user %>
+          <%= turbo_stream_from "inbox_#{current_user.id}" %>
+        <% end %>
         <%= yield %>
       </div>
     </main>

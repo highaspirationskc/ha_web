@@ -1,3 +1,4 @@
+<%= turbo_stream_from "message_thread_#{@message.thread_root.id}" %>
 <div class="py-6">
   <div class="px-4 sm:px-0">
     <div class="mb-6 flex items-center justify-between">
@@ -6,7 +7,9 @@
       <% is_recipient = current_user.message_recipients.where(message_id: thread_message_ids).exists? %>
       <% if is_recipient %>
         <% is_archived = current_user.message_recipients.where(message_id: thread_message_ids, archived: true).exists? %>
-        <% unless is_archived %>
+        <% if is_archived %>
+          <%= button_to "Unarchive", unarchive_message_path(@message), method: :post, class: "inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        <% else %>
           <%= button_to "Archive", archive_message_path(@message), method: :post, class: "inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
         <% end %>
       <% end %>
@@ -15,32 +18,14 @@
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
         <h1 class="text-xl font-bold text-gray-900"><%= @message.thread_root.subject %></h1>
-        <p class="mt-1 text-sm text-gray-500">
+<p id="thread-message-count" class="mt-1 text-sm text-gray-500">
           <%= @thread_messages.count %> message<%= @thread_messages.count == 1 ? '' : 's' %> in this thread
         </p>
       </div>
 
-      <div class="divide-y divide-gray-200">
+      <div id="thread-messages" class="divide-y divide-gray-200">
         <% @thread_messages.each do |msg| %>
-          <div class="px-4 py-5 sm:px-6 <%= msg == @message ? 'bg-indigo-50' : '' %>">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-sm font-medium text-gray-900">
-                  <%= msg.author.first_name %> <%= msg.author.last_name %>
-                  <span class="text-gray-500 font-normal">(<%= msg.author.role_name %>)</span>
-                </p>
-                <p class="text-xs text-gray-500">
-                  <%= msg.created_at.strftime("%B %d, %Y at %I:%M %p") %>
-                </p>
-              </div>
-              <% if msg.recipients.any? && (@message.thread_root.reply_to_all? || @message.thread_root.author == current_user) %>
-                <p class="text-xs text-gray-500">
-                  To: <%= msg.recipients.map { |r| "#{r.first_name} #{r.last_name}" }.join(", ") %>
-                </p>
-              <% end %>
-            </div>
-            <div class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"><%= msg.message %></div>
-          </div>
+          <%= render "message", message: msg %>
         <% end %>
       </div>
 
@@ -56,7 +41,7 @@
           <p class="text-xs text-gray-500 mb-3">
             To: <%= @reply_recipients.map { |r| "#{r.first_name} #{r.last_name}" }.join(", ") %>
           </p>
-          <%= form_with model: Message.new, url: messages_path, method: :post, class: "space-y-4" do |f| %>
+          <%= form_with model: Message.new, url: messages_path, method: :post, id: "new_message", class: "space-y-4" do |f| %>
             <%= f.hidden_field :parent_id, value: @message.thread_root.id %>
             <%= f.hidden_field :subject, value: @message.thread_root.subject.start_with?("Re:") ? @message.thread_root.subject : "Re: #{@message.thread_root.subject}" %>
             <% @reply_recipients.each do |recipient| %>

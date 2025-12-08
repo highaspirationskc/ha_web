@@ -1,0 +1,19 @@
+<div class="px-4 py-5 sm:px-6">
+  <div class="flex justify-between items-start">
+    <div>
+      <p class="text-sm font-medium text-gray-900">
+        <%= message.author.first_name %> <%= message.author.last_name %>
+        <span class="text-gray-500 font-normal">(<%= message.author.role_name %>)</span>
+      </p>
+      <p class="text-xs text-gray-500">
+        <%= message.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+      </p>
+    </div>
+    <% unless message.reply? %>
+      <p class="text-xs text-gray-500">
+        To: <%= message.recipients_display_for(current_user) %>
+      </p>
+    <% end %>
+  </div>
+  <div class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"><%= message.message %></div>
+</div>

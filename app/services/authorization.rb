@@ -82,10 +82,6 @@ class Authorization
   def can_message?(recipient, in_thread_with: nil)
     return false unless @user
     return false if recipient == @user
-    return false if recipient.system_user? && recipient != User.support_user
-
-    # Support user can always be messaged
-    return true if recipient == User.support_user
 
     # Allow replying to anyone who is in the same message thread
     if in_thread_with.present?
@@ -137,7 +133,7 @@ class Authorization
 
     case @role
     when :admin, :staff
-      User.where.not(id: @user.id).where(is_system_user: false)
+      User.where.not(id: @user.id)
     when :mentor
       mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
       mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
@@ -182,6 +178,37 @@ class Authorization
 
     def messageable_users(user)
       new(user).messageable_users
+    end
+
+    # Returns users who have a specific permission
+    def users_with_permission(action, resource)
+      roles_with_permission = PERMISSIONS.select do |_role, permissions|
+        permissions[resource]&.include?(action)
+      end.keys
+
+      # Build query based on roles that have this permission
+      queries = roles_with_permission.map do |role|
+        case role
+        when :admin
+          User.joins(:staff).where(staff: { permission_level: :admin })
+        when :staff
+          User.joins(:staff)
+        when :mentor
+          User.joins(:mentor)
+        when :mentee
+          User.joins(:mentee)
+        when :guardian
+          User.joins(:guardian)
+        when :volunteer
+          User.joins(:volunteer)
+        end
+      end.compact
+
+      return User.none if queries.empty?
+
+      # Combine all queries with OR
+      combined = queries.reduce { |result, query| result.or(query) }
+      combined.distinct
     end
   end
 

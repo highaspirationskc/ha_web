@@ -88,24 +88,22 @@
                             <p class="text-xs font-semibold text-gray-500 uppercase">Individuals</p>
                           </div>
                         <% end %>
-                        <% if @support_user %>
-                          <button type="button"
-                                  data-recipient-picker-target="userOption"
-                                  data-action="recipient-picker#selectUser"
-                                  data-user-id="<%= @support_user.id %>"
-                                  data-user-name="Support (Help Desk)"
-                                  data-user-role="Support"
-                                  data-search-text="support help desk"
-                                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 cursor-pointer">
-                            <div>
-                              <p class="text-sm font-medium text-gray-900">Support (Help Desk)</p>
-                              <p class="text-xs text-gray-500">Get help from staff</p>
-                            </div>
-                            <svg data-checkmark class="hidden h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
-                            </svg>
-                          </button>
-                        <% end %>
+                        <button type="button"
+                                data-recipient-picker-target="userOption"
+                                data-action="recipient-picker#selectUser"
+                                data-user-id="support"
+                                data-user-name="Support (Help Desk)"
+                                data-user-role="Support"
+                                data-search-text="support help desk"
+                                class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 cursor-pointer">
+                          <div>
+                            <p class="text-sm font-medium text-gray-900">Support (Help Desk)</p>
+                            <p class="text-xs text-gray-500">Get help from staff</p>
+                          </div>
+                          <svg data-checkmark class="hidden h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                          </svg>
+                        </button>
                         <% @messageable_users.each do |user| %>
                           <button type="button"
                                   data-recipient-picker-target="userOption"

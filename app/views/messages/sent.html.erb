@@ -24,7 +24,7 @@
                   <% end %>
                 </td>
                 <td class="px-3 py-3 text-sm text-gray-500">
-                  <%= message.recipients.map { |r| "#{r.first_name} #{r.last_name}" }.join(", ") %>
+                  <%= message.recipients_display_for(current_user) %>
                 </td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                   <%= time_ago_in_words(message.created_at) %> ago

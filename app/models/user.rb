@@ -69,14 +69,6 @@ class User < ApplicationRecord
     volunteer.present?
   end
 
-  def system_user?
-    is_system_user
-  end
-
-  def self.support_user
-    find_by(email: "support@highaspirations.org", is_system_user: true)
-  end
-
   # Check if user can login to the application
   # Staff, mentors, mentees, and guardians can login
   def can_login?
@@ -94,6 +86,16 @@ class User < ApplicationRecord
 
   def allowed_navigation
     Authorization.navigation_for(self)
+  end
+
+  # Count unread message threads
+  def unread_message_count
+    unread_message_ids = message_recipients.unread.pluck(:message_id)
+    return 0 if unread_message_ids.empty?
+
+    unread_messages = Message.where(id: unread_message_ids)
+    root_ids = unread_messages.map { |m| m.parent_id || m.id }.uniq
+    root_ids.count
   end
 
   # Activation methods

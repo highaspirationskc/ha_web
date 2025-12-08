@@ -52,16 +52,5 @@ module ActiveSupport
       user.activate! if active
       user
     end
-
-    def create_support_user
-      User.support_user || User.create!(
-        email: "support@highaspirations.org",
-        password: "Support123!",
-        first_name: "Support",
-        last_name: "Inbox",
-        active: true,
-        is_system_user: true
-      ).tap { |u| u.update_columns(confirmation_token: nil, confirmation_sent_at: nil) }
-    end
   end
 end

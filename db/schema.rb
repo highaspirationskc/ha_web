@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_08_064608) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_08_072645) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -104,6 +104,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_064608) do
     t.integer "parent_id"
     t.integer "reply_mode", default: 1, null: false
     t.string "subject", null: false
+    t.boolean "support", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["author_id"], name: "index_messages_on_author_id"
     t.index ["created_at"], name: "index_messages_on_created_at"
@@ -161,7 +162,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_064608) do
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "first_name"
-    t.boolean "is_system_user", default: false, null: false
     t.string "last_name"
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false

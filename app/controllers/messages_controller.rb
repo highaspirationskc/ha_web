@@ -3,7 +3,6 @@ class MessagesController < AuthenticatedController
   before_action :set_message, only: [:show, :archive, :unarchive]
   before_action :authorize_view, only: [:show]
   before_action :authorize_recipient_action, only: [:archive, :unarchive]
-  before_action :authorize_support_inbox, only: [:support]
 
   def index
     # Get root messages where user is a recipient (not archived) of the root OR any reply
@@ -15,7 +14,7 @@ class MessagesController < AuthenticatedController
 
     @messages = Message.where(id: all_root_ids)
                        .includes(:author, :message_recipients)
-                       .recent
+                       .order(support: :desc, created_at: :desc)
   end
 
   def sent
@@ -36,14 +35,6 @@ class MessagesController < AuthenticatedController
     @messages = Message.where(id: all_root_ids)
                        .includes(:author, :message_recipients)
                        .recent
-  end
-
-  def support
-    support_user = User.support_user
-    @messages = support_user.received_messages
-                            .includes(:author, :message_recipients)
-                            .roots
-                            .recent
   end
 
   def show
@@ -88,7 +79,6 @@ class MessagesController < AuthenticatedController
     end
 
     @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-    @support_user = User.support_user
     @group_recipients = build_group_recipients if current_user.staff?
   end
 
@@ -110,24 +100,34 @@ class MessagesController < AuthenticatedController
 
     # Validate and expand recipients (groups get expanded to individual users)
     recipient_ids = params[:message][:recipient_ids]&.reject(&:blank?) || []
+
+    # Check if this is a support message
+    is_support_message = recipient_ids.include?("support")
+    recipient_ids = recipient_ids.reject { |id| id == "support" }
+
+    if is_support_message
+      @message.support = true
+      @message.reply_mode = :reply_to_all  # Support messages are group conversations
+    end
+
     expanded_ids = expand_group_recipients(recipient_ids)
     recipients = User.where(id: expanded_ids)
 
     # Get parent message for reply permission checking
     parent_message = @message.parent_id.present? ? Message.find_by(id: @message.parent_id) : nil
 
-    # Check permissions for each recipient
-    # For replies, allow messaging anyone in the thread
-    unauthorized_recipients = recipients.reject do |recipient|
-      Authorization.can_message?(current_user, recipient, in_thread_with: parent_message)
-    end
+    # Check permissions for each recipient (skip for support messages - anyone can message support)
+    unless is_support_message
+      unauthorized_recipients = recipients.reject do |recipient|
+        Authorization.can_message?(current_user, recipient, in_thread_with: parent_message)
+      end
 
-    if unauthorized_recipients.any?
-      @message.errors.add(:base, "You don't have permission to message some of the selected recipients")
-      @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-      @support_user = User.support_user
-      render :new, status: :unprocessable_entity
-      return
+      if unauthorized_recipients.any?
+        @message.errors.add(:base, "You don't have permission to message some of the selected recipients")
+        @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
+        render :new, status: :unprocessable_entity
+        return
+      end
     end
 
     # For reply_to_sender with multiple recipients, create separate messages
@@ -140,13 +140,31 @@ class MessagesController < AuthenticatedController
           @message.recipients << recipient
         end
 
+        # For support messages, add all users with support_inbox permission as recipients
+        if is_support_message
+          support_users = Authorization.users_with_permission(:support_inbox, :messages)
+                                       .where.not(id: current_user.id)
+          support_users.each do |user|
+            @message.recipients << user unless @message.recipients.include?(user)
+          end
+        end
+
         # Auto-add guardians when messaging mentees
         add_guardians_for_mentees(recipients)
 
-        redirect_to sent_messages_path, notice: "Message sent successfully"
+        # Broadcast to recipients for real-time updates
+        @message.broadcast_to_recipients
+
+        if @message.reply?
+          respond_to do |format|
+            format.turbo_stream
+            format.html { redirect_to message_path(@message.thread_root), notice: "Reply sent" }
+          end
+        else
+          redirect_to sent_messages_path, notice: "Message sent successfully"
+        end
       else
         @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-        @support_user = User.support_user
         render :new, status: :unprocessable_entity
       end
     end
@@ -164,12 +182,6 @@ class MessagesController < AuthenticatedController
     end
   end
 
-  def authorize_support_inbox
-    unless current_user.can?(:support_inbox, :messages)
-      redirect_to dashboard_path, alert: "You don't have permission to access the support inbox"
-    end
-  end
-
   def authorize_recipient_action
     thread_message_ids = @message.thread_root.thread_messages.pluck(:id)
     unless current_user.message_recipients.where(message_id: thread_message_ids).exists?
@@ -183,12 +195,6 @@ class MessagesController < AuthenticatedController
 
     # Recipients can view
     return true if message.recipients.include?(current_user)
-
-    # Staff can view support messages
-    if current_user.can?(:support_inbox, :messages)
-      support_user = User.support_user
-      return true if message.recipients.include?(support_user)
-    end
 
     false
   end
@@ -212,6 +218,7 @@ class MessagesController < AuthenticatedController
       if msg.save
         msg.recipients << recipient
         add_guardians_for_mentee(msg, recipient)
+        msg.broadcast_to_recipients
         messages_created << msg
       end
     end
@@ -221,7 +228,6 @@ class MessagesController < AuthenticatedController
     else
       @message.errors.add(:base, "Failed to send messages")
       @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-      @support_user = User.support_user
       render :new, status: :unprocessable_entity
     end
   end

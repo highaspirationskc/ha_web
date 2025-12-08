@@ -52,7 +52,6 @@ Rails.application.routes.draw do
     collection do
       get :sent
       get :archived
-      get :support
     end
   end
 
