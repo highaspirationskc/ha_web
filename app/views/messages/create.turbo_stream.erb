@@ -1,7 +1,4 @@
 <% thread_count = @message.thread_root.thread_messages.count %>
-<%= turbo_stream.append "thread-messages" do %>
-  <%= render "message", message: @message %>
-<% end %>
 
 <%= turbo_stream.replace "thread-message-count" do %>
   <p id="thread-message-count" class="mt-1 text-sm text-gray-500">

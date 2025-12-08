@@ -204,10 +204,6 @@ class UsersController < AuthenticatedController
     current_user.staff.present?
   end
 
-  def staff?
-    current_user.staff&.admin?
-  end
-
   def authorize_index
     # Superusers see all, mentors see their team, others only see themselves
     true # Everyone can access index, but results are filtered
@@ -376,7 +372,7 @@ class UsersController < AuthenticatedController
   end
 
   def update_mentee_if_present
-    return unless @user.mentee.present? && can_edit_profile? && params[:mentee].present?
+    return unless @user.mentee.present? && current_user.can?(:edit, :users) && params[:mentee].present?
 
     mentee_params = params.require(:mentee).permit(:team_id, :mentor_id)
     # Convert empty strings to nil for optional associations
