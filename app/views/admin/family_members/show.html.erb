@@ -37,15 +37,15 @@
       <div class="border-t border-gray-200">
         <dl>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm font-medium text-gray-500">Parent/Guardian</dt>
+            <dt class="text-sm font-medium text-gray-500">Guardian</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= link_to @family_member.user.email, admin_user_path(@family_member.user), class: "text-indigo-600 hover:text-indigo-900" %>
+              <%= link_to @family_member.guardian.user.email, admin_user_path(@family_member.guardian.user), class: "text-indigo-600 hover:text-indigo-900" %>
             </dd>
           </div>
           <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-            <dt class="text-sm font-medium text-gray-500">Child</dt>
+            <dt class="text-sm font-medium text-gray-500">Child (Mentee)</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= link_to @family_member.related_user.email, admin_user_path(@family_member.related_user), class: "text-indigo-600 hover:text-indigo-900" %>
+              <%= link_to @family_member.mentee.user.email, admin_user_path(@family_member.mentee.user), class: "text-indigo-600 hover:text-indigo-900" %>
             </dd>
           </div>
           <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

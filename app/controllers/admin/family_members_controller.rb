@@ -66,6 +66,6 @@ class Admin::FamilyMembersController < Admin::BaseController
 
     # Only allow a list of trusted parameters through.
     def family_member_params
-      params.expect(family_member: [ :user_id, :related_user_id, :relationship_type ])
+      params.expect(family_member: [ :guardian_id, :mentee_id, :relationship_type ])
     end
 end

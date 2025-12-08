@@ -33,7 +33,7 @@ module Mutations
       private
 
       def superuser?
-        current_user.admin? || current_user.staff?
+        current_user.staff.present?
       end
 
       def can_update?(user, input)

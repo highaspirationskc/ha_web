@@ -11,18 +11,22 @@ module Mutations
       field :errors, [String], null: false
 
       def resolve(input:)
-        user = User.find_by(id: input[:user_id])
-        related_user = User.find_by(id: input[:related_user_id])
+        guardian = Guardian.find_by(id: input[:guardian_id])
+        mentee = Mentee.find_by(id: input[:mentee_id])
 
-        return { family_member: nil, errors: ["User not found"] } unless user
-        return { family_member: nil, errors: ["Related user not found"] } unless related_user
+        return { family_member: nil, errors: ["Guardian not found"] } unless guardian
+        return { family_member: nil, errors: ["Mentee not found"] } unless mentee
 
-        # Check permissions - only superusers can create family member relationships
-        unless superuser?
+        # Check permissions - only staff can create family member relationships
+        unless staff_member?
           return { family_member: nil, errors: ["You don't have permission to create this relationship"] }
         end
 
-        family_member = FamilyMember.new(input.to_h)
+        family_member = FamilyMember.new(
+          guardian: guardian,
+          mentee: mentee,
+          relationship_type: input[:relationship_type]
+        )
 
         if family_member.save
           { family_member: family_member, errors: [] }
@@ -33,8 +37,8 @@ module Mutations
 
       private
 
-      def superuser?
-        current_user.admin? || current_user.staff?
+      def staff_member?
+        current_user.staff.present?
       end
     end
   end

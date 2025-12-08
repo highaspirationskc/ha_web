@@ -119,9 +119,9 @@
                               <%= mentee_data[:user].first_name %> <%= mentee_data[:user].last_name %>
                             <% end %>
                             <div class="text-sm text-gray-500">
-                              <% if mentee_data[:user].team %>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].team.color %>-100 text-<%= mentee_data[:user].team.color %>-800">
-                                  <%= mentee_data[:user].team.name %>
+                              <% if mentee_data[:user].mentee&.team %>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].mentee&.team.color %>-100 text-<%= mentee_data[:user].mentee&.team.color %>-800">
+                                  <%= mentee_data[:user].mentee&.team.name %>
                                 </span>
                               <% end %>
                             </div>
@@ -167,9 +167,9 @@
                               <%= mentee_data[:user].first_name %> <%= mentee_data[:user].last_name %>
                             <% end %>
                             <div class="text-sm text-gray-500">
-                              <% if mentee_data[:user].team %>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].team.color %>-100 text-<%= mentee_data[:user].team.color %>-800">
-                                  <%= mentee_data[:user].team.name %>
+                              <% if mentee_data[:user].mentee&.team %>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].mentee&.team.color %>-100 text-<%= mentee_data[:user].mentee&.team.color %>-800">
+                                  <%= mentee_data[:user].mentee&.team.name %>
                                 </span>
                               <% end %>
                             </div>

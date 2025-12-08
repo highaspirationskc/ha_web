@@ -5,8 +5,7 @@ require "test_helper"
 class GraphQL::QueriesTest < ActiveSupport::TestCase
   def setup
     # Create authenticated user
-    @user = User.create!(email: "test@example.com", password: "Password123!", role: :admin)
-    @user.activate!
+    @user = create_admin_user(email: "test@example.com")
     @token = AuthService.generate_token(@user)
 
     # Load seed data
@@ -20,6 +19,11 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     EventType.destroy_all
     OlympicSeason.destroy_all
     FamilyMember.destroy_all
+    Mentor.destroy_all
+    Mentee.destroy_all
+    Guardian.destroy_all
+    Staff.destroy_all
+    Volunteer.destroy_all
     User.destroy_all
     Team.destroy_all
   end
@@ -199,7 +203,9 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
         users {
           id
           email
-          role
+          staff {
+            permissionLevel
+          }
         }
       }
     GQL
@@ -217,7 +223,9 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
         currentUser {
           id
           email
-          role
+          staff {
+            permissionLevel
+          }
         }
       }
     GQL
@@ -278,11 +286,15 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
         familyMembers {
           id
           relationshipType
-          user {
-            email
+          guardian {
+            user {
+              email
+            }
           }
-          relatedUser {
-            email
+          mentee {
+            user {
+              email
+            }
           }
         }
       }

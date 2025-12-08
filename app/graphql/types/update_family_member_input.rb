@@ -5,8 +5,8 @@ module Types
     description "Input for updating a family member relationship"
 
     argument :id, ID, required: true
-    argument :user_id, ID, required: false
-    argument :related_user_id, ID, required: false
+    argument :guardian_id, ID, required: false
+    argument :mentee_id, ID, required: false
     argument :relationship_type, String, required: false
   end
 end

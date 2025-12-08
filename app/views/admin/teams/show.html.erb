@@ -63,29 +63,30 @@
       </div>
     </div>
 
-    <!-- Add Member Section -->
-    <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
-      <div class="px-4 py-5 sm:px-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Add Team Member</h3>
-        <p class="mt-1 text-sm text-gray-500">Add a mentor, volunteer, or mentee to this team.</p>
+    <!-- Add Mentee Section -->
+    <% if @available_mentees.any? %>
+      <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Add Mentee to Team</h3>
+          <p class="mt-1 text-sm text-gray-500">Add a mentee to this team.</p>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+          <%= form_with url: add_member_admin_team_path(@team), method: :post, class: "flex items-end space-x-4" do |f| %>
+            <div class="flex-grow">
+              <%= f.label :mentee_id, "Select Mentee", class: "block text-sm font-medium text-gray-700" %>
+              <%= f.select :mentee_id, @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] }, { prompt: "Choose a mentee..." }, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+            </div>
+            <%= f.submit "Add to Team", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+          <% end %>
+        </div>
       </div>
-      <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-        <%= form_with url: add_member_admin_team_path(@team), method: :post, class: "flex items-end space-x-4" do |f| %>
-          <div class="flex-grow">
-            <%= f.label :user_id, "Select User", class: "block text-sm font-medium text-gray-700" %>
-            <% available_users = User.where(team_id: nil).where(role: [:mentor, :volunteer, :mentee]).order(:role, :last_name, :first_name) %>
-            <%= f.select :user_id, available_users.map { |u| ["#{u.first_name} #{u.last_name} (#{u.email}) - #{u.role.titleize}", u.id] }, { prompt: "Choose a user..." }, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-          </div>
-          <%= f.submit "Add to Team", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
-        <% end %>
-      </div>
-    </div>
+    <% end %>
 
-    <!-- Mentors & Volunteers -->
+    <!-- Mentees -->
     <div class="mt-6">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Mentors & Volunteers (<%= @team.users.where(role: [:mentor, :volunteer]).count %>)
+          Mentees (<%= @team.mentees.count %>)
         </h3>
         <% if @current_season %>
           <span class="px-3 py-1 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">
@@ -110,7 +111,7 @@
                       Email
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
+                      Mentor
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Season Points
@@ -121,29 +122,28 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <% mentor_points = @user_points.select { |up| up[:user].mentor? || up[:user].volunteer? } %>
-                  <% if mentor_points.any? %>
+                  <% if @mentee_points.any? %>
                     <%
                       # Calculate ranks with tie handling (dense ranking)
                       current_rank = 1
                       previous_points = nil
                     %>
-                    <% mentor_points.each_with_index do |user_point, index| %>
+                    <% @mentee_points.each_with_index do |mentee_point, index| %>
                       <%
                         # Increment rank only if points changed (dense ranking)
-                        if previous_points && user_point[:points] < previous_points
+                        if previous_points && mentee_point[:points] < previous_points
                           current_rank += 1
                         end
-                        previous_points = user_point[:points]
+                        previous_points = mentee_point[:points]
                       %>
-                      <tr class="<%= 'bg-yellow-50' if current_rank == 1 && user_point[:points] > 0 %>">
+                      <tr class="<%= 'bg-yellow-50' if current_rank == 1 && mentee_point[:points] > 0 %>">
                         <td class="px-6 py-4 whitespace-nowrap">
                           <div class="flex items-center">
-                            <% if current_rank == 1 && user_point[:points] > 0 %>
+                            <% if current_rank == 1 && mentee_point[:points] > 0 %>
                               <span class="text-2xl">🥇</span>
-                            <% elsif current_rank == 2 && user_point[:points] > 0 %>
+                            <% elsif current_rank == 2 && mentee_point[:points] > 0 %>
                               <span class="text-2xl">🥈</span>
-                            <% elsif current_rank == 3 && user_point[:points] > 0 %>
+                            <% elsif current_rank == 3 && mentee_point[:points] > 0 %>
                               <span class="text-2xl">🥉</span>
                             <% else %>
                               <span class="text-sm font-medium text-gray-900"><%= current_rank %></span>
@@ -151,125 +151,28 @@
                           </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                          <%= link_to admin_user_path(user_point[:user]), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
-                            <%= user_point[:user].first_name %> <%= user_point[:user].last_name %>
+                          <%= link_to admin_user_path(mentee_point[:user]), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
+                            <%= mentee_point[:user].first_name %> <%= mentee_point[:user].last_name %>
                           <% end %>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <%= user_point[:user].email %>
+                          <%= mentee_point[:user].email %>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            <%= user_point[:user].role.titleize %>
-                          </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="text-2xl font-bold text-gray-900"><%= user_point[:points] %></div>
-                          <div class="text-xs text-gray-500">points</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <%= button_to "Remove", remove_member_admin_team_path(@team, user_id: user_point[:user].id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Remove #{user_point[:user].email} from this team?" }, form: { class: "inline" } %>
-                        </td>
-                      </tr>
-                    <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                        No mentors/volunteers on this team
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mentees -->
-    <div class="mt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Mentees (<%= @team.mentees.count %>)
-        </h3>
-      </div>
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Season Points
-                    </th>
-                    <th scope="col" class="relative px-6 py-3">
-                      <span class="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% mentee_points = @user_points.select { |up| up[:user].mentee? } %>
-                  <% if mentee_points.any? %>
-                    <%
-                      # Calculate ranks with tie handling (dense ranking)
-                      current_rank = 1
-                      previous_points = nil
-                    %>
-                    <% mentee_points.each_with_index do |user_point, index| %>
-                      <%
-                        # Increment rank only if points changed (dense ranking)
-                        if previous_points && user_point[:points] < previous_points
-                          current_rank += 1
-                        end
-                        previous_points = user_point[:points]
-                      %>
-                      <tr class="<%= 'bg-yellow-50' if current_rank == 1 && user_point[:points] > 0 %>">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="flex items-center">
-                            <% if current_rank == 1 && user_point[:points] > 0 %>
-                              <span class="text-2xl">🥇</span>
-                            <% elsif current_rank == 2 && user_point[:points] > 0 %>
-                              <span class="text-2xl">🥈</span>
-                            <% elsif current_rank == 3 && user_point[:points] > 0 %>
-                              <span class="text-2xl">🥉</span>
-                            <% else %>
-                              <span class="text-sm font-medium text-gray-900"><%= current_rank %></span>
+                          <% if mentee_point[:mentee].mentor.present? %>
+                            <%= link_to admin_user_path(mentee_point[:mentee].mentor.user), class: "text-sm text-indigo-600 hover:text-indigo-900" do %>
+                              <%= mentee_point[:mentee].mentor.user.first_name %> <%= mentee_point[:mentee].mentor.user.last_name %>
                             <% end %>
-                          </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <%= link_to admin_user_path(user_point[:user]), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
-                            <%= user_point[:user].first_name %> <%= user_point[:user].last_name %>
+                          <% else %>
+                            <span class="text-sm text-gray-400">—</span>
                           <% end %>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <%= user_point[:user].email %>
-                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            <%= user_point[:user].role.titleize %>
-                          </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="text-2xl font-bold text-gray-900"><%= user_point[:points] %></div>
+                          <div class="text-2xl font-bold text-gray-900"><%= mentee_point[:points] %></div>
                           <div class="text-xs text-gray-500">points</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <%= button_to "Remove", remove_member_admin_team_path(@team, user_id: user_point[:user].id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Remove #{user_point[:user].email} from this team?" }, form: { class: "inline" } %>
+                          <%= button_to "Remove", remove_member_admin_team_path(@team, mentee_id: mentee_point[:mentee].id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Remove #{mentee_point[:user].email} from this team?" }, form: { class: "inline" } %>
                         </td>
                       </tr>
                     <% end %>

@@ -13,7 +13,7 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def show
-    @available_users_for_family = available_users_for_family
+    @available_guardians_for_family = available_guardians_for_family
     @allowed_relationship_types = allowed_relationship_types
     @can_manage_family_members = can_manage_family_members?
   end
@@ -35,7 +35,6 @@ class Admin::UsersController < Admin::BaseController
   def edit
     @can_edit_profile = can_edit_profile?
     @can_edit_password = can_edit_password?
-    @can_edit_role_and_team = can_edit_role_and_team?
   end
 
   def update
@@ -56,7 +55,6 @@ class Admin::UsersController < Admin::BaseController
     else
       @can_edit_profile = can_edit_profile?
       @can_edit_password = can_edit_password?
-      @can_edit_role_and_team = can_edit_role_and_team?
       render :edit, status: :unprocessable_entity
     end
   end
@@ -77,35 +75,36 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def add_family_member
-    # Only mentees can have parents/guardians added
-    unless @user.mentee?
-      redirect_to admin_user_path(@user), alert: "Can only add parents/guardians to mentees"
+    # Only users with mentee profiles can have guardians added
+    unless @user.mentee.present?
+      redirect_to admin_user_path(@user), alert: "Can only add guardians to mentees"
       return
     end
 
-    parent_user = User.find_by(id: params[:related_user_id])
+    guardian_user = User.find_by(id: params[:guardian_user_id])
 
-    unless parent_user
-      redirect_to admin_user_path(@user), alert: "Parent not found"
+    unless guardian_user&.guardian.present?
+      redirect_to admin_user_path(@user), alert: "Guardian not found"
       return
     end
 
-    # FamilyMember: user is the parent, related_user is the child (mentee)
     family_member = FamilyMember.new(
-      user_id: parent_user.id,
-      related_user_id: @user.id,
+      guardian_id: guardian_user.guardian.id,
+      mentee_id: @user.mentee.id,
       relationship_type: params[:relationship_type]
     )
 
     if family_member.save
-      redirect_to admin_user_path(@user), notice: "Parent/guardian added successfully"
+      redirect_to admin_user_path(@user), notice: "Guardian added successfully"
     else
       redirect_to admin_user_path(@user), alert: family_member.errors.full_messages.join(", ")
     end
   end
 
   def remove_family_member
-    family_member = @user.reverse_family_members.find_by(id: params[:family_member_id])
+    return redirect_to admin_user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+
+    family_member = @user.mentee.family_members.find_by(id: params[:family_member_id])
 
     if family_member&.destroy
       redirect_to admin_user_path(@user), notice: "Family member removed successfully"
@@ -121,8 +120,12 @@ class Admin::UsersController < Admin::BaseController
   end
 
   # Authorization methods
-  def superuser?
-    current_user.admin? || current_user.staff?
+  def staff_member?
+    current_user.staff.present?
+  end
+
+  def admin_staff?
+    current_user.staff&.admin?
   end
 
   def authorize_index
@@ -131,72 +134,77 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def authorize_show
-    return if current_user.can_manage?(@user)
+    return if can_manage_user?(@user)
 
     redirect_to admin_users_path, alert: "You don't have permission to view this user"
   end
 
   def authorize_edit
-    return if current_user.can_manage?(@user)
+    return if can_manage_user?(@user)
 
     redirect_to admin_users_path, alert: "You don't have permission to edit this user"
   end
 
   def authorize_create
-    return if superuser?
+    return if staff_member?
 
     redirect_to admin_users_path, alert: "You don't have permission to create users"
   end
 
   def authorize_destroy
-    return if superuser?
+    return if staff_member?
 
     redirect_to admin_users_path, alert: "You don't have permission to delete users"
   end
 
   def authorize_activation
-    return if superuser?
+    return if staff_member?
 
     redirect_to admin_users_path, alert: "You don't have permission to activate/deactivate users"
   end
 
   def authorize_family_member_management
-    # Only superusers can manage family members
-    return if superuser?
+    # Only staff can manage family members
+    return if staff_member?
 
     redirect_to admin_users_path, alert: "You don't have permission to manage family members"
   end
 
-  # Permission check methods for views
+  # Permission check methods
+  def can_manage_user?(user)
+    return true if user == current_user
+    return true if staff_member?
+    return true if current_user.mentor.present? && user.mentee&.mentor_id == current_user.mentor.id
+    return true if current_user.guardian.present? && current_user.guardian.children.exists?(user.mentee&.id)
+    false
+  end
+
   def can_edit_profile?
-    superuser?
+    staff_member?
   end
 
   def can_edit_password?
-    return true if superuser?
+    return true if staff_member?
     return true if @user == current_user
     false
   end
 
-  def can_edit_role_and_team?
-    superuser?
-  end
-
   def can_manage_family_members?
-    # Only superusers can manage family members
-    superuser?
+    staff_member?
   end
 
   # Scoped user list based on current user's permissions
   def users_for_current_user
-    return User.all if superuser?
+    return User.all if staff_member?
 
-    if (current_user.mentor? || current_user.volunteer?) && current_user.team_id
-      # Mentors/volunteers can see themselves and all mentees on their team
-      User.where(team_id: current_user.team_id, role: :mentee).or(User.where(id: current_user.id))
-    elsif current_user.parent?
-      # Parents can see themselves and their children
-      User.where(id: [current_user.id] + current_user.children.pluck(:id))
+    if current_user.mentor.present?
+      # Mentors can see themselves and their mentees
+      mentee_user_ids = current_user.mentor.mentees.joins(:user).pluck("users.id")
+      User.where(id: [current_user.id] + mentee_user_ids)
+    elsif current_user.guardian.present?
+      # Guardians can see themselves and their children
+      child_user_ids = current_user.guardian.children.joins(:user).pluck("users.id")
+      User.where(id: [current_user.id] + child_user_ids)
     else
       # Everyone else can only see themselves
       User.where(id: current_user.id)
@@ -204,15 +212,15 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def user_params_for_create
-    return {} unless superuser?
-    params.require(:user).permit(:email, :password, :password_confirmation, :active, :team_id, :first_name, :last_name, :role)
+    return {} unless staff_member?
+    params.require(:user).permit(:email, :password, :password_confirmation, :active, :first_name, :last_name)
   end
 
   def permitted_update_params
     permitted = []
 
-    if superuser?
-      permitted = [:email, :password, :password_confirmation, :active, :team_id, :first_name, :last_name, :role]
+    if staff_member?
+      permitted = [:email, :password, :password_confirmation, :active, :first_name, :last_name]
     elsif @user == current_user
       permitted = [:password, :password_confirmation]
     end
@@ -221,19 +229,19 @@ class Admin::UsersController < Admin::BaseController
     params.require(:user).permit(permitted)
   end
 
-  def available_users_for_family
+  def available_guardians_for_family
     return [] unless can_manage_family_members?
-    return [] unless @user.mentee?
+    return [] unless @user.mentee.present?
 
-    # Get existing parent/guardian IDs to exclude
-    existing_parent_ids = @user.reverse_family_members.pluck(:user_id)
-    User.where(role: :parent).where.not(id: existing_parent_ids)
+    # Get existing guardian IDs to exclude
+    existing_guardian_ids = @user.mentee.guardians.pluck(:id)
+    Guardian.where.not(id: existing_guardian_ids).includes(:user)
   end
 
   def allowed_relationship_types
     return [] unless can_manage_family_members?
-    return [] unless @user.mentee?
+    return [] unless @user.mentee.present?
 
-    [["Parent", "parent"], ["Guardian", "guardian"]]
+    FamilyMember.relationship_types.keys.map { |k| [k.titleize, k] }
   end
 end

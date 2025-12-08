@@ -40,14 +40,14 @@
         </div>
       <% end %>
 
-      <% if @can_edit_profile || @can_edit_password || @can_edit_role_and_team %>
+      <% if @can_edit_profile || @can_edit_password %>
         <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
           <div class="md:grid md:grid-cols-3 md:gap-6">
             <div class="md:col-span-1">
               <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
               <p class="mt-1 text-sm text-gray-500">
                 <% if @can_edit_profile %>
-                  Update user details and permissions.
+                  Update user details.
                 <% else %>
                   Update your password.
                 <% end %>
@@ -70,6 +70,14 @@
                     <%= form.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
                     <%= form.text_field :last_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
                   </div>
+
+                  <div class="col-span-6 sm:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <div class="mt-2">
+                      <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
+                      <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
+                    </div>
+                  </div>
                 <% end %>
 
                 <% if @can_edit_password %>
@@ -84,26 +92,6 @@
                     <%= form.password_field :password_confirmation, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
                   </div>
                 <% end %>
-
-                <% if @can_edit_role_and_team %>
-                  <div class="col-span-6 sm:col-span-3">
-                    <%= form.label :role, class: "block text-sm font-medium text-gray-700" %>
-                    <%= form.select :role, User.roles.keys.map { |k| [k.titleize, k] }, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-                  </div>
-
-                  <div class="col-span-6 sm:col-span-3">
-                    <%= form.label :team_id, "Team", class: "block text-sm font-medium text-gray-700" %>
-                    <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)", selected: @user.team_id }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
-                  </div>
-
-                  <div class="col-span-6 sm:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700">Status</label>
-                    <div class="mt-2">
-                      <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
-                      <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
-                    </div>
-                  </div>
-                <% end %>
               </div>
             </div>
           </div>
@@ -111,7 +99,7 @@
 
         <div class="flex justify-end space-x-3">
           <%= link_to "Cancel", admin_user_path(@user), class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-          <% if @can_edit_role_and_team %>
+          <% if @can_edit_profile %>
             <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
           <% end %>
           <%= form.submit "Save Changes", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>

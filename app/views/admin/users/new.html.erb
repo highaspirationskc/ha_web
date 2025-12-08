@@ -20,7 +20,7 @@
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
             <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
-            <p class="mt-1 text-sm text-gray-500">Enter the details for this new user.</p>
+            <p class="mt-1 text-sm text-gray-500">Enter the details for this new user. You can assign a role profile after creating the user.</p>
           </div>
           <div class="mt-5 md:mt-0 md:col-span-2">
             <div class="grid grid-cols-6 gap-6">
@@ -48,16 +48,6 @@
               <div class="col-span-6 sm:col-span-3">
                 <%= form.label :password_confirmation, "Password Confirmation", class: "block text-sm font-medium text-gray-700" %>
                 <%= form.password_field :password_confirmation, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :role, class: "block text-sm font-medium text-gray-700" %>
-                <%= form.select :role, User.roles.keys.map { |k| [k.titleize, k] }, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-              </div>
-
-              <div class="col-span-6 sm:col-span-3">
-                <%= form.label :team_id, "Team", class: "block text-sm font-medium text-gray-700" %>
-                <%= form.collection_select :team_id, Team.all, :id, :name, { prompt: "Select a team (optional)" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
               </div>
 
               <div class="col-span-6 sm:col-span-3">

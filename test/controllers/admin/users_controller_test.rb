@@ -4,30 +4,30 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   def setup
     @admin_user = User.create!(
       email: "admin@example.com",
-      password: "Password123!",
-      role: :admin
+      password: "Password123!"
     )
+    Staff.create!(user: @admin_user, permission_level: :admin)
     @admin_user.activate!
 
     @staff_user = User.create!(
       email: "staff@example.com",
-      password: "Password123!",
-      role: :staff
+      password: "Password123!"
     )
+    Staff.create!(user: @staff_user, permission_level: :standard)
     @staff_user.activate!
 
     @volunteer_user = User.create!(
       email: "volunteer@example.com",
-      password: "Password123!",
-      role: :volunteer
+      password: "Password123!"
     )
+    Volunteer.create!(user: @volunteer_user)
     @volunteer_user.activate!
 
     @inactive_user = User.create!(
       email: "inactive@example.com",
-      password: "Password123!",
-      role: :mentor
+      password: "Password123!"
     )
+    Mentor.create!(user: @inactive_user)
   end
 
   def login_as(user)
@@ -80,12 +80,11 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "should update user with valid params" do
     login_as(@admin_user)
     patch admin_user_path(@volunteer_user), params: {
-      user: { email: "newemail@example.com", role: "mentor" }
+      user: { email: "newemail@example.com" }
     }
     assert_redirected_to admin_user_path(@volunteer_user)
     @volunteer_user.reload
     assert_equal "newemail@example.com", @volunteer_user.email
-    assert_equal "mentor", @volunteer_user.role
   end
 
   test "should not update user with invalid email" do
@@ -122,8 +121,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     30.times do |i|
       User.create!(
         email: "user#{i}@example.com",
-        password: "Password123!",
-        role: :volunteer
+        password: "Password123!"
       )
     end
     get admin_users_path

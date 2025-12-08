@@ -21,13 +21,13 @@
       <div class="mt-5 md:mt-0 md:col-span-2">
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-3">
-            <%= form.label :user_id, "Parent/Guardian", class: "block text-sm font-medium text-gray-700" %>
-            <%= form.collection_select :user_id, User.where(role: :parent), :id, :email, { prompt: "Select a parent/guardian" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+            <%= form.label :guardian_id, "Guardian", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.collection_select :guardian_id, Guardian.includes(:user).all, :id, ->(g) { g.user.email }, { prompt: "Select a guardian" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
           </div>
 
           <div class="col-span-6 sm:col-span-3">
-            <%= form.label :related_user_id, "Child", class: "block text-sm font-medium text-gray-700" %>
-            <%= form.collection_select :related_user_id, User.where(role: :mentee), :id, :email, { prompt: "Select a child" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+            <%= form.label :mentee_id, "Child (Mentee)", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.collection_select :mentee_id, Mentee.includes(:user).all, :id, ->(m) { m.user.email }, { prompt: "Select a child" }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
           </div>
 
           <div class="col-span-6">

@@ -4,11 +4,8 @@ require "test_helper"
 
 class EventLogsMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin.activate!
-
-    @mentee = User.create!(email: "mentee@example.com", password: "Password123!", role: :mentee)
-    @mentee.activate!
+    @admin = create_admin_user(email: "admin@example.com")
+    @mentee = create_mentee_user(email: "mentee@example.com")
 
     @event_type = EventType.create!(name: "Practice", point_value: 5, category: :org)
     @event = Event.create!(
@@ -29,8 +26,7 @@ class EventLogsMutationsTest < ActiveSupport::TestCase
   # CreateEventLog tests
 
   test "authenticated user can create event log" do
-    another_mentee = User.create!(email: "mentee2@example.com", password: "Password123!", role: :mentee)
-    another_mentee.activate!
+    another_mentee = create_mentee_user(email: "mentee2@example.com")
 
     mutation = <<~GQL
       mutation($input: CreateEventLogInput!) {
@@ -63,8 +59,7 @@ class EventLogsMutationsTest < ActiveSupport::TestCase
   end
 
   test "create event log with registered type awards zero points" do
-    another_mentee = User.create!(email: "mentee3@example.com", password: "Password123!", role: :mentee)
-    another_mentee.activate!
+    another_mentee = create_mentee_user(email: "mentee3@example.com")
 
     mutation = <<~GQL
       mutation($input: CreateEventLogInput!) {

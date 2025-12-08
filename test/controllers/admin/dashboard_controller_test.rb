@@ -2,8 +2,7 @@ require "test_helper"
 
 class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
   def setup
-    @admin_user = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin_user.activate!
+    @admin_user = create_admin_user
   end
 
   def login_as(user)

@@ -25,14 +25,11 @@ class GraphQL::AuthorizationTest < ActiveSupport::TestCase
   end
 
   def setup
-    @admin_user = User.create!(email: "admin@example.com", password: "Password123!", role: :admin)
-    @admin_user.activate!
+    @admin_user = create_admin_user(email: "admin@example.com")
 
-    @staff_user = User.create!(email: "staff@example.com", password: "Password123!", role: :staff)
-    @staff_user.activate!
+    @staff_user = create_staff_user(email: "staff@example.com")
 
-    @volunteer_user = User.create!(email: "volunteer@example.com", password: "Password123!", role: :volunteer)
-    @volunteer_user.activate!
+    @volunteer_user = create_volunteer_user(email: "volunteer@example.com")
   end
 
   # require_authentication! tests

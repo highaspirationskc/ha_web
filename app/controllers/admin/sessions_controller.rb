@@ -8,7 +8,7 @@ class Admin::SessionsController < ApplicationController
 
     if user&.authenticate(params[:password])
       if user.active?
-        if user.admin? || user.staff?
+        if user.staff.present?
           session[:user_id] = user.id
           redirect_to admin_dashboard_path, notice: "Logged in successfully"
         else

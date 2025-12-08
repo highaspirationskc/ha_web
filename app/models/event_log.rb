@@ -2,7 +2,7 @@ class EventLog < ApplicationRecord
   belongs_to :event
   belongs_to :user
 
-  enum :log_type, { registered: 0, arrived: 1 }
+  enum :log_type, { registered: "registered", arrived: "arrived" }
 
   before_validation :stamp_event_data, on: :create
 

@@ -4,23 +4,23 @@ class Admin::SessionsControllerTest < ActionDispatch::IntegrationTest
   def setup
     @admin_user = User.create!(
       email: "admin@example.com",
-      password: "Password123!",
-      role: :admin
+      password: "Password123!"
     )
+    Staff.create!(user: @admin_user, permission_level: :admin)
     @admin_user.activate!
 
     @staff_user = User.create!(
       email: "staff@example.com",
-      password: "Password123!",
-      role: :staff
+      password: "Password123!"
     )
+    Staff.create!(user: @staff_user, permission_level: :standard)
     @staff_user.activate!
 
     @volunteer_user = User.create!(
       email: "volunteer@example.com",
-      password: "Password123!",
-      role: :volunteer
+      password: "Password123!"
     )
+    Volunteer.create!(user: @volunteer_user)
     @volunteer_user.activate!
   end
 
@@ -55,7 +55,7 @@ class Admin::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_nil session[:user_id]
   end
 
-  test "should not login with non-admin/staff role" do
+  test "should not login with non-staff role" do
     post admin_login_path, params: { email: @volunteer_user.email, password: "Password123!" }
     assert_response :unauthorized
     assert_nil session[:user_id]

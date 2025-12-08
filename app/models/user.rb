@@ -3,26 +3,16 @@ class User < ApplicationRecord
 
   has_many :tokens, dependent: :destroy
 
-  # Team relationship
-  belongs_to :team, optional: true
-
-  # Family member associations (parent-child relationships)
-  has_many :family_members, dependent: :destroy
-  has_many :reverse_family_members, class_name: "FamilyMember", foreign_key: :related_user_id, dependent: :destroy
+  # Role profiles
+  has_one :mentor, dependent: :destroy
+  has_one :mentee, dependent: :destroy
+  has_one :guardian, dependent: :destroy
+  has_one :staff, dependent: :destroy
+  has_one :volunteer, dependent: :destroy
 
   # Event associations
   has_many :created_events, class_name: "Event", foreign_key: :created_by_id, dependent: :nullify
   has_many :event_logs, dependent: :destroy
-
-  # TODO: Change default role logic - currently defaulting to admin for development
-  enum :role, {
-    volunteer: 0,
-    mentor: 1,
-    mentee: 2,
-    parent: 3,
-    staff: 4,
-    admin: 5
-  }
 
   # Email validations
   validates :email, presence: true,
@@ -38,6 +28,42 @@ class User < ApplicationRecord
   # Normalize email to lowercase
   before_save :normalize_email
 
+  # Role detection helper
+  def role_name
+    return "Staff (Admin)" if staff&.admin?
+    return "Staff" if staff.present?
+    return "Mentor" if mentor.present?
+    return "Mentee" if mentee.present?
+    return "Guardian" if guardian.present?
+    return "Volunteer" if volunteer.present?
+    "User"
+  end
+
+  # Role check methods for authorization
+  def admin?
+    staff&.admin? || false
+  end
+
+  def staff?
+    staff.present?
+  end
+
+  def mentor?
+    mentor.present?
+  end
+
+  def mentee?
+    mentee.present?
+  end
+
+  def guardian?
+    guardian.present?
+  end
+
+  def volunteer?
+    volunteer.present?
+  end
+
   # Activation methods
   def activate!
     update(active: true, confirmation_token: nil, confirmation_sent_at: nil)
@@ -49,32 +75,6 @@ class User < ApplicationRecord
 
   def send_confirmation_email
     UserMailer.confirmation_email(self).deliver_later
-  end
-
-  # Parent-child relationships (via FamilyMember)
-  def children
-    return User.none unless parent?
-    User.where(id: family_members.where(relationship_type: :parent).select(:related_user_id))
-  end
-
-  def parents
-    return User.none unless mentee?
-    User.where(id: reverse_family_members.where(relationship_type: :parent).select(:user_id))
-  end
-
-  # Team-based access (for mentors/volunteers to see mentees on their team)
-  def team_mentees
-    return User.none unless (mentor? || volunteer?) && team_id
-    User.where(team_id: team_id, role: :mentee)
-  end
-
-  # Permission check - can this user manage another user?
-  def can_manage?(other_user)
-    return true if self == other_user
-    return true if admin? || staff?
-    return true if (mentor? || volunteer?) && team_id && other_user.team_id == team_id
-    return true if parent? && children.exists?(other_user.id)
-    false
   end
 
   # Calculate total points for a given date range

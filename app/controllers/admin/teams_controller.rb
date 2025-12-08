@@ -11,13 +11,17 @@ class Admin::TeamsController < Admin::BaseController
   def show
     @current_season = OlympicSeason.current_season
 
-    # Calculate points for each user on this team
-    @user_points = @team.users.map do |user|
+    # Calculate points for each mentee on this team
+    @mentee_points = @team.mentees.includes(:user).map do |mentee|
       {
-        user: user,
-        points: user.total_points
+        mentee: mentee,
+        user: mentee.user,
+        points: mentee.user.total_points
       }
-    end.sort_by { |up| -up[:points] }
+    end.sort_by { |mp| -mp[:points] }
+
+    # Available mentees that can be added to the team (those not already on a team)
+    @available_mentees = Mentee.includes(:user).where(team_id: nil)
   end
 
   # GET /admin/teams/new
@@ -69,28 +73,28 @@ class Admin::TeamsController < Admin::BaseController
 
   # POST /admin/teams/1/add_member
   def add_member
-    user = User.find_by(id: params[:user_id])
+    mentee = Mentee.find_by(id: params[:mentee_id])
 
-    unless user
-      redirect_to admin_team_path(@team), alert: "User not found"
+    unless mentee
+      redirect_to admin_team_path(@team), alert: "Mentee not found"
       return
     end
 
-    user.update!(team: @team)
-    redirect_to admin_team_path(@team), notice: "#{user.email} added to team"
+    mentee.update!(team: @team)
+    redirect_to admin_team_path(@team), notice: "#{mentee.user.email} added to team"
   end
 
   # DELETE /admin/teams/1/remove_member
   def remove_member
-    user = User.find_by(id: params[:user_id])
+    mentee = Mentee.find_by(id: params[:mentee_id])
 
-    unless user
-      redirect_to admin_team_path(@team), alert: "User not found"
+    unless mentee
+      redirect_to admin_team_path(@team), alert: "Mentee not found"
       return
     end
 
-    user.update!(team: nil)
-    redirect_to admin_team_path(@team), notice: "#{user.email} removed from team"
+    mentee.update!(team: nil)
+    redirect_to admin_team_path(@team), notice: "#{mentee.user.email} removed from team"
   end
 
   private
