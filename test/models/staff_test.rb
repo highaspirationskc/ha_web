@@ -47,12 +47,12 @@ class StaffTest < ActiveSupport::TestCase
   test "permission_level scopes work" do
     @staff.save!
 
-    admin_user = User.create!(email: "admin@example.com", password: "Password123!")
-    admin_staff = Staff.create!(user: admin_user, permission_level: "admin")
+    user = User.create!(email: "admin@example.com", password: "Password123!")
+    staff = Staff.create!(user: user, permission_level: "admin")
 
     assert_includes Staff.standard, @staff
-    assert_not_includes Staff.standard, admin_staff
-    assert_includes Staff.admin, admin_staff
+    assert_not_includes Staff.standard, staff
+    assert_includes Staff.admin, staff
     assert_not_includes Staff.admin, @staff
   end
 end

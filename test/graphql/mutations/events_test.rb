@@ -4,7 +4,7 @@ require "test_helper"
 
 class EventsMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = create_admin_user(email: "admin@example.com")
+    @admin = create_user(email: "admin@example.com")
     @mentor = create_mentor_user(email: "mentor@example.com")
 
     @event_type = EventType.create!(name: "Meeting", point_value: 1, category: :org)

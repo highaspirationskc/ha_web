@@ -2,8 +2,8 @@ require "test_helper"
 
 class AuthorizationTest < ActiveSupport::TestCase
   def setup
-    @admin_user = User.create!(email: "admin@example.com", password: "Password123!")
-    Staff.create!(user: @admin_user, permission_level: :admin)
+    @user = User.create!(email: "admin@example.com", password: "Password123!")
+    Staff.create!(user: @user, permission_level: :admin)
 
     @staff_user = User.create!(email: "staff@example.com", password: "Password123!")
     Staff.create!(user: @staff_user)
@@ -25,7 +25,7 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   # Role detection
   test "determines admin role correctly" do
-    assert_equal :admin, Authorization.new(@admin_user).role
+    assert_equal :admin, Authorization.new(@user).role
   end
 
   test "determines staff role correctly" do
@@ -50,27 +50,27 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   # Admin permissions
   test "admin can delete users" do
-    assert Authorization.can?(@admin_user, :delete, :users, @other_user)
+    assert Authorization.can?(@user, :delete, :users, @other_user)
   end
 
   test "admin cannot delete themselves" do
-    assert_not Authorization.can?(@admin_user, :delete, :users, @admin_user)
+    assert_not Authorization.can?(@user, :delete, :users, @user)
   end
 
   test "admin can change user status" do
-    assert Authorization.can?(@admin_user, :change_status, :users, @other_user)
+    assert Authorization.can?(@user, :change_status, :users, @other_user)
   end
 
   test "admin cannot change their own status" do
-    assert_not Authorization.can?(@admin_user, :change_status, :users, @admin_user)
+    assert_not Authorization.can?(@user, :change_status, :users, @user)
   end
 
   test "admin can manage family members" do
-    assert Authorization.can?(@admin_user, :manage_family_members, :users)
+    assert Authorization.can?(@user, :manage_family_members, :users)
   end
 
   test "admin can manage mentees" do
-    assert Authorization.can?(@admin_user, :manage_mentees, :users)
+    assert Authorization.can?(@user, :manage_mentees, :users)
   end
 
   # Staff permissions
@@ -152,7 +152,7 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   # Navigation
   test "admin has full navigation" do
-    nav = Authorization.navigation_for(@admin_user)
+    nav = Authorization.navigation_for(@user)
     assert_includes nav, :dashboard
     assert_includes nav, :users
     assert_includes nav, :events
@@ -176,13 +176,13 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   # User#can? helper
   test "user can? delegates to Authorization" do
-    assert @admin_user.can?(:delete, :users, @other_user)
+    assert @user.can?(:delete, :users, @other_user)
     assert_not @staff_user.can?(:delete, :users, @other_user)
   end
 
   # User#allowed_navigation helper
   test "user allowed_navigation delegates to Authorization" do
-    assert_includes @admin_user.allowed_navigation, :dashboard
+    assert_includes @user.allowed_navigation, :dashboard
     assert_includes @mentee_user.allowed_navigation, :dashboard
   end
 
@@ -207,28 +207,28 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test "invalid action returns false" do
-    assert_not Authorization.can?(@admin_user, :nonexistent_action, :users)
+    assert_not Authorization.can?(@user, :nonexistent_action, :users)
   end
 
   test "invalid resource returns false" do
-    assert_not Authorization.can?(@admin_user, :show, :nonexistent_resource)
+    assert_not Authorization.can?(@user, :show, :nonexistent_resource)
   end
 
   # Admin comprehensive permissions
   test "admin can index users" do
-    assert Authorization.can?(@admin_user, :index, :users)
+    assert Authorization.can?(@user, :index, :users)
   end
 
   test "admin can show users" do
-    assert Authorization.can?(@admin_user, :show, :users)
+    assert Authorization.can?(@user, :show, :users)
   end
 
   test "admin can create users" do
-    assert Authorization.can?(@admin_user, :create, :users)
+    assert Authorization.can?(@user, :create, :users)
   end
 
   test "admin can edit users" do
-    assert Authorization.can?(@admin_user, :edit, :users)
+    assert Authorization.can?(@user, :edit, :users)
   end
 
   # Staff comprehensive permissions
@@ -314,9 +314,9 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   # Navigation comprehensive tests
   test "staff has same navigation as admin" do
-    admin_nav = Authorization.navigation_for(@admin_user)
+    nav = Authorization.navigation_for(@user)
     staff_nav = Authorization.navigation_for(@staff_user)
-    assert_equal admin_nav, staff_nav
+    assert_equal nav, staff_nav
   end
 
   test "guardian has limited navigation" do
@@ -340,6 +340,6 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "self-restriction only applies to specific actions" do
     # Admin can edit themselves (edit is not self-restricted)
-    assert Authorization.can?(@admin_user, :edit, :users)
+    assert Authorization.can?(@user, :edit, :users)
   end
 end

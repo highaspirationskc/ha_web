@@ -25,7 +25,7 @@ class GraphQL::AuthorizationTest < ActiveSupport::TestCase
   end
 
   def setup
-    @admin_user = create_admin_user(email: "admin@example.com")
+    @user = create_user(email: "admin@example.com")
 
     @staff_user = create_staff_user(email: "staff@example.com")
 
@@ -34,7 +34,7 @@ class GraphQL::AuthorizationTest < ActiveSupport::TestCase
 
   # require_authentication! tests
   test "require_authentication! does not raise error for authenticated user" do
-    mutation = TestMutation.new({ current_user: @admin_user })
+    mutation = TestMutation.new({ current_user: @user })
     mutation.require_authentication!
     # If we get here without error, test passes
     assert true
@@ -58,7 +58,7 @@ class GraphQL::AuthorizationTest < ActiveSupport::TestCase
 
   # require_role! tests
   test "require_role! does not raise error for user with matching role" do
-    mutation = TestMutation.new({ current_user: @admin_user })
+    mutation = TestMutation.new({ current_user: @user })
     mutation.require_role!(:admin)
     # If we get here without error, test passes
     assert true
@@ -88,7 +88,7 @@ class GraphQL::AuthorizationTest < ActiveSupport::TestCase
   end
 
   test "require_role! allows user with one of multiple roles" do
-    mutation = TestMutation.new({ current_user: @admin_user })
+    mutation = TestMutation.new({ current_user: @user })
     mutation.require_role!(:admin, :staff)
     # If we get here without error, test passes
     assert true

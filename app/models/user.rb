@@ -64,6 +64,12 @@ class User < ApplicationRecord
     volunteer.present?
   end
 
+  # Check if user can login to the application
+  # Only staff (including admins) and mentors can login
+  def can_login?
+    staff? || mentor?
+  end
+
   # Authorization helper - delegates to Authorization service
   def can?(action, resource, target = nil)
     Authorization.can?(self, action, resource, target)

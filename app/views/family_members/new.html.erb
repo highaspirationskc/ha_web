@@ -1,0 +1,11 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">New Family Member</h1>
+
+    <%= render "form", family_member: @family_member %>
+
+    <div class="mt-6">
+      <%= link_to "Back to Family Members", family_members_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+    </div>
+  </div>
+</div>

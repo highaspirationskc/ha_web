@@ -1,29 +1,36 @@
-<% content_for :title, "Events" %>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Events Calendar</h1>
+      <% if current_user.can?(:create, :events) %>
+        <%= link_to "New Event", new_event_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+      <% end %>
+    </div>
 
-<div class="w-full">
-  <% if notice.present? %>
-    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-md inline-block" id="notice"><%= notice %></p>
-  <% end %>
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800" id="notice"><%= notice %></p>
+      </div>
+    <% end %>
 
-  <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">Events</h1>
-    <%= link_to "New event", new_event_path, class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white block font-medium" %>
-  </div>
-
-  <div id="events" class="min-w-full divide-y divide-gray-200 space-y-5">
-    <% if @events.any? %>
-      <% @events.each do |event| %>
-        <div class="flex flex-col sm:flex-row justify-between items-center pb-5 sm:pb-0">
-          <%= render event %>
-          <div class="w-full sm:w-auto flex flex-col sm:flex-row space-x-2 space-y-2">
-            <%= link_to "Show", event, class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-            <%= link_to "Edit", edit_event_path(event), class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-            <%= button_to "Destroy", event, method: :delete, class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 text-white bg-red-600 hover:bg-red-500 font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
-          </div>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <%= month_calendar(events: @events, attribute: :event_date, start_date: @start_date) do |date, events| %>
+        <div class="h-32 overflow-y-auto">
+          <div class="font-medium text-gray-900 mb-1"><%= date.day %></div>
+          <% events.each do |event| %>
+            <div class="mb-1">
+              <%= link_to event_path(event), class: "block text-xs px-2 py-1 rounded hover:opacity-80" do %>
+                <div class="bg-indigo-100 text-indigo-800 rounded px-1 py-0.5">
+                  <div class="font-medium truncate"><%= event.name %></div>
+                  <% if event.event_type %>
+                    <div class="text-indigo-600 text-xs"><%= event.event_type.name %></div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
         </div>
       <% end %>
-    <% else %>
-      <p class="text-center my-10">No events found.</p>
-    <% end %>
+    </div>
   </div>
 </div>

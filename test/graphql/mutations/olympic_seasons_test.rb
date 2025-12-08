@@ -4,7 +4,7 @@ require "test_helper"
 
 class OlympicSeasonsMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = create_admin_user(email: "admin@example.com")
+    @admin = create_user(email: "admin@example.com")
 
     @olympic_season = OlympicSeason.create!(
       name: "Summer 2024",

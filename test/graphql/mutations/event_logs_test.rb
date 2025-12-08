@@ -4,7 +4,7 @@ require "test_helper"
 
 class EventLogsMutationsTest < ActiveSupport::TestCase
   def setup
-    @admin = create_admin_user(email: "admin@example.com")
+    @admin = create_user(email: "admin@example.com")
     @mentee = create_mentee_user(email: "mentee@example.com")
 
     @event_type = EventType.create!(name: "Practice", point_value: 5, category: :org)

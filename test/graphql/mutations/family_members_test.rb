@@ -6,7 +6,7 @@ class FamilyMembersMutationsTest < ActiveSupport::TestCase
   def setup
     @team = Team.create!(name: "Test Team", color: :blue)
 
-    @admin = create_admin_user(email: "admin@example.com")
+    @admin = create_user(email: "admin@example.com")
     @staff = create_staff_user(email: "staff@example.com")
     @mentor = create_mentor_user(email: "mentor@example.com")
     @mentee_user = create_mentee_user(email: "mentee@example.com")

@@ -11,7 +11,7 @@ module ActiveSupport
     fixtures :all
 
     # Helper methods for creating users with role profiles
-    def create_admin_user(email: "admin@example.com", password: "Password123!", active: true)
+    def create_user(email: "admin@example.com", password: "Password123!", active: true)
       user = User.create!(email: email, password: password)
       Staff.create!(user: user, permission_level: :admin)
       user.activate! if active

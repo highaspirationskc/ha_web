@@ -1,32 +1,33 @@
 class EventLogsController < ApplicationController
+  before_action { require_navigation_access(:events) }
   before_action :set_event_log, only: %i[ show edit update destroy ]
 
-  # GET /event_logs or /event_logs.json
+  # GET /admin/event_logs or /admin/event_logs.json
   def index
     @event_logs = EventLog.all
   end
 
-  # GET /event_logs/1 or /event_logs/1.json
+  # GET /admin/event_logs/1 or /admin/event_logs/1.json
   def show
   end
 
-  # GET /event_logs/new
+  # GET /admin/event_logs/new
   def new
     @event_log = EventLog.new
   end
 
-  # GET /event_logs/1/edit
+  # GET /admin/event_logs/1/edit
   def edit
   end
 
-  # POST /event_logs or /event_logs.json
+  # POST /admin/event_logs or /admin/event_logs.json
   def create
     @event_log = EventLog.new(event_log_params)
 
     respond_to do |format|
       if @event_log.save
-        format.html { redirect_to @event_log, notice: "Event log was successfully created." }
-        format.json { render :show, status: :created, location: @event_log }
+        format.html { redirect_to event_log_path(@event_log), notice: "Event log was successfully created." }
+        format.json { render :show, status: :created, location: event_log_path(@event_log) }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @event_log.errors, status: :unprocessable_entity }
@@ -34,12 +35,12 @@ class EventLogsController < ApplicationController
     end
   end
 
-  # PATCH/PUT /event_logs/1 or /event_logs/1.json
+  # PATCH/PUT /admin/event_logs/1 or /admin/event_logs/1.json
   def update
     respond_to do |format|
       if @event_log.update(event_log_params)
-        format.html { redirect_to @event_log, notice: "Event log was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @event_log }
+        format.html { redirect_to event_log_path(@event_log), notice: "Event log was successfully updated.", status: :see_other }
+        format.json { render :show, status: :ok, location: event_log_path(@event_log) }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @event_log.errors, status: :unprocessable_entity }
@@ -47,7 +48,7 @@ class EventLogsController < ApplicationController
     end
   end
 
-  # DELETE /event_logs/1 or /event_logs/1.json
+  # DELETE /admin/event_logs/1 or /admin/event_logs/1.json
   def destroy
     @event_log.destroy!
 
