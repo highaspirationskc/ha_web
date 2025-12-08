@@ -14,6 +14,11 @@ class User < ApplicationRecord
   has_many :created_events, class_name: "Event", foreign_key: :created_by_id, dependent: :nullify
   has_many :event_logs, dependent: :destroy
 
+  # Message associations
+  has_many :sent_messages, class_name: "Message", foreign_key: :author_id, dependent: :destroy
+  has_many :message_recipients, foreign_key: :recipient_id, dependent: :destroy
+  has_many :received_messages, through: :message_recipients, source: :message
+
   # Email validations
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },
@@ -64,10 +69,18 @@ class User < ApplicationRecord
     volunteer.present?
   end
 
+  def system_user?
+    is_system_user
+  end
+
+  def self.support_user
+    find_by(email: "support@highaspirations.org", is_system_user: true)
+  end
+
   # Check if user can login to the application
-  # Only staff (including admins) and mentors can login
+  # Staff, mentors, mentees, and guardians can login
   def can_login?
-    staff? || mentor?
+    staff? || mentor? || mentee? || guardian?
   end
 
   # Authorization helper - delegates to Authorization service

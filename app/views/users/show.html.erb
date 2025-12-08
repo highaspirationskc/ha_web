@@ -113,7 +113,7 @@
           <% if @available_mentees_for_mentor.any? %>
             <%= form_with url: add_mentee_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
               <div class="flex-grow">
-                <%= render "admin/shared/combobox",
+                <%= render "shared/combobox",
                     name: "mentee_id",
                     label: "Select Mentee",
                     options: @available_mentees_for_mentor.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
@@ -208,7 +208,7 @@
           <% if @available_guardians_for_family.any? %>
             <%= form_with url: add_family_member_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
               <div class="flex-grow">
-                <%= render "admin/shared/combobox",
+                <%= render "shared/combobox",
                     name: "guardian_user_id",
                     label: "Select Existing Guardian",
                     options: @available_guardians_for_family.map { |g| ["#{g.user.first_name} #{g.user.last_name} (#{g.user.email})", g.user.id] },

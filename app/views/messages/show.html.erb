@@ -1,0 +1,78 @@
+<div class="py-6">
+  <div class="px-4 sm:px-0">
+    <div class="mb-6 flex items-center justify-between">
+      <%= link_to "&larr; Back to Inbox".html_safe, messages_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+      <% thread_message_ids = @message.thread_root.thread_messages.pluck(:id) %>
+      <% is_recipient = current_user.message_recipients.where(message_id: thread_message_ids).exists? %>
+      <% if is_recipient %>
+        <% is_archived = current_user.message_recipients.where(message_id: thread_message_ids, archived: true).exists? %>
+        <% unless is_archived %>
+          <%= button_to "Archive", archive_message_path(@message), method: :post, class: "inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h1 class="text-xl font-bold text-gray-900"><%= @message.thread_root.subject %></h1>
+        <p class="mt-1 text-sm text-gray-500">
+          <%= @thread_messages.count %> message<%= @thread_messages.count == 1 ? '' : 's' %> in this thread
+        </p>
+      </div>
+
+      <div class="divide-y divide-gray-200">
+        <% @thread_messages.each do |msg| %>
+          <div class="px-4 py-5 sm:px-6 <%= msg == @message ? 'bg-indigo-50' : '' %>">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-sm font-medium text-gray-900">
+                  <%= msg.author.first_name %> <%= msg.author.last_name %>
+                  <span class="text-gray-500 font-normal">(<%= msg.author.role_name %>)</span>
+                </p>
+                <p class="text-xs text-gray-500">
+                  <%= msg.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+                </p>
+              </div>
+              <% if msg.recipients.any? && (@message.thread_root.reply_to_all? || @message.thread_root.author == current_user) %>
+                <p class="text-xs text-gray-500">
+                  To: <%= msg.recipients.map { |r| "#{r.first_name} #{r.last_name}" }.join(", ") %>
+                </p>
+              <% end %>
+            </div>
+            <div class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"><%= msg.message %></div>
+          </div>
+        <% end %>
+      </div>
+
+      <% if @message.thread_root.no_replies? %>
+        <% if @message.thread_root.author == current_user %>
+          <div class="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200">
+            <p class="text-sm text-gray-500">Replies are disabled for this message.</p>
+          </div>
+        <% end %>
+      <% elsif @reply_recipients.any? %>
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-t border-gray-200">
+          <h3 class="text-sm font-medium text-gray-900 mb-4">Reply</h3>
+          <p class="text-xs text-gray-500 mb-3">
+            To: <%= @reply_recipients.map { |r| "#{r.first_name} #{r.last_name}" }.join(", ") %>
+          </p>
+          <%= form_with model: Message.new, url: messages_path, method: :post, class: "space-y-4" do |f| %>
+            <%= f.hidden_field :parent_id, value: @message.thread_root.id %>
+            <%= f.hidden_field :subject, value: @message.thread_root.subject.start_with?("Re:") ? @message.thread_root.subject : "Re: #{@message.thread_root.subject}" %>
+            <% @reply_recipients.each do |recipient| %>
+              <input type="hidden" name="message[recipient_ids][]" value="<%= recipient.id %>">
+            <% end %>
+
+            <div>
+              <%= f.text_area :message, rows: 4, required: true, placeholder: "Write your reply...", class: "block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+            </div>
+
+            <div class="flex justify-end">
+              <%= f.submit "Send Reply", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

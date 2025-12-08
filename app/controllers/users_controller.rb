@@ -355,11 +355,19 @@ class UsersController < AuthenticatedController
   def apply_search_filter(users)
     return users if params[:search].blank?
 
-    search_term = "%#{params[:search].downcase}%"
-    users.where(
-      "LOWER(email) LIKE :search OR LOWER(first_name) LIKE :search OR LOWER(last_name) LIKE :search",
-      search: search_term
-    )
+    # Split search into words and match each word against any field
+    words = params[:search].downcase.split(/\s+/).reject(&:blank?)
+    return users if words.empty?
+
+    words.each do |word|
+      term = "%#{word}%"
+      users = users.where(
+        "LOWER(email) LIKE :term OR LOWER(first_name) LIKE :term OR LOWER(last_name) LIKE :term",
+        term: term
+      )
+    end
+
+    users
   end
 
   def load_mentee_form_data

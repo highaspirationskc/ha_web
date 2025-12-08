@@ -1,0 +1,179 @@
+<div class="py-6">
+  <div class="px-4 sm:px-0">
+    <div class="mb-6">
+      <%= link_to "&larr; Back to Inbox".html_safe, messages_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h1 class="text-xl font-bold text-gray-900">Compose Message</h1>
+      </div>
+
+      <div class="px-4 py-5 sm:px-6">
+        <%= form_with model: @message, url: messages_path, method: :post, class: "space-y-6" do |f| %>
+          <% if @message.errors.any? %>
+            <div class="rounded-md bg-red-50 p-4">
+              <div class="text-sm text-red-700">
+                <ul class="list-disc pl-5 space-y-1">
+                  <% @message.errors.full_messages.each do |error| %>
+                    <li><%= error %></li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          <% end %>
+
+          <%= f.hidden_field :parent_id if @message.parent_id %>
+
+          <div data-controller="recipient-picker">
+            <%= f.label :recipient_ids, "To", class: "block text-sm font-medium text-gray-700" %>
+            <div class="mt-1">
+              <div class="min-h-[42px] flex flex-wrap items-center gap-2 py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500" data-recipient-picker-target="chipsContainer">
+                <button type="button" data-add-button data-action="recipient-picker#openModal" class="inline-flex items-center gap-x-1 rounded-md bg-gray-100 px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-200">
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                  </svg>
+                  Add Recipient
+                </button>
+              </div>
+              <div data-recipient-picker-target="hiddenInputs"></div>
+            </div>
+
+            <!-- Recipient Selection Modal -->
+            <div data-recipient-picker-target="modal" class="hidden relative z-50">
+              <div data-recipient-picker-target="backdrop" data-action="click->recipient-picker#closeOnBackdrop" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+              <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                  <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
+                      <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Add Recipients</h3>
+                        <button type="button" data-action="recipient-picker#closeModal" class="text-gray-400 hover:text-gray-500">
+                          <span class="sr-only">Close</span>
+                          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div class="mb-4">
+                        <input type="text" data-recipient-picker-target="searchInput" data-action="input->recipient-picker#filterUsers" placeholder="Search recipients..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3 border">
+                      </div>
+
+                      <div data-recipient-picker-target="userList" class="max-h-64 overflow-y-auto border border-gray-200 rounded-md divide-y divide-gray-200">
+                        <% if @group_recipients&.any? %>
+                          <div class="bg-gray-50 px-4 py-2">
+                            <p class="text-xs font-semibold text-gray-500 uppercase">Groups</p>
+                          </div>
+                          <% @group_recipients.each do |group| %>
+                            <button type="button"
+                                    data-recipient-picker-target="userOption"
+                                    data-action="recipient-picker#selectUser"
+                                    data-user-id="<%= group[:id] %>"
+                                    data-user-name="<%= group[:name] %>"
+                                    data-user-role="Group"
+                                    data-search-text="<%= group[:name] %> <%= group[:description] %> group"
+                                    class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 cursor-pointer">
+                              <div>
+                                <p class="text-sm font-medium text-gray-900"><%= group[:name] %></p>
+                                <p class="text-xs text-gray-500"><%= group[:description] %></p>
+                              </div>
+                              <svg data-checkmark class="hidden h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                              </svg>
+                            </button>
+                          <% end %>
+                          <div class="bg-gray-50 px-4 py-2">
+                            <p class="text-xs font-semibold text-gray-500 uppercase">Individuals</p>
+                          </div>
+                        <% end %>
+                        <% if @support_user %>
+                          <button type="button"
+                                  data-recipient-picker-target="userOption"
+                                  data-action="recipient-picker#selectUser"
+                                  data-user-id="<%= @support_user.id %>"
+                                  data-user-name="Support (Help Desk)"
+                                  data-user-role="Support"
+                                  data-search-text="support help desk"
+                                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 cursor-pointer">
+                            <div>
+                              <p class="text-sm font-medium text-gray-900">Support (Help Desk)</p>
+                              <p class="text-xs text-gray-500">Get help from staff</p>
+                            </div>
+                            <svg data-checkmark class="hidden h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                          </button>
+                        <% end %>
+                        <% @messageable_users.each do |user| %>
+                          <button type="button"
+                                  data-recipient-picker-target="userOption"
+                                  data-action="recipient-picker#selectUser"
+                                  data-user-id="<%= user.id %>"
+                                  data-user-name="<%= user.first_name %> <%= user.last_name %>"
+                                  data-user-role="<%= user.role_name %>"
+                                  data-search-text="<%= user.first_name %> <%= user.last_name %> <%= user.role_name %> <%= user.email %>"
+                                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 cursor-pointer">
+                            <div>
+                              <p class="text-sm font-medium text-gray-900"><%= user.first_name %> <%= user.last_name %></p>
+                              <p class="text-xs text-gray-500"><%= user.role_name %></p>
+                            </div>
+                            <svg data-checkmark class="hidden h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                          </button>
+                        <% end %>
+                      </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                      <button type="button" data-action="recipient-picker#closeModal" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto">
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div data-recipient-picker-target="replyModeContainer" class="hidden mt-3">
+              <fieldset>
+                <legend class="text-sm font-medium text-gray-700">Reply options</legend>
+                <div class="mt-2 space-y-2">
+                  <div class="flex items-center">
+                    <%= f.radio_button :reply_mode, "reply_to_sender", checked: true, class: "h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" %>
+                    <%= f.label :reply_mode_reply_to_sender, "Recipients can reply to me only", class: "ml-2 block text-sm text-gray-700" %>
+                  </div>
+                  <div class="flex items-center">
+                    <%= f.radio_button :reply_mode, "reply_to_all", class: "h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" %>
+                    <%= f.label :reply_mode_reply_to_all, "Recipients can reply to all", class: "ml-2 block text-sm text-gray-700" %>
+                  </div>
+                  <div class="flex items-center">
+                    <%= f.radio_button :reply_mode, "no_replies", class: "h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" %>
+                    <%= f.label :reply_mode_no_replies, "No replies allowed", class: "ml-2 block text-sm text-gray-700" %>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+
+          <div>
+            <%= f.label :subject, class: "block text-sm font-medium text-gray-700" %>
+            <%= f.text_field :subject, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+          </div>
+
+          <div>
+            <%= f.label :message, "Message", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.text_area :message, rows: 8, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <%= link_to "Cancel", messages_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+            <%= f.submit "Send Message", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

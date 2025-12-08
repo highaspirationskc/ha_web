@@ -24,7 +24,7 @@
           <div class="mt-4 max-w-xl">
             <%= form_with url: mentees_path, method: :post, class: "flex items-end gap-4" do |f| %>
               <div class="flex-1">
-                <%= render "admin/shared/combobox",
+                <%= render "shared/combobox",
                     name: "mentee_id",
                     label: "Select Mentee",
                     options: @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_08_000800) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_08_064608) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -84,6 +84,32 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_000800) do
     t.index ["user_id"], name: "index_mentors_on_user_id", unique: true
   end
 
+  create_table "message_recipients", force: :cascade do |t|
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.boolean "is_read", default: false, null: false
+    t.integer "message_id", null: false
+    t.integer "recipient_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id", "recipient_id"], name: "index_message_recipients_on_message_id_and_recipient_id", unique: true
+    t.index ["message_id"], name: "index_message_recipients_on_message_id"
+    t.index ["recipient_id", "is_read"], name: "index_message_recipients_on_recipient_id_and_is_read"
+    t.index ["recipient_id"], name: "index_message_recipients_on_recipient_id"
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.integer "author_id", null: false
+    t.datetime "created_at", null: false
+    t.text "message", null: false
+    t.integer "parent_id"
+    t.integer "reply_mode", default: 1, null: false
+    t.string "subject", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_messages_on_author_id"
+    t.index ["created_at"], name: "index_messages_on_created_at"
+    t.index ["parent_id"], name: "index_messages_on_parent_id"
+  end
+
   create_table "olympic_seasons", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "end_day", null: false
@@ -135,6 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_000800) do
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "first_name"
+    t.boolean "is_system_user", default: false, null: false
     t.string "last_name"
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
@@ -149,8 +176,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_000800) do
     t.index ["user_id"], name: "index_volunteers_on_user_id", unique: true
   end
 
-  add_foreign_key "event_logs", "events"
-  add_foreign_key "event_logs", "users"
   add_foreign_key "events", "event_types"
   add_foreign_key "events", "users", column: "created_by_id"
   add_foreign_key "family_members", "guardians"
@@ -160,6 +185,10 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_000800) do
   add_foreign_key "mentees", "teams"
   add_foreign_key "mentees", "users"
   add_foreign_key "mentors", "users"
+  add_foreign_key "message_recipients", "messages"
+  add_foreign_key "message_recipients", "users", column: "recipient_id"
+  add_foreign_key "messages", "messages", column: "parent_id"
+  add_foreign_key "messages", "users", column: "author_id"
   add_foreign_key "staff", "users"
   add_foreign_key "tokens", "users"
   add_foreign_key "volunteers", "users"

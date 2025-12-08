@@ -20,5 +20,19 @@ class ApplicationController < ActionController::Base
     session[:spoofed_user_id].present? && real_current_user&.admin?
   end
 
-  helper_method :current_user, :real_current_user, :spoofing?
+  def unread_message_count
+    return 0 unless current_user
+    @unread_message_count ||= begin
+      # Count unread threads (root messages with any unread message for this user)
+      unread_message_ids = current_user.message_recipients.unread.pluck(:message_id)
+      return 0 if unread_message_ids.empty?
+
+      # Get root IDs for these unread messages
+      unread_messages = Message.where(id: unread_message_ids)
+      root_ids = unread_messages.map { |m| m.parent_id || m.id }.uniq
+      root_ids.count
+    end
+  end
+
+  helper_method :current_user, :real_current_user, :spoofing?, :unread_message_count
 end

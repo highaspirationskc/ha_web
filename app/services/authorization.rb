@@ -4,35 +4,41 @@ class Authorization
       users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons]
+      messages: [:index, :show, :create, :support_inbox],
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons]
+      messages: [:index, :show, :create, :support_inbox],
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox]
     },
     mentor: {
       users: [],
       events: [:index, :show],
       teams: [:index, :show],
       mentees: [:index, :show, :create, :destroy],
-      navigation: [:dashboard, :mentees, :events, :teams]
+      messages: [:index, :show, :create],
+      navigation: [:dashboard, :mentees, :events, :teams, :inbox]
     },
     guardian: {
       users: [],
       events: [:index, :show],
-      navigation: [:dashboard, :events]
+      messages: [:index, :show, :create],
+      navigation: [:dashboard, :events, :inbox]
     },
     mentee: {
       users: [],
       events: [:index, :show],
-      navigation: [:dashboard, :events]
+      messages: [:index, :show, :create],
+      navigation: [:dashboard, :events, :inbox]
     },
     volunteer: {
       users: [],
       events: [:index, :show],
-      navigation: [:dashboard, :events]
+      messages: [:index, :show, :create],
+      navigation: [:dashboard, :events, :inbox]
     }
   }.freeze
 
@@ -71,6 +77,91 @@ class Authorization
     @role
   end
 
+  # Check if user can message a specific recipient
+  # If in_thread_with is provided, allows replying to anyone in that thread
+  def can_message?(recipient, in_thread_with: nil)
+    return false unless @user
+    return false if recipient == @user
+    return false if recipient.system_user? && recipient != User.support_user
+
+    # Support user can always be messaged
+    return true if recipient == User.support_user
+
+    # Allow replying to anyone who is in the same message thread
+    if in_thread_with.present?
+      thread_user_ids = thread_participant_ids(in_thread_with)
+      return true if thread_user_ids.include?(recipient.id)
+    end
+
+    case @role
+    when :admin, :staff
+      # Can message anyone
+      true
+    when :mentor
+      # Can message their mentees, their mentees' guardians, or support
+      mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
+      mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
+
+      # Get guardians of mentees
+      guardian_user_ids = FamilyMember.joins(:mentee, guardian: :user)
+                                       .where(mentee_id: mentee_ids)
+                                       .pluck("users.id")
+
+      (mentee_user_ids + guardian_user_ids).include?(recipient.id)
+    when :mentee
+      # Can message their mentor, their guardians, or support
+      mentor_user_id = @user.mentee&.mentor&.user&.id
+      guardian_user_ids = @user.mentee&.family_members&.joins(guardian: :user)&.pluck("users.id") || []
+
+      ([mentor_user_id] + guardian_user_ids).compact.include?(recipient.id)
+    when :guardian
+      # Can message their mentees, their mentees' mentor, or support
+      mentee_ids = @user.guardian&.family_members&.pluck(:mentee_id) || []
+      mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
+
+      # Get mentors of mentees
+      mentor_user_ids = Mentee.where(id: mentee_ids)
+                              .where.not(mentor_id: nil)
+                              .joins(mentor: :user)
+                              .pluck("users.id")
+
+      (mentee_user_ids + mentor_user_ids).include?(recipient.id)
+    else
+      false
+    end
+  end
+
+  # Get list of users this user can message
+  def messageable_users
+    return User.none unless @user
+
+    case @role
+    when :admin, :staff
+      User.where.not(id: @user.id).where(is_system_user: false)
+    when :mentor
+      mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
+      mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
+      guardian_user_ids = FamilyMember.joins(:mentee, guardian: :user)
+                                       .where(mentee_id: mentee_ids)
+                                       .pluck("users.id")
+      User.where(id: mentee_user_ids + guardian_user_ids)
+    when :mentee
+      mentor_user_id = @user.mentee&.mentor&.user&.id
+      guardian_user_ids = @user.mentee&.family_members&.joins(guardian: :user)&.pluck("users.id") || []
+      User.where(id: ([mentor_user_id] + guardian_user_ids).compact)
+    when :guardian
+      mentee_ids = @user.guardian&.family_members&.pluck(:mentee_id) || []
+      mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
+      mentor_user_ids = Mentee.where(id: mentee_ids)
+                              .where.not(mentor_id: nil)
+                              .joins(mentor: :user)
+                              .pluck("users.id")
+      User.where(id: mentee_user_ids + mentor_user_ids)
+    else
+      User.none
+    end
+  end
+
   # Class methods for convenience
   class << self
     def can?(user, action, resource, target = nil)
@@ -84,9 +175,30 @@ class Authorization
     def can_access?(user, nav_item)
       new(user).can_access?(nav_item)
     end
+
+    def can_message?(user, recipient, in_thread_with: nil)
+      new(user).can_message?(recipient, in_thread_with: in_thread_with)
+    end
+
+    def messageable_users(user)
+      new(user).messageable_users
+    end
   end
 
   private
+
+  # Get all user IDs who are participants in a message thread
+  def thread_participant_ids(message)
+    return [] unless message
+
+    root = message.thread_root
+    thread_messages = [root] + root.replies
+
+    author_ids = thread_messages.map(&:author_id)
+    recipient_ids = MessageRecipient.where(message_id: thread_messages.map(&:id)).pluck(:recipient_id)
+
+    (author_ids + recipient_ids).uniq
+  end
 
   def determine_role(user)
     return nil unless user

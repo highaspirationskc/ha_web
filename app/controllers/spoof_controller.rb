@@ -4,7 +4,7 @@ class SpoofController < AuthenticatedController
   def create
     user = User.find(params[:user_id])
     session[:spoofed_user_id] = user.id
-    redirect_to root_path, notice: "Now viewing as #{user.email}"
+    redirect_to dashboard_path, notice: "Now viewing as #{user.email}"
   end
 
   def destroy
@@ -16,7 +16,7 @@ class SpoofController < AuthenticatedController
 
   def require_admin
     unless real_current_user&.admin?
-      redirect_to root_path, alert: "Only admins can spoof users"
+      redirect_to dashboard_path, alert: "Only admins can spoof users"
     end
   end
 end
