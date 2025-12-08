@@ -18,10 +18,16 @@
           </li>
         </ol>
       </nav>
-      <div class="flex space-x-4">
-        <%= link_to "Edit", edit_admin_team_path(@team), class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200" %>
-        <%= button_to "Delete Team", admin_team_path(@team), method: :delete, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
-      </div>
+      <% if current_user.can?(:edit, :teams) || current_user.can?(:delete, :teams) %>
+        <div class="flex space-x-4">
+          <% if current_user.can?(:edit, :teams) %>
+            <%= link_to "Edit", edit_admin_team_path(@team), class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200" %>
+          <% end %>
+          <% if current_user.can?(:delete, :teams) %>
+            <%= button_to "Delete Team", admin_team_path(@team), method: :delete, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <% if notice.present? %>
@@ -64,7 +70,7 @@
     </div>
 
     <!-- Add Mentee Section -->
-    <% if @available_mentees.any? %>
+    <% if current_user.can?(:manage_members, :teams) && @available_mentees.any? %>
       <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Add Mentee to Team</h3>
@@ -116,9 +122,11 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Season Points
                     </th>
-                    <th scope="col" class="relative px-6 py-3">
-                      <span class="sr-only">Actions</span>
-                    </th>
+                    <% if current_user.can?(:manage_members, :teams) %>
+                      <th scope="col" class="relative px-6 py-3">
+                        <span class="sr-only">Actions</span>
+                      </th>
+                    <% end %>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -171,9 +179,11 @@
                           <div class="text-2xl font-bold text-gray-900"><%= mentee_point[:points] %></div>
                           <div class="text-xs text-gray-500">points</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <%= button_to "Remove", remove_member_admin_team_path(@team, mentee_id: mentee_point[:mentee].id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Remove #{mentee_point[:user].email} from this team?" }, form: { class: "inline" } %>
-                        </td>
+                        <% if current_user.can?(:manage_members, :teams) %>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <%= button_to "Remove", remove_member_admin_team_path(@team, mentee_id: mentee_point[:mentee].id), method: :delete, class: "text-red-600 hover:text-red-900", data: { confirm: "Remove #{mentee_point[:user].email} from this team?" }, form: { class: "inline" } %>
+                          </td>
+                        <% end %>
                       </tr>
                     <% end %>
                   <% else %>

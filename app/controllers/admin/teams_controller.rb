@@ -1,6 +1,10 @@
 class Admin::TeamsController < Admin::BaseController
   before_action { require_navigation_access(:teams) }
   before_action :set_team, only: %i[ show edit update destroy add_member remove_member ]
+  before_action :authorize_create, only: %i[ new create ]
+  before_action :authorize_edit, only: %i[ edit update ]
+  before_action :authorize_delete, only: %i[ destroy ]
+  before_action :authorize_manage_members, only: %i[ add_member remove_member ]
 
   # GET /admin/teams or /admin/teams.json
   def index
@@ -106,5 +110,25 @@ class Admin::TeamsController < Admin::BaseController
     # Only allow a list of trusted parameters through.
     def team_params
       params.expect(team: [ :name, :color, :icon_url ])
+    end
+
+    def authorize_create
+      return if current_user.can?(:create, :teams)
+      redirect_to admin_teams_path, alert: "You don't have permission to create teams"
+    end
+
+    def authorize_edit
+      return if current_user.can?(:edit, :teams)
+      redirect_to admin_team_path(@team), alert: "You don't have permission to edit teams"
+    end
+
+    def authorize_delete
+      return if current_user.can?(:delete, :teams)
+      redirect_to admin_team_path(@team), alert: "You don't have permission to delete teams"
+    end
+
+    def authorize_manage_members
+      return if current_user.can?(:manage_members, :teams)
+      redirect_to admin_team_path(@team), alert: "You don't have permission to manage team members"
     end
 end

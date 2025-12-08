@@ -31,6 +31,7 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :mentees
     resources :events
     resources :event_types
     resources :event_registrations

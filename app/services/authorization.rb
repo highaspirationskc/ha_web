@@ -3,17 +3,21 @@ class Authorization
     admin: {
       users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees],
       events: [:index, :show, :create, :edit, :delete],
+      teams: [:index, :show, :create, :edit, :delete, :manage_members],
       navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees],
       events: [:index, :show, :create, :edit, :delete],
+      teams: [:index, :show, :create, :edit, :delete, :manage_members],
       navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons]
     },
     mentor: {
       users: [],
       events: [:index, :show],
-      navigation: [:dashboard, :events, :teams]
+      teams: [:index, :show],
+      mentees: [:index, :show, :create, :destroy],
+      navigation: [:dashboard, :mentees, :events, :teams]
     },
     guardian: {
       users: [],
