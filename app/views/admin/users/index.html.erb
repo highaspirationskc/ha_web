@@ -11,6 +11,26 @@
       </div>
     <% end %>
 
+    <!-- Filters -->
+    <div class="bg-white shadow sm:rounded-lg mb-6">
+      <div class="px-4 py-5 sm:p-6">
+        <%= form_with url: admin_users_path, method: :get, class: "flex flex-wrap gap-4 items-end" do |f| %>
+          <div class="flex-1 min-w-[200px]">
+            <%= f.label :search, "Search", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.text_field :search, value: params[:search], placeholder: "Email, first name, or last name", class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+          </div>
+          <div class="w-48">
+            <%= f.label :role, "Role", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.select :role, [["All Users", ""], ["Admins", "admin"], ["Staff", "staff"], ["Mentors", "mentor"], ["Mentees", "mentee"], ["Guardians", "guardian"], ["Volunteers", "volunteer"]], { selected: params[:role] }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+          </div>
+          <div class="flex gap-2">
+            <%= f.submit "Filter", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+            <%= link_to "Clear", admin_users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <div class="flex flex-col">
       <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -19,7 +39,7 @@
               <thead class="bg-gray-50">
                 <tr>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                    Name
                   </th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
@@ -39,7 +59,8 @@
                 <% @users.each do |user| %>
                   <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900"><%= user.email %></div>
+                      <div class="text-sm font-medium text-gray-900"><%= user.first_name %> <%= user.last_name %></div>
+                      <div class="text-sm text-gray-500"><%= user.email %></div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">

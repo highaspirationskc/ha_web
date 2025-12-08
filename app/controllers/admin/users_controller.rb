@@ -9,7 +9,10 @@ class Admin::UsersController < Admin::BaseController
   before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member]
 
   def index
-    @users = users_for_current_user.order(created_at: :desc).page(params[:page])
+    @users = users_for_current_user
+    @users = apply_role_filter(@users)
+    @users = apply_search_filter(@users)
+    @users = @users.order(created_at: :desc).page(params[:page])
   end
 
   def show
@@ -243,5 +246,36 @@ class Admin::UsersController < Admin::BaseController
     return [] unless @user.mentee.present?
 
     FamilyMember.relationship_types.keys.map { |k| [k.titleize, k] }
+  end
+
+  def apply_role_filter(users)
+    return users if params[:role].blank?
+
+    case params[:role]
+    when "admin"
+      users.joins(:staff).where(staff: { permission_level: "admin" })
+    when "staff"
+      users.joins(:staff)
+    when "mentor"
+      users.joins(:mentor)
+    when "mentee"
+      users.joins(:mentee)
+    when "guardian"
+      users.joins(:guardian)
+    when "volunteer"
+      users.joins(:volunteer)
+    else
+      users
+    end
+  end
+
+  def apply_search_filter(users)
+    return users if params[:search].blank?
+
+    search_term = "%#{params[:search].downcase}%"
+    users.where(
+      "LOWER(email) LIKE :search OR LOWER(first_name) LIKE :search OR LOWER(last_name) LIKE :search",
+      search: search_term
+    )
   end
 end
