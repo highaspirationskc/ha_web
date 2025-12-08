@@ -1,5 +1,5 @@
 class Admin::TeamsController < Admin::BaseController
-  before_action :require_superuser
+  before_action { require_navigation_access(:teams) }
   before_action :set_team, only: %i[ show edit update destroy add_member remove_member ]
 
   # GET /admin/teams or /admin/teams.json

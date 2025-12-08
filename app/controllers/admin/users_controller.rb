@@ -1,12 +1,14 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member]
+  before_action { require_navigation_access(:users) }
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show]
   before_action :authorize_edit, only: [:edit, :update]
   before_action :authorize_create, only: [:new, :create]
   before_action :authorize_destroy, only: [:destroy]
   before_action :authorize_activation, only: [:activate, :deactivate]
-  before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member]
+  before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member, :create_guardian]
+  before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
 
   def index
     @users = users_for_current_user
@@ -16,9 +18,13 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def show
+    @can_manage_family_members = current_user.can?(:manage_family_members, :users)
+    @can_manage_mentees = current_user.can?(:manage_mentees, :users)
+    @can_activate_deactivate = current_user.can?(:change_status, :users, @user)
+    @can_delete = current_user.can?(:delete, :users, @user)
     @available_guardians_for_family = available_guardians_for_family
     @allowed_relationship_types = allowed_relationship_types
-    @can_manage_family_members = can_manage_family_members?
+    @available_mentees_for_mentor = available_mentees_for_mentor
   end
 
   def new
@@ -36,8 +42,11 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def edit
-    @can_edit_profile = can_edit_profile?
-    @can_edit_password = can_edit_password?
+    @can_edit_profile = current_user.can?(:edit, :users)
+    @can_edit_password = current_user.can?(:edit, :users) || @user == current_user
+    @can_delete = current_user.can?(:delete, :users, @user)
+    @can_change_status = current_user.can?(:change_status, :users, @user)
+    load_mentee_form_data if @user.mentee.present? && @can_edit_profile
   end
 
   def update
@@ -53,13 +62,19 @@ class Admin::UsersController < Admin::BaseController
       permitted = permitted.except(:password, :password_confirmation)
     end
 
-    if @user.update(permitted)
-      redirect_to admin_user_path(@user), notice: "User updated successfully"
-    else
-      @can_edit_profile = can_edit_profile?
-      @can_edit_password = can_edit_password?
-      render :edit, status: :unprocessable_entity
+    ActiveRecord::Base.transaction do
+      @user.update!(permitted)
+      update_mentee_if_present
     end
+
+    redirect_to admin_user_path(@user), notice: "User updated successfully"
+  rescue ActiveRecord::RecordInvalid
+    @can_edit_profile = current_user.can?(:edit, :users)
+    @can_edit_password = current_user.can?(:edit, :users) || @user == current_user
+    @can_delete = current_user.can?(:delete, :users, @user)
+    @can_change_status = current_user.can?(:change_status, :users, @user)
+    load_mentee_form_data if @user.mentee.present? && @can_edit_profile
+    render :edit, status: :unprocessable_entity
   end
 
   def destroy
@@ -116,6 +131,68 @@ class Admin::UsersController < Admin::BaseController
     end
   end
 
+  def create_guardian
+    return redirect_to admin_user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+
+    ActiveRecord::Base.transaction do
+      # Create guardian user with random temporary password
+      guardian_user = User.new(
+        email: params[:email],
+        first_name: params[:first_name],
+        last_name: params[:last_name],
+        password: generate_temporary_password,
+        active: false
+      )
+      guardian_user.save!
+
+      # Create guardian profile
+      guardian = Guardian.create!(user: guardian_user)
+
+      # Create family member relationship
+      FamilyMember.create!(
+        guardian: guardian,
+        mentee: @user.mentee,
+        relationship_type: params[:relationship_type]
+      )
+
+      # Send confirmation email
+      guardian_user.send_confirmation_email
+
+      redirect_to admin_user_path(@user), notice: "Guardian created successfully. A confirmation email has been sent to #{guardian_user.email}."
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to admin_user_path(@user), alert: "Could not create guardian: #{e.record.errors.full_messages.join(', ')}"
+  end
+
+  def add_mentee
+    return redirect_to admin_user_path(@user), alert: "User is not a mentor" unless @user.mentor.present?
+
+    mentee = Mentee.find_by(id: params[:mentee_id])
+
+    unless mentee
+      redirect_to admin_user_path(@user), alert: "Mentee not found"
+      return
+    end
+
+    if mentee.update(mentor: @user.mentor)
+      redirect_to admin_user_path(@user), notice: "Mentee added successfully"
+    else
+      redirect_to admin_user_path(@user), alert: mentee.errors.full_messages.join(", ")
+    end
+  end
+
+  def remove_mentee
+    return redirect_to admin_user_path(@user), alert: "User is not a mentor" unless @user.mentor.present?
+
+    mentee = @user.mentor.mentees.find_by(id: params[:mentee_id])
+
+    if mentee&.update(mentor: nil)
+      redirect_to admin_user_path(@user), notice: "Mentee removed successfully"
+    else
+      redirect_to admin_user_path(@user), alert: "Could not remove mentee"
+    end
+  end
+
   private
 
   def set_user
@@ -149,28 +226,41 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def authorize_create
-    return if staff_member?
+    return if current_user.can?(:create, :users)
 
     redirect_to admin_users_path, alert: "You don't have permission to create users"
   end
 
   def authorize_destroy
-    return if staff_member?
+    return if current_user.can?(:delete, :users, @user)
 
-    redirect_to admin_users_path, alert: "You don't have permission to delete users"
+    if @user == current_user
+      redirect_to admin_user_path(@user), alert: "You cannot delete yourself"
+    else
+      redirect_to admin_users_path, alert: "You don't have permission to delete users"
+    end
   end
 
   def authorize_activation
-    return if staff_member?
+    return if current_user.can?(:change_status, :users, @user)
 
-    redirect_to admin_users_path, alert: "You don't have permission to activate/deactivate users"
+    if @user == current_user
+      redirect_to admin_user_path(@user), alert: "You cannot activate/deactivate yourself"
+    else
+      redirect_to admin_users_path, alert: "You don't have permission to activate/deactivate users"
+    end
   end
 
   def authorize_family_member_management
-    # Only staff can manage family members
-    return if staff_member?
+    return if current_user.can?(:manage_family_members, :users)
 
     redirect_to admin_users_path, alert: "You don't have permission to manage family members"
+  end
+
+  def authorize_mentee_management
+    return if current_user.can?(:manage_mentees, :users)
+
+    redirect_to admin_users_path, alert: "You don't have permission to manage mentees"
   end
 
   # Permission check methods
@@ -180,20 +270,6 @@ class Admin::UsersController < Admin::BaseController
     return true if current_user.mentor.present? && user.mentee&.mentor_id == current_user.mentor.id
     return true if current_user.guardian.present? && current_user.guardian.children.exists?(user.mentee&.id)
     false
-  end
-
-  def can_edit_profile?
-    staff_member?
-  end
-
-  def can_edit_password?
-    return true if staff_member?
-    return true if @user == current_user
-    false
-  end
-
-  def can_manage_family_members?
-    staff_member?
   end
 
   # Scoped user list based on current user's permissions
@@ -222,8 +298,9 @@ class Admin::UsersController < Admin::BaseController
   def permitted_update_params
     permitted = []
 
-    if staff_member?
-      permitted = [:email, :password, :password_confirmation, :active, :first_name, :last_name]
+    if current_user.can?(:edit, :users)
+      permitted = [:email, :password, :password_confirmation, :first_name, :last_name]
+      permitted << :active if current_user.can?(:change_status, :users, @user)
     elsif @user == current_user
       permitted = [:password, :password_confirmation]
     end
@@ -233,7 +310,7 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def available_guardians_for_family
-    return [] unless can_manage_family_members?
+    return [] unless current_user.can?(:manage_family_members, :users)
     return [] unless @user.mentee.present?
 
     # Get existing guardian IDs to exclude
@@ -242,18 +319,24 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def allowed_relationship_types
-    return [] unless can_manage_family_members?
+    return [] unless current_user.can?(:manage_family_members, :users)
     return [] unless @user.mentee.present?
 
     FamilyMember.relationship_types.keys.map { |k| [k.titleize, k] }
+  end
+
+  def available_mentees_for_mentor
+    return [] unless current_user.can?(:manage_mentees, :users)
+    return [] unless @user.mentor.present?
+
+    # Get mentees not already assigned to this mentor (unassigned)
+    Mentee.where(mentor_id: nil).includes(:user)
   end
 
   def apply_role_filter(users)
     return users if params[:role].blank?
 
     case params[:role]
-    when "admin"
-      users.joins(:staff).where(staff: { permission_level: "admin" })
     when "staff"
       users.joins(:staff)
     when "mentor"
@@ -277,5 +360,32 @@ class Admin::UsersController < Admin::BaseController
       "LOWER(email) LIKE :search OR LOWER(first_name) LIKE :search OR LOWER(last_name) LIKE :search",
       search: search_term
     )
+  end
+
+  def load_mentee_form_data
+    @teams = Team.all.order(:name)
+    @mentors = Mentor.includes(:user).all
+  end
+
+  def update_mentee_if_present
+    return unless @user.mentee.present? && can_edit_profile? && params[:mentee].present?
+
+    mentee_params = params.require(:mentee).permit(:team_id, :mentor_id)
+    # Convert empty strings to nil for optional associations
+    mentee_params[:team_id] = nil if mentee_params[:team_id].blank?
+    mentee_params[:mentor_id] = nil if mentee_params[:mentor_id].blank?
+    @user.mentee.update!(mentee_params)
+  end
+
+  def generate_temporary_password
+    # Generate a password that meets complexity requirements
+    # At least 8 chars, uppercase, number, special character
+    chars = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a + %w[! @ # $ % ^ & *]
+    password = ""
+    password += ("A".."Z").to_a.sample # uppercase
+    password += ("0".."9").to_a.sample # number
+    password += %w[! @ # $ % ^ & *].sample # special
+    password += Array.new(13) { chars.sample }.join # fill to 16 chars
+    password.chars.shuffle.join
   end
 end

@@ -30,7 +30,7 @@ class User < ApplicationRecord
 
   # Role detection helper
   def role_name
-    return "Staff (Admin)" if staff&.admin?
+    return "Admin" if staff&.admin?
     return "Staff" if staff.present?
     return "Mentor" if mentor.present?
     return "Mentee" if mentee.present?
@@ -62,6 +62,19 @@ class User < ApplicationRecord
 
   def volunteer?
     volunteer.present?
+  end
+
+  # Authorization helper - delegates to Authorization service
+  def can?(action, resource, target = nil)
+    Authorization.can?(self, action, resource, target)
+  end
+
+  def can_access?(nav_item)
+    Authorization.can_access?(self, nav_item)
+  end
+
+  def allowed_navigation
+    Authorization.navigation_for(self)
   end
 
   # Activation methods

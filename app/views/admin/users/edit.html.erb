@@ -56,11 +56,6 @@
             <div class="mt-5 md:mt-0 md:col-span-2">
               <div class="grid grid-cols-6 gap-6">
                 <% if @can_edit_profile %>
-                  <div class="col-span-6 sm:col-span-4">
-                    <%= form.label :email, class: "block text-sm font-medium text-gray-700" %>
-                    <%= form.email_field :email, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-                  </div>
-
                   <div class="col-span-6 sm:col-span-3">
                     <%= form.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
                     <%= form.text_field :first_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
@@ -71,12 +66,9 @@
                     <%= form.text_field :last_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
                   </div>
 
-                  <div class="col-span-6 sm:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700">Status</label>
-                    <div class="mt-2">
-                      <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
-                      <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
-                    </div>
+                  <div class="col-span-6 sm:col-span-4">
+                    <%= form.label :email, class: "block text-sm font-medium text-gray-700" %>
+                    <%= form.email_field :email, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
                   </div>
                 <% end %>
 
@@ -92,14 +84,58 @@
                     <%= form.password_field :password_confirmation, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
                   </div>
                 <% end %>
+
+                <% if @can_change_status %>
+                  <div class="col-span-6 sm:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <div class="mt-2">
+                      <%= form.check_box :active, class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
+                      <%= form.label :active, "Active", class: "ml-2 text-sm text-gray-900" %>
+                    </div>
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
         </div>
 
+        <% if @user.mentee.present? && @can_edit_profile %>
+          <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+            <div class="md:grid md:grid-cols-3 md:gap-6">
+              <div class="md:col-span-1">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Mentee Information</h3>
+                <p class="mt-1 text-sm text-gray-500">Assign a team and mentor for this mentee.</p>
+              </div>
+              <div class="mt-5 md:mt-0 md:col-span-2">
+                <div class="grid grid-cols-6 gap-6">
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= render "admin/shared/combobox",
+                        name: "mentee[team_id]",
+                        label: "Team",
+                        options: @teams.map { |t| [t.name, t.id] },
+                        selected_value: @user.mentee.team_id,
+                        selected_text: @user.mentee.team&.name,
+                        placeholder: "Search teams..." %>
+                  </div>
+
+                  <div class="col-span-6 sm:col-span-3">
+                    <%= render "admin/shared/combobox",
+                        name: "mentee[mentor_id]",
+                        label: "Mentor",
+                        options: @mentors.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
+                        selected_value: @user.mentee.mentor_id,
+                        selected_text: @user.mentee.mentor ? "#{@user.mentee.mentor.user.first_name} #{@user.mentee.mentor.user.last_name} (#{@user.mentee.mentor.user.email})" : nil,
+                        placeholder: "Search mentors..." %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <div class="flex justify-end space-x-3">
           <%= link_to "Cancel", admin_user_path(@user), class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-          <% if @can_edit_profile %>
+          <% if @can_delete %>
             <%= button_to "Delete User", admin_user_path(@user), method: :delete, class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700", data: { confirm: "Are you sure?" } %>
           <% end %>
           <%= form.submit "Save Changes", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>

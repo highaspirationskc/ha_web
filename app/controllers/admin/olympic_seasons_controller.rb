@@ -1,5 +1,5 @@
 class Admin::OlympicSeasonsController < Admin::BaseController
-  before_action :require_superuser
+  before_action { require_navigation_access(:olympic_seasons) }
   before_action :set_olympic_season, only: %i[ show edit update destroy ]
 
   # GET /admin/olympic_seasons or /admin/olympic_seasons.json

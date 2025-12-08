@@ -15,12 +15,19 @@ Rails.application.routes.draw do
     delete "logout", to: "sessions#destroy"
     get "dashboard", to: "dashboard#index"
 
+    # User spoofing (admin only)
+    post "spoof/:user_id", to: "spoof#create", as: :spoof
+    delete "spoof", to: "spoof#destroy", as: :unspoof
+
     resources :users do
       member do
         patch :activate
         patch :deactivate
         post :add_family_member
         delete :remove_family_member
+        post :create_guardian
+        post :add_mentee
+        delete :remove_mentee
       end
     end
 

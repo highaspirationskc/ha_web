@@ -1,6 +1,9 @@
 class Admin::EventsController < Admin::BaseController
-  before_action :require_superuser
+  before_action { require_navigation_access(:events) }
   before_action :set_event, only: %i[ show edit update destroy ]
+  before_action :authorize_create, only: %i[ new create ]
+  before_action :authorize_edit, only: %i[ edit update ]
+  before_action :authorize_delete, only: %i[ destroy ]
 
   # GET /admin/events or /admin/events.json
   def index
@@ -81,5 +84,20 @@ class Admin::EventsController < Admin::BaseController
     # Only allow a list of trusted parameters through.
     def event_params
       params.expect(event: [ :name, :description, :event_date, :location, :image_url, :event_type_id, :created_by_id ])
+    end
+
+    def authorize_create
+      return if current_user.can?(:create, :events)
+      redirect_to admin_events_path, alert: "You don't have permission to create events"
+    end
+
+    def authorize_edit
+      return if current_user.can?(:edit, :events)
+      redirect_to admin_event_path(@event), alert: "You don't have permission to edit events"
+    end
+
+    def authorize_delete
+      return if current_user.can?(:delete, :events)
+      redirect_to admin_event_path(@event), alert: "You don't have permission to delete events"
     end
 end

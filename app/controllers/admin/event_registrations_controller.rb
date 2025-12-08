@@ -1,5 +1,5 @@
 class Admin::EventRegistrationsController < Admin::BaseController
-  before_action :require_superuser
+  before_action { require_navigation_access(:events) }
   before_action :set_event_registration, only: %i[ show edit update destroy ]
 
   # GET /admin/event_registrations or /admin/event_registrations.json

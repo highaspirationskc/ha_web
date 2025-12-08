@@ -1,5 +1,5 @@
 class Admin::FamilyMembersController < Admin::BaseController
-  before_action :require_superuser
+  before_action { require_navigation_access(:users) }
   before_action :set_family_member, only: %i[ show edit update destroy ]
 
   # GET /admin/family_members or /admin/family_members.json
