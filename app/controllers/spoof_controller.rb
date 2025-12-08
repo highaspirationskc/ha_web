@@ -1,4 +1,4 @@
-class SpoofController < ApplicationController
+class SpoofController < AuthenticatedController
   before_action :require_admin
 
   def create

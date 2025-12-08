@@ -1,4 +1,4 @@
-class EventRegistrationsController < ApplicationController
+class EventRegistrationsController < AuthenticatedController
   before_action { require_navigation_access(:events) }
   before_action :set_event_registration, only: %i[ show edit update destroy ]
 

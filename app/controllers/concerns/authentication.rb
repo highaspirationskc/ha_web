@@ -3,26 +3,9 @@ module Authentication
 
   included do
     before_action :require_authentication
-    helper_method :current_user, :real_current_user, :spoofing?
   end
 
   private
-
-  def current_user
-    if spoofing?
-      @current_user ||= User.find_by(id: session[:spoofed_user_id])
-    else
-      @current_user ||= User.find_by(id: session[:user_id])
-    end
-  end
-
-  def real_current_user
-    @real_current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
-  end
-
-  def spoofing?
-    session[:spoofed_user_id].present? && real_current_user&.admin?
-  end
 
   def require_authentication
     unless real_current_user

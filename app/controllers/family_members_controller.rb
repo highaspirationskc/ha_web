@@ -1,4 +1,4 @@
-class FamilyMembersController < ApplicationController
+class FamilyMembersController < AuthenticatedController
   before_action { require_navigation_access(:users) }
   before_action :set_family_member, only: %i[ show edit update destroy ]
 

@@ -1,4 +1,4 @@
-class MenteesController < ApplicationController
+class MenteesController < AuthenticatedController
   before_action { require_navigation_access(:mentees) }
   before_action :require_mentor
   before_action :set_mentee, only: [:show, :destroy]

@@ -1,4 +1,4 @@
-class EventLogsController < ApplicationController
+class EventLogsController < AuthenticatedController
   before_action { require_navigation_access(:events) }
   before_action :set_event_log, only: %i[ show edit update destroy ]
 

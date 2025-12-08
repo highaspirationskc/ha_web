@@ -1,5 +1,4 @@
 class ConfirmationsController < ApplicationController
-  skip_before_action :require_authentication
 
   def confirm
     @user = User.find_by(confirmation_token: params[:token])

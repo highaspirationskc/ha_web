@@ -1,4 +1,4 @@
-class EventTypesController < ApplicationController
+class EventTypesController < AuthenticatedController
   before_action { require_navigation_access(:event_types) }
   before_action :set_event_type, only: %i[ show edit update destroy ]
 

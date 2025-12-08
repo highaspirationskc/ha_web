@@ -1,4 +1,4 @@
-class OlympicSeasonsController < ApplicationController
+class OlympicSeasonsController < AuthenticatedController
   before_action { require_navigation_access(:olympic_seasons) }
   before_action :set_olympic_season, only: %i[ show edit update destroy ]
 

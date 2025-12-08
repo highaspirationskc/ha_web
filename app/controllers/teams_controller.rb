@@ -1,4 +1,4 @@
-class TeamsController < ApplicationController
+class TeamsController < AuthenticatedController
   before_action { require_navigation_access(:teams) }
   before_action :set_team, only: %i[ show edit update destroy add_member remove_member ]
   before_action :authorize_create, only: %i[ new create ]

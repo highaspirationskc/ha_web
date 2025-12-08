@@ -1,4 +1,4 @@
-class DashboardController < ApplicationController
+class DashboardController < AuthenticatedController
   def index
     @current_season = OlympicSeason.current_season
 
