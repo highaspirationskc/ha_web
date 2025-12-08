@@ -130,5 +130,4 @@ class UserTest < ActiveSupport::TestCase
       @user.send_confirmation_email
     end
   end
-
 end

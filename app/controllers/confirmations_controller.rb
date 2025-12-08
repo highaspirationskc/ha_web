@@ -1,5 +1,4 @@
 class ConfirmationsController < ApplicationController
-
   def confirm
     @user = User.find_by(confirmation_token: params[:token])
 
