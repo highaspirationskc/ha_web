@@ -93,10 +93,9 @@ class CloudflareImagesServiceTest < ActiveSupport::TestCase
   end
 
   test "class method url generates correct url" do
-    Rails.application.credentials.stubs(:dig).with(:cloudflare, :images).returns(@credentials)
+    Rails.application.credentials.stubs(:dig).with(:cloudflare, :images, :account_hash).returns("test_account_hash")
     url = CloudflareImagesService.url("image123", variant: "public")
-    assert_includes url, "image123"
-    assert_includes url, "public"
+    assert_equal "https://imagedelivery.net/test_account_hash/image123/public", url
   end
 
   private

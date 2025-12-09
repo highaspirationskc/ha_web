@@ -18,7 +18,8 @@ class CloudflareImagesService
     end
 
     def url(cloudflare_id, variant: "public")
-      new.url(cloudflare_id, variant: variant)
+      hash = Rails.application.credentials.dig(:cloudflare, :images, :account_hash) || "test_hash"
+      "https://imagedelivery.net/#{hash}/#{cloudflare_id}/#{variant}"
     end
   end
 
