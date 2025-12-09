@@ -3,7 +3,7 @@
 
   Local variables:
     - name: form field name (e.g., "mentee[mentor_id]")
-    - label: label text
+    - label: label text (optional)
     - options: array of [display_text, value] pairs
     - selected_value: currently selected value (optional)
     - selected_text: display text for selected value (optional)
@@ -14,10 +14,13 @@
 <% allow_clear = true if local_assigns[:allow_clear].nil? %>
 <% selected_value ||= nil %>
 <% selected_text ||= nil %>
+<% label ||= nil %>
 
 <div data-controller="combobox" class="relative">
-  <%= label_tag name, label, class: "block text-sm font-medium text-gray-700" %>
-  <div class="mt-1 relative">
+  <% if label.present? %>
+    <%= label_tag name, label, class: "block text-sm font-medium text-gray-700" %>
+  <% end %>
+  <div class="<%= 'mt-1 ' if label.present? %>relative">
     <input type="text"
            data-combobox-target="input"
            data-action="input->combobox#filter focus->combobox#open keydown->combobox#keydown"

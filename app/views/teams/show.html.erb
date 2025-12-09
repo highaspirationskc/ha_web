@@ -55,25 +55,6 @@
       </div>
     </div>
 
-    <!-- Add Mentee Section -->
-    <% if current_user.can?(:manage_members, :teams) && @available_mentees.any? %>
-      <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Add Mentee to Team</h3>
-          <p class="mt-1 text-sm text-gray-500">Add a mentee to this team.</p>
-        </div>
-        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <%= form_with url: add_member_team_path(@team), method: :post, class: "flex items-end space-x-4" do |f| %>
-            <div class="flex-grow">
-              <%= f.label :mentee_id, "Select Mentee", class: "block text-sm font-medium text-gray-700" %>
-              <%= f.select :mentee_id, @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] }, { prompt: "Choose a mentee..." }, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-            </div>
-            <%= f.submit "Add to Team", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-
     <!-- Mentees -->
     <div class="mt-6">
       <div class="flex justify-between items-center mb-4">
@@ -86,6 +67,27 @@
           </span>
         <% end %>
       </div>
+
+      <!-- Add Mentee Form -->
+      <% if current_user.can?(:manage_members, :teams) %>
+        <div class="mb-4 bg-white shadow sm:rounded-lg p-4">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Add Mentee</h4>
+          <% if @available_mentees.any? %>
+            <%= form_with url: add_member_team_path(@team), method: :post, class: "flex items-end space-x-4" do |f| %>
+              <div class="flex-grow">
+                <%= render "shared/combobox",
+                    name: "mentee_id",
+                    options: @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
+                    placeholder: "Search mentees..." %>
+              </div>
+              <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+            <% end %>
+          <% else %>
+            <p class="text-sm text-gray-500">No unassigned mentees available.</p>
+          <% end %>
+        </div>
+      <% end %>
+
       <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
