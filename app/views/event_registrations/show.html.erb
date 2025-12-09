@@ -1,7 +1,7 @@
 <% content_for :title, "Showing event registration" %>
 
 <div class="md:w-2/3 w-full">
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center mb-6">
     <%= render "shared/breadcrumbs", items: [
       { label: "Event Registrations", path: event_registrations_path },
       { label: "Registration ##{@event_registration.id}" }

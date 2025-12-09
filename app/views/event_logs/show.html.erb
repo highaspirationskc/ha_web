@@ -1,7 +1,7 @@
 <% content_for :title, "Showing event log" %>
 
 <div class="md:w-2/3 w-full">
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center mb-6">
     <%= render "shared/breadcrumbs", items: [
       { label: "Event Logs", path: event_logs_path },
       { label: "Event Log ##{@event_log.id}" }
