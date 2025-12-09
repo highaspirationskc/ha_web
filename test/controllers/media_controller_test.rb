@@ -18,6 +18,15 @@ class MediaControllerTest < ActionDispatch::IntegrationTest
     @staff.activate!
 
     @medium = create_medium(@admin)
+
+    # Stub Cloudflare credentials for tests
+    @test_credentials = {
+      account_id: "test_account_id",
+      api_token: "test_api_token",
+      account_hash: "test_account_hash"
+    }
+    Rails.application.credentials.stubs(:dig).with(:cloudflare, :images).returns(@test_credentials)
+    Rails.application.credentials.stubs(:dig).with(:cloudflare, :images, :account_hash).returns("test_account_hash")
   end
 
   def login_as(user)

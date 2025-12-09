@@ -13,26 +13,30 @@ class CloudflareImagesServiceTest < ActiveSupport::TestCase
 
   test "raises error when credentials not configured" do
     Rails.application.credentials.stubs(:dig).with(:cloudflare, :images).returns(nil)
+    service = CloudflareImagesService.new(credentials: nil)
     assert_raises(CloudflareImagesService::ConfigurationError) do
-      CloudflareImagesService.new(credentials: nil)
+      service.upload(mock_uploaded_file("test.jpg", "image/jpeg", "data"))
     end
   end
 
   test "raises error when account_id missing" do
+    service = CloudflareImagesService.new(credentials: { api_token: "x", account_hash: "y" })
     assert_raises(CloudflareImagesService::ConfigurationError) do
-      CloudflareImagesService.new(credentials: { api_token: "x", account_hash: "y" })
+      service.upload(mock_uploaded_file("test.jpg", "image/jpeg", "data"))
     end
   end
 
   test "raises error when api_token missing" do
+    service = CloudflareImagesService.new(credentials: { account_id: "x", account_hash: "y" })
     assert_raises(CloudflareImagesService::ConfigurationError) do
-      CloudflareImagesService.new(credentials: { account_id: "x", account_hash: "y" })
+      service.upload(mock_uploaded_file("test.jpg", "image/jpeg", "data"))
     end
   end
 
   test "raises error when account_hash missing" do
+    service = CloudflareImagesService.new(credentials: { account_id: "x", api_token: "y" })
     assert_raises(CloudflareImagesService::ConfigurationError) do
-      CloudflareImagesService.new(credentials: { account_id: "x", api_token: "y" })
+      service.upload(mock_uploaded_file("test.jpg", "image/jpeg", "data"))
     end
   end
 

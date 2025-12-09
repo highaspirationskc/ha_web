@@ -25,10 +25,10 @@ class CloudflareImagesService
 
   def initialize(credentials: nil)
     @credentials = credentials || cloudflare_credentials
-    validate_credentials!
   end
 
   def upload(file)
+    validate_credentials!
     uri = URI("#{API_BASE}/#{account_id}/images/v1")
 
     request = Net::HTTP::Post.new(uri)
@@ -46,6 +46,7 @@ class CloudflareImagesService
   end
 
   def delete(cloudflare_id)
+    validate_credentials!
     uri = URI("#{API_BASE}/#{account_id}/images/v1/#{cloudflare_id}")
 
     request = Net::HTTP::Delete.new(uri)
