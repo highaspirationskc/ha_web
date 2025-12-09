@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :tokens, dependent: :destroy
+  has_many :user_devices, dependent: :destroy
 
   # Role profiles
   has_one :mentor, dependent: :destroy

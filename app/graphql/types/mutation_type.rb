@@ -40,5 +40,15 @@ module Types
     field :create_family_member, mutation: Mutations::FamilyMembers::CreateFamilyMember
     field :update_family_member, mutation: Mutations::FamilyMembers::UpdateFamilyMember
     field :delete_family_member, mutation: Mutations::FamilyMembers::DeleteFamilyMember
+
+    # Message mutations
+    field :compose_message, mutation: Mutations::Messages::ComposeMessage
+    field :reply_message, mutation: Mutations::Messages::ReplyMessage
+    field :mark_thread_read, mutation: Mutations::Messages::MarkThreadRead
+    field :archive_message, mutation: Mutations::Messages::ArchiveMessage
+
+    # Device mutations
+    field :register_device, mutation: Mutations::Devices::RegisterDevice
+    field :unregister_device, mutation: Mutations::Devices::UnregisterDevice
   end
 end

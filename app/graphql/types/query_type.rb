@@ -167,6 +167,64 @@ module Types
       context[:current_user]
     end
 
+    # Messages
+    field :inbox, [Types::MessageType], null: false, description: "Get current user's inbox messages (grouped by thread root)"
+    def inbox
+      require_authentication!
+      user = context[:current_user]
+
+      received_message_ids = user.message_recipients.not_archived.pluck(:message_id)
+      messages = Message.where(id: received_message_ids)
+
+      thread_root_ids = messages.map { |m| m.parent_id || m.id }.uniq
+      Message.where(id: thread_root_ids).order(created_at: :desc)
+    end
+
+    field :sent_messages, [Types::MessageType], null: false, description: "Get messages sent by current user"
+    def sent_messages
+      require_authentication!
+      context[:current_user].sent_messages.roots.order(created_at: :desc)
+    end
+
+    field :archived_messages, [Types::MessageType], null: false, description: "Get current user's archived messages"
+    def archived_messages
+      require_authentication!
+      user = context[:current_user]
+
+      archived_message_ids = user.message_recipients.archived.pluck(:message_id)
+      messages = Message.where(id: archived_message_ids)
+
+      thread_root_ids = messages.map { |m| m.parent_id || m.id }.uniq
+      Message.where(id: thread_root_ids).order(created_at: :desc)
+    end
+
+    field :message_thread, Types::MessageType, null: true, description: "Get a message thread and mark it as read" do
+      argument :message_id, ID, required: true
+    end
+    def message_thread(message_id:)
+      require_authentication!
+      user = context[:current_user]
+
+      message = Message.find_by(id: message_id)
+      return nil unless message
+
+      thread_root = message.thread_root
+      thread_message_ids = thread_root.thread_messages.pluck(:id)
+
+      MessageRecipient.where(
+        message_id: thread_message_ids,
+        recipient: user
+      ).update_all(is_read: true)
+
+      thread_root
+    end
+
+    field :messageable_users, [Types::UserType], null: false, description: "Get users the current user can message"
+    def messageable_users
+      require_authentication!
+      Authorization.messageable_users(context[:current_user])
+    end
+
     private
 
     def require_authentication!

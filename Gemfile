@@ -72,3 +72,9 @@ gem "bcrypt", "~> 3.1"
 gem "kaminari", "~> 1.2"
 
 gem "simple_calendar", "~> 3.0"
+
+gem "googleauth", "~> 1.11"
+
+gem "webmock", "~> 3.26", group: :test
+
+gem "mocha", "~> 2.8", group: :test

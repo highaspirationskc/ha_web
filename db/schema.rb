@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_08_072645) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -154,6 +154,17 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_072645) do
     t.index ["user_id"], name: "index_tokens_on_user_id"
   end
 
+  create_table "user_devices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "device_name"
+    t.string "fcm_token", null: false
+    t.string "platform", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["fcm_token"], name: "index_user_devices_on_fcm_token", unique: true
+    t.index ["user_id"], name: "index_user_devices_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.string "avatar_url"
@@ -191,5 +202,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_072645) do
   add_foreign_key "messages", "users", column: "author_id"
   add_foreign_key "staff", "users"
   add_foreign_key "tokens", "users"
+  add_foreign_key "user_devices", "users"
   add_foreign_key "volunteers", "users"
 end

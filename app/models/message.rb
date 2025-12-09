@@ -21,6 +21,8 @@ class Message < ApplicationRecord
   scope :roots, -> { where(parent_id: nil) }
   scope :support_requests, -> { where(support: true) }
 
+  after_create_commit :enqueue_push_notifications
+
   def thread_root
     parent_id? ? parent.thread_root : self
   end
@@ -126,5 +128,11 @@ class Message < ApplicationRecord
       partial: "messages/inbox_row",
       locals: { message: root, user: user }
     )
+  end
+
+  private
+
+  def enqueue_push_notifications
+    SendPushNotificationJob.perform_later(id)
   end
 end
