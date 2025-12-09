@@ -5,42 +5,102 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     @user = User.create!(email: "test@example.com", password: "Password123!")
   end
 
-  test "confirm with valid token activates user" do
+  test "show with valid token displays password form" do
     assert_not @user.active?
 
     get confirmation_path(token: @user.confirmation_token)
 
+    assert_response :success
+    assert_select "input[name='password']"
+    assert_select "input[name='password_confirmation']"
+  end
+
+  test "show with invalid token redirects with error" do
+    get confirmation_path(token: "invalid_token")
+
+    assert_redirected_to root_path
+    assert_equal "Invalid or expired confirmation link", flash[:error]
+  end
+
+  test "show with used token redirects with invalid message" do
+    token = @user.confirmation_token
+    @user.activate!  # This clears the token
+
+    get confirmation_path(token: token)
+
+    # Token was cleared, so lookup returns nil
+    assert_redirected_to root_path
+    assert_equal "Invalid or expired confirmation link", flash[:error]
+  end
+
+  test "confirm with valid token and password activates user" do
+    assert_not @user.active?
+
+    post confirmation_path(token: @user.confirmation_token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
+
     @user.reload
     assert @user.active?
+    assert @user.authenticate("NewPassword123!")
     assert_redirected_to root_path
     assert_equal "Your account has been confirmed! You can now log in.", flash[:success]
   end
 
   test "confirm with invalid token shows error" do
-    get confirmation_path(token: "invalid_token")
+    post confirmation_path(token: "invalid_token"), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
 
     assert_redirected_to root_path
-    assert_equal "Invalid confirmation token", flash[:error]
+    assert_equal "Invalid or expired confirmation link", flash[:error]
   end
 
-  test "confirm with already active user shows error for invalid token" do
+  test "confirm with used token redirects with invalid message" do
     token = @user.confirmation_token
-    @user.activate!
+    @user.activate!  # This clears the token
 
-    # After activation, token is cleared, so it will be invalid
-    get confirmation_path(token: token)
+    post confirmation_path(token: token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
 
+    # Token was cleared, so lookup returns nil
     assert_redirected_to root_path
-    assert_equal "Invalid confirmation token", flash[:error]
+    assert_equal "Invalid or expired confirmation link", flash[:error]
   end
 
-  test "confirm clears confirmation token" do
-    token = @user.confirmation_token
+  test "confirm with blank password shows error" do
+    post confirmation_path(token: @user.confirmation_token), params: {
+      password: "",
+      password_confirmation: ""
+    }
 
-    get confirmation_path(token: token)
+    assert_response :unprocessable_entity
+    assert_equal "Password is required", flash[:error]
+  end
 
+  test "confirm with mismatched passwords shows error" do
+    post confirmation_path(token: @user.confirmation_token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "DifferentPassword123!"
+    }
+
+    assert_response :unprocessable_entity
     @user.reload
-    assert_nil @user.confirmation_token
-    assert_nil @user.confirmation_sent_at
+    assert_not @user.active?
+  end
+
+  test "confirm with weak password shows error" do
+    post confirmation_path(token: @user.confirmation_token), params: {
+      password: "weak",
+      password_confirmation: "weak"
+    }
+
+    assert_response :unprocessable_entity
+    @user.reload
+    assert_not @user.active?
   end
 end

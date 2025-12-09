@@ -1,12 +1,12 @@
 Welcome to High Aspirations!
 
-Hi <%= @user.email %>,
+Hi <%= @user.first_name.presence || @user.email %>,
 
-Thank you for signing up! Please confirm your email address by visiting this link:
+An account has been created for you. To get started, please visit the link below to set your password and activate your account:
 
 <%= @confirmation_url %>
 
-If you didn't create an account, you can safely ignore this email.
+If you didn't expect this email, you can safely ignore it.
 
 Thanks,
 The High Aspirations Team

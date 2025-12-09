@@ -26,6 +26,7 @@ module Mutations
           user = build_user(input)
           user.save!
           create_role_profile!(user, role, input)
+          user.send_confirmation_email if @generated_password
           { user: user, errors: [] }
         end
       rescue ActiveRecord::RecordInvalid => e
@@ -39,11 +40,15 @@ module Mutations
       end
 
       def build_user(input)
-        user_attrs = input.to_h.slice(:email, :password, :first_name, :last_name, :active)
+        user_attrs = input.to_h.slice(:email, :password, :first_name, :last_name)
         user = User.new(user_attrs)
 
-        if user.password.blank?
+        @generated_password = user.password.blank?
+        if @generated_password
           user.password = generate_temporary_password
+          user.active = false  # Must confirm account
+        else
+          user.active = true   # Password set, active immediately
         end
 
         user

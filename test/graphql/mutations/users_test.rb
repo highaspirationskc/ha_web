@@ -246,7 +246,31 @@ class UsersMutationsTest < ActiveSupport::TestCase
     assert created_user.password_digest.present?
   end
 
-  test "user is active by default" do
+  test "user is inactive when created without password" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            active
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "inactiveuser@example.com",
+        role: "mentor"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    assert_not user["active"]
+  end
+
+  test "user is active when created with password" do
     mutation = <<~GQL
       mutation($input: CreateUserInput!) {
         createUser(input: $input) {
@@ -262,6 +286,7 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "activeuser@example.com",
+        password: "Password123!",
         role: "mentor"
       }
     }, context: { current_user: @admin })

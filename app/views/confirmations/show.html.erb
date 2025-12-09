@@ -1,0 +1,62 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <div class="flex justify-center">
+        <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "w-auto", style: "height: 80px;" %>
+      </div>
+      <h2 class="mt-6 text-center text-2xl font-bold text-gray-900">
+        Set Your Password
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Welcome to High Aspirations! Please create a password to complete your account setup.
+      </p>
+    </div>
+
+    <%= form_with url: confirmation_path(token: params[:token]), method: :post, class: "mt-8 space-y-6" do |form| %>
+      <% if flash[:error] %>
+        <div class="rounded-md bg-red-50 p-4">
+          <div class="text-sm text-red-700">
+            <%= flash[:error] %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <div class="mt-1">
+            <input type="email" value="<%= @user.email %>" disabled
+              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 sm:text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <div class="mt-1">
+            <%= password_field_tag :password, nil,
+                class: "appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm",
+                placeholder: "Enter your password",
+                required: true,
+                autofocus: true %>
+          </div>
+          <p class="mt-1 text-xs text-gray-500">Must be at least 8 characters with uppercase, number, and special character</p>
+        </div>
+
+        <div>
+          <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+          <div class="mt-1">
+            <%= password_field_tag :password_confirmation, nil,
+                class: "appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm",
+                placeholder: "Confirm your password",
+                required: true %>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <%= submit_tag "Set Password & Confirm Account",
+            class: "group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -99,6 +99,69 @@
           </div>
         </div>
 
+        <% if @can_edit_profile %>
+          <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6" data-controller="role-form">
+            <div class="md:grid md:grid-cols-3 md:gap-6">
+              <div class="md:col-span-1">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Role</h3>
+                <% if @can_delete %>
+                  <p class="mt-1 text-sm text-gray-500">Change the user's role. Additional fields may appear based on the selected role.</p>
+                  <div class="mt-3 rounded-md bg-yellow-50 p-3">
+                    <p class="text-xs text-yellow-700">Changing roles will delete the current role profile and any associated data.</p>
+                  </div>
+                <% else %>
+                  <p class="mt-1 text-sm text-gray-500">You cannot change your own role.</p>
+                <% end %>
+              </div>
+              <div class="mt-5 md:mt-0 md:col-span-2">
+                <div class="grid grid-cols-6 gap-6">
+                  <div class="col-span-6 sm:col-span-4">
+                    <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                    <select name="role" id="role" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm <%= 'bg-gray-100 cursor-not-allowed' unless @can_delete %>" data-role-form-target="roleSelect" data-action="change->role-form#toggleFields" <%= 'disabled' unless @can_delete %>>
+                      <option value="staff" <%= "selected" if @current_role == "staff" %>>Staff</option>
+                      <option value="mentor" <%= "selected" if @current_role == "mentor" %>>Mentor</option>
+                      <option value="mentee" <%= "selected" if @current_role == "mentee" %>>Mentee</option>
+                      <option value="guardian" <%= "selected" if @current_role == "guardian" %>>Guardian</option>
+                      <option value="volunteer" <%= "selected" if @current_role == "volunteer" %>>Volunteer</option>
+                    </select>
+                  </div>
+
+                  <!-- Staff Fields -->
+                  <div class="col-span-6 sm:col-span-4" data-role-form-target="staffFields" style="<%= @current_role == 'staff' ? '' : 'display: none;' %>">
+                    <label for="staff_permission_level" class="block text-sm font-medium text-gray-700">Permission Level</label>
+                    <select name="staff[permission_level]" id="staff_permission_level" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                      <option value="standard" <%= "selected" if @user.staff&.standard? %>>Standard</option>
+                      <option value="admin" <%= "selected" if @user.staff&.admin? %>>Admin</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Admins have full system access including user management.</p>
+                  </div>
+
+                  <!-- Mentee Fields -->
+                  <div class="col-span-6 sm:col-span-4" data-role-form-target="menteeFields" style="<%= @current_role == 'mentee' ? '' : 'display: none;' %>">
+                    <label for="mentee_team_id" class="block text-sm font-medium text-gray-700">Team</label>
+                    <select name="mentee[team_id]" id="mentee_team_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                      <option value="">No team assigned</option>
+                      <% @teams&.each do |team| %>
+                        <option value="<%= team.id %>" <%= "selected" if @user.mentee&.team_id == team.id %>><%= team.name %></option>
+                      <% end %>
+                    </select>
+                  </div>
+
+                  <div class="col-span-6 sm:col-span-4" data-role-form-target="menteeFields" style="<%= @current_role == 'mentee' ? '' : 'display: none;' %>">
+                    <label for="mentee_mentor_id" class="block text-sm font-medium text-gray-700">Mentor</label>
+                    <select name="mentee[mentor_id]" id="mentee_mentor_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                      <option value="">No mentor assigned</option>
+                      <% @mentors&.each do |mentor| %>
+                        <option value="<%= mentor.id %>" <%= "selected" if @user.mentee&.mentor_id == mentor.id %>><%= mentor.user.first_name %> <%= mentor.user.last_name %></option>
+                      <% end %>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <% if @user.mentee.present? && @can_edit_profile %>
           <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
             <div class="md:grid md:grid-cols-3 md:gap-6">

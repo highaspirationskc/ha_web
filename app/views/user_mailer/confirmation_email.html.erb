@@ -1,14 +1,14 @@
 <h1>Welcome to High Aspirations!</h1>
 
-<p>Hi <%= @user.email %>,</p>
+<p>Hi <%= @user.first_name.presence || @user.email %>,</p>
 
-<p>Thank you for signing up! Please confirm your email address by clicking the link below:</p>
+<p>An account has been created for you. To get started, please click the link below to set your password and activate your account:</p>
 
 <p>
-  <%= link_to "Confirm my account", @confirmation_url %>
+  <%= link_to "Set Up My Account", @confirmation_url %>
 </p>
 
-<p>If you didn't create an account, you can safely ignore this email.</p>
+<p>If you didn't expect this email, you can safely ignore it.</p>
 
 <p>
   Thanks,<br>

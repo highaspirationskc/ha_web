@@ -5,7 +5,8 @@ Rails.application.routes.draw do
   post "/graphql", to: "graphql#execute"
 
   # Email confirmation
-  get "confirm/:token", to: "confirmations#confirm", as: :confirmation
+  get "confirm/:token", to: "confirmations#show", as: :confirmation
+  post "confirm/:token", to: "confirmations#confirm"
 
   # Authentication
   get "login", to: "sessions#new"

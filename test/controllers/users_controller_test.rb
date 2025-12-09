@@ -352,4 +352,212 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :unprocessable_entity
   end
+
+  # Role editing tests
+  test "should show role section on edit page for users with delete permission" do
+    login_as(@user)
+    get edit_user_path(@volunteer_user)
+    assert_response :success
+    assert_select "select[name='role']"
+  end
+
+  test "should change role from volunteer to mentor" do
+    login_as(@user)
+    assert_not_nil @volunteer_user.volunteer
+    assert_nil @volunteer_user.mentor
+
+    patch user_path(@volunteer_user), params: {
+      user: { email: @volunteer_user.email },
+      role: "mentor"
+    }
+
+    assert_redirected_to user_path(@volunteer_user)
+    @volunteer_user.reload
+    assert_nil @volunteer_user.volunteer
+    assert_not_nil @volunteer_user.mentor
+  end
+
+  test "should change role from mentor to staff with permission level" do
+    login_as(@user)
+    mentor_user = User.create!(email: "testmentor@example.com", password: "Password123!")
+    Mentor.create!(user: mentor_user)
+    mentor_user.activate!
+
+    patch user_path(mentor_user), params: {
+      user: { email: mentor_user.email },
+      role: "staff",
+      staff: { permission_level: "admin" }
+    }
+
+    assert_redirected_to user_path(mentor_user)
+    mentor_user.reload
+    assert_nil mentor_user.mentor
+    assert_not_nil mentor_user.staff
+    assert mentor_user.staff.admin?
+  end
+
+  test "should unassign mentees when mentor role is changed" do
+    login_as(@user)
+
+    # Create mentor with a mentee
+    mentor_user = User.create!(email: "mentor_to_change@example.com", password: "Password123!")
+    mentor = Mentor.create!(user: mentor_user)
+    mentor_user.activate!
+
+    mentee_user = User.create!(email: "assigned_mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user, mentor: mentor)
+    mentee_user.activate!
+
+    assert_equal mentor, mentee.mentor
+
+    # Change mentor to volunteer
+    patch user_path(mentor_user), params: {
+      user: { email: mentor_user.email },
+      role: "volunteer"
+    }
+
+    assert_redirected_to user_path(mentor_user)
+    mentor_user.reload
+    mentee.reload
+
+    assert_nil mentor_user.mentor
+    assert_not_nil mentor_user.volunteer
+    assert_nil mentee.mentor # Mentee should be unassigned
+  end
+
+  test "should delete orphaned guardians when mentee role is changed" do
+    login_as(@user)
+
+    # Create mentee with a guardian who only has this one child
+    mentee_user = User.create!(email: "mentee_to_change@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+    mentee_user.activate!
+
+    guardian_user = User.create!(email: "orphan_guardian@example.com", password: "Password123!")
+    guardian = Guardian.create!(user: guardian_user)
+    guardian_user.activate!
+
+    FamilyMember.create!(mentee: mentee, guardian: guardian, relationship_type: :parent)
+
+    guardian_user_id = guardian_user.id
+
+    # Change mentee to volunteer
+    patch user_path(mentee_user), params: {
+      user: { email: mentee_user.email },
+      role: "volunteer"
+    }
+
+    assert_redirected_to user_path(mentee_user)
+    mentee_user.reload
+
+    assert_nil mentee_user.mentee
+    assert_not_nil mentee_user.volunteer
+    # Orphaned guardian should be deleted
+    assert_nil User.find_by(id: guardian_user_id)
+  end
+
+  test "should not delete guardian with other children when mentee role is changed" do
+    login_as(@user)
+
+    # Create guardian with two children
+    guardian_user = User.create!(email: "multi_guardian@example.com", password: "Password123!")
+    guardian = Guardian.create!(user: guardian_user)
+    guardian_user.activate!
+
+    mentee_user1 = User.create!(email: "mentee1@example.com", password: "Password123!")
+    mentee1 = Mentee.create!(user: mentee_user1)
+    mentee_user1.activate!
+
+    mentee_user2 = User.create!(email: "mentee2@example.com", password: "Password123!")
+    mentee2 = Mentee.create!(user: mentee_user2)
+    mentee_user2.activate!
+
+    FamilyMember.create!(mentee: mentee1, guardian: guardian, relationship_type: :parent)
+    FamilyMember.create!(mentee: mentee2, guardian: guardian, relationship_type: :parent)
+
+    guardian_user_id = guardian_user.id
+
+    # Change first mentee to volunteer
+    patch user_path(mentee_user1), params: {
+      user: { email: mentee_user1.email },
+      role: "volunteer"
+    }
+
+    assert_redirected_to user_path(mentee_user1)
+    mentee_user1.reload
+
+    assert_nil mentee_user1.mentee
+    assert_not_nil mentee_user1.volunteer
+    # Guardian should NOT be deleted (still has another child)
+    assert_not_nil User.find_by(id: guardian_user_id)
+    guardian.reload
+    assert_equal 1, guardian.children.count
+  end
+
+  test "should delete family_members but keep mentee when guardian role is changed" do
+    login_as(@user)
+
+    # Create guardian with a child
+    guardian_user = User.create!(email: "guardian_to_change@example.com", password: "Password123!")
+    guardian = Guardian.create!(user: guardian_user)
+    guardian_user.activate!
+
+    mentee_user = User.create!(email: "child_mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+    mentee_user.activate!
+
+    FamilyMember.create!(mentee: mentee, guardian: guardian, relationship_type: :parent)
+
+    mentee_id = mentee.id
+
+    # Change guardian to volunteer
+    patch user_path(guardian_user), params: {
+      user: { email: guardian_user.email },
+      role: "volunteer"
+    }
+
+    assert_redirected_to user_path(guardian_user)
+    guardian_user.reload
+
+    assert_nil guardian_user.guardian
+    assert_not_nil guardian_user.volunteer
+    # Mentee should still exist
+    assert_not_nil Mentee.find_by(id: mentee_id)
+    # But family member relationship should be gone
+    assert_equal 0, mentee.reload.guardians.count
+  end
+
+  test "should not change role if same role is submitted" do
+    login_as(@user)
+    volunteer_id = @volunteer_user.volunteer.id
+
+    patch user_path(@volunteer_user), params: {
+      user: { email: @volunteer_user.email },
+      role: "volunteer"
+    }
+
+    assert_redirected_to user_path(@volunteer_user)
+    @volunteer_user.reload
+    # Should keep the same volunteer record
+    assert_equal volunteer_id, @volunteer_user.volunteer.id
+  end
+
+  test "should change role to mentee with team and mentor" do
+    login_as(@user)
+    team = Team.create!(name: "New Team", color: :green)
+    mentor = @inactive_user.mentor
+
+    patch user_path(@volunteer_user), params: {
+      user: { email: @volunteer_user.email },
+      role: "mentee",
+      mentee: { team_id: team.id, mentor_id: mentor.id }
+    }
+
+    assert_redirected_to user_path(@volunteer_user)
+    @volunteer_user.reload
+    assert_nil @volunteer_user.volunteer
+    assert_not_nil @volunteer_user.mentee
+    assert_equal team, @volunteer_user.mentee.team
+    assert_equal mentor, @volunteer_user.mentee.mentor
+  end
 end

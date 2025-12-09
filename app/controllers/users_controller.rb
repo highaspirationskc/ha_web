@@ -30,7 +30,7 @@ class UsersController < AuthenticatedController
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
 
   def new
-    @user = User.new(active: true)
+    @user = User.new
     load_role_form_data
   end
 
@@ -47,13 +47,23 @@ class UsersController < AuthenticatedController
 
     ActiveRecord::Base.transaction do
       @user = User.new(user_params_for_create)
-      if @user.password.blank?
+      generated_password = @user.password.blank?
+      if generated_password
         @user.password = generate_temporary_password
         @user.password_confirmation = @user.password
+        @user.active = false  # Must confirm account
+      else
+        @user.active = true   # Password set, active immediately
       end
       @user.save!
       create_role_profile!
-      redirect_to user_path(@user), notice: "User was successfully created."
+
+      if generated_password
+        @user.send_confirmation_email
+        redirect_to user_path(@user), notice: "User was successfully created. A confirmation email has been sent to #{@user.email}."
+      else
+        redirect_to user_path(@user), notice: "User was successfully created."
+      end
     end
   rescue ActiveRecord::RecordInvalid
     load_role_form_data
@@ -65,7 +75,8 @@ class UsersController < AuthenticatedController
     @can_edit_password = current_user.can?(:edit, :users) || @user == current_user
     @can_delete = current_user.can?(:delete, :users, @user)
     @can_change_status = current_user.can?(:change_status, :users, @user)
-    load_mentee_form_data if @user.mentee.present? && @can_edit_profile
+    @current_role = current_role_key if @can_edit_profile
+    load_role_form_data if @can_edit_profile
   end
 
   def update
@@ -83,7 +94,7 @@ class UsersController < AuthenticatedController
 
     ActiveRecord::Base.transaction do
       @user.update!(permitted)
-      update_mentee_if_present
+      update_role_if_changed
     end
 
     redirect_to user_path(@user), notice: "User updated successfully"
@@ -92,6 +103,8 @@ class UsersController < AuthenticatedController
     @can_edit_password = current_user.can?(:edit, :users) || @user == current_user
     @can_delete = current_user.can?(:delete, :users, @user)
     @can_change_status = current_user.can?(:change_status, :users, @user)
+    @current_role = current_role_key if @can_edit_profile
+    load_role_form_data if @can_edit_profile
     load_mentee_form_data if @user.mentee.present? && @can_edit_profile
     render :edit, status: :unprocessable_entity
   end
@@ -393,6 +406,75 @@ class UsersController < AuthenticatedController
   def load_role_form_data
     @teams = Team.all.order(:name)
     @mentors = Mentor.includes(:user).all
+  end
+
+  def current_role_key
+    return "staff" if @user.staff.present?
+    return "mentor" if @user.mentor.present?
+    return "mentee" if @user.mentee.present?
+    return "guardian" if @user.guardian.present?
+    return "volunteer" if @user.volunteer.present?
+    nil
+  end
+
+  def update_role_if_changed
+    return unless params[:role].present?
+    return unless current_user.can?(:delete, :users, @user)
+
+    new_role = params[:role].to_s.downcase
+    old_role = current_role_key
+
+    return if new_role == old_role
+    return unless VALID_ROLES.include?(new_role)
+
+    # Track guardians that might become orphaned when deleting a mentee
+    orphan_guardian_ids = []
+    if old_role == "mentee" && @user.mentee.present?
+      orphan_guardian_ids = find_potentially_orphaned_guardian_ids(@user.mentee)
+    end
+
+    # Destroy old role profile (cascade deletes handled by model associations)
+    destroy_current_role_profile!
+
+    # Create new role profile
+    @role = new_role
+    create_role_profile!
+
+    # Clean up orphaned guardians
+    cleanup_orphaned_guardians(orphan_guardian_ids)
+  end
+
+  def destroy_current_role_profile!
+    @user.staff&.destroy!
+    @user.mentor&.destroy!
+    @user.mentee&.destroy!
+    @user.guardian&.destroy!
+    @user.volunteer&.destroy!
+  end
+
+  def find_potentially_orphaned_guardian_ids(mentee)
+    # Get guardian IDs that are linked to this mentee
+    guardian_ids = mentee.guardians.pluck(:id)
+
+    # For each guardian, check if they have other mentees besides this one
+    guardian_ids.select do |guardian_id|
+      guardian = Guardian.find(guardian_id)
+      guardian.children.where.not(id: mentee.id).empty?
+    end
+  end
+
+  def cleanup_orphaned_guardians(guardian_ids)
+    return if guardian_ids.empty?
+
+    guardian_ids.each do |guardian_id|
+      guardian = Guardian.find_by(id: guardian_id)
+      next unless guardian
+
+      # If guardian has no more children, delete the guardian's user
+      if guardian.children.empty?
+        guardian.user.destroy!
+      end
+    end
   end
 
   def create_role_profile!

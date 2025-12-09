@@ -3,7 +3,6 @@
 module Types
   class MutationType < Types::BaseObject
     # Auth mutations (unauthenticated)
-    field :register, mutation: Mutations::Register
     field :login, mutation: Mutations::Login
     field :logout, mutation: Mutations::Logout
 

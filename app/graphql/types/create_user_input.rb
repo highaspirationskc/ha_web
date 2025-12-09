@@ -8,7 +8,6 @@ module Types
     argument :password, String, required: false, description: "Password (optional - random password generated if blank)"
     argument :first_name, String, required: false
     argument :last_name, String, required: false
-    argument :active, Boolean, required: false, default_value: true
 
     # Role selection (required)
     argument :role, String, required: true, description: "The role for this user (staff, mentor, mentee, guardian, volunteer)"
