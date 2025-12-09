@@ -223,6 +223,177 @@ class EventLogsMutationsTest < ActiveSupport::TestCase
     assert_includes errors, "Event log not found"
   end
 
+  # Register tests
+
+  test "authenticated user can register for event" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        register(input: $input) {
+          eventLog {
+            id
+            logType
+            pointsAwarded
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: { current_user: @admin })
+
+    event_log = result.dig("data", "register", "eventLog")
+    errors = result.dig("data", "register", "errors")
+
+    assert_not_nil event_log
+    assert_equal "registered", event_log["logType"]
+    assert_equal 0, event_log["pointsAwarded"]
+    assert_empty errors
+  end
+
+  test "register requires authentication" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        register(input: $input) {
+          eventLog {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: {})
+
+    assert_nil result.dig("data", "register")
+    assert_includes result["errors"].first["message"], "Authentication required"
+  end
+
+  test "register returns error for non-existent event" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        register(input: $input) {
+          eventLog {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: "99999" }
+    }, context: { current_user: @admin })
+
+    event_log = result.dig("data", "register", "eventLog")
+    errors = result.dig("data", "register", "errors")
+
+    assert_nil event_log
+    assert_includes errors, "Event not found"
+  end
+
+  # CheckIn tests
+
+  test "authenticated user can check in to event" do
+    mutation = <<~GQL
+      mutation($input: CheckInInput!) {
+        checkIn(input: $input) {
+          eventLog {
+            id
+            logType
+            pointsAwarded
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: { current_user: @mentee })
+
+    event_log = result.dig("data", "checkIn", "eventLog")
+    errors = result.dig("data", "checkIn", "errors")
+
+    assert_not_nil event_log
+    assert_equal "arrived", event_log["logType"]
+    assert_equal 5, event_log["pointsAwarded"]
+    assert_empty errors
+  end
+
+  test "checkIn requires authentication" do
+    mutation = <<~GQL
+      mutation($input: CheckInInput!) {
+        checkIn(input: $input) {
+          eventLog {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: {})
+
+    assert_nil result.dig("data", "checkIn")
+    assert_includes result["errors"].first["message"], "Authentication required"
+  end
+
+  test "checkIn returns error for non-existent event" do
+    mutation = <<~GQL
+      mutation($input: CheckInInput!) {
+        checkIn(input: $input) {
+          eventLog {
+            id
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: "99999" }
+    }, context: { current_user: @mentee })
+
+    event_log = result.dig("data", "checkIn", "eventLog")
+    errors = result.dig("data", "checkIn", "errors")
+
+    assert_nil event_log
+    assert_includes errors, "Event not found"
+  end
+
+  test "checkIn awards zero points to non-mentees" do
+    mutation = <<~GQL
+      mutation($input: CheckInInput!) {
+        checkIn(input: $input) {
+          eventLog {
+            id
+            logType
+            pointsAwarded
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: { current_user: @admin })
+
+    event_log = result.dig("data", "checkIn", "eventLog")
+    errors = result.dig("data", "checkIn", "errors")
+
+    assert_not_nil event_log
+    assert_equal "arrived", event_log["logType"]
+    assert_equal 0, event_log["pointsAwarded"]
+    assert_empty errors
+  end
+
   private
 
   def execute_graphql(query, variables: {}, context: {})

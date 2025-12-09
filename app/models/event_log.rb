@@ -17,12 +17,9 @@ class EventLog < ApplicationRecord
   def stamp_event_data
     return unless event
 
-    # Auto-set points based on log_type
-    self.points_awarded ||= case log_type
-    when "arrived"
+    # Auto-set points based on log_type (only mentees earn points)
+    self.points_awarded ||= if log_type == "arrived" && user&.mentee?
       event.event_type.point_value
-    when "registered"
-      0
     else
       0
     end

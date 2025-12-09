@@ -125,6 +125,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
 
   # Event Log mutations
   test "createEventLog mutation creates a log entry with arrived type" do
+    mentee_user = create_mentee_user(email: "mentee@example.com")
     event = Event.create!(
       name: "Test Event",
       event_date: Date.current,
@@ -149,7 +150,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         eventId: event.id,
-        userId: @user.id,
+        userId: mentee_user.id,
         logType: "arrived"
       }
     }, context: { current_user: @user })
