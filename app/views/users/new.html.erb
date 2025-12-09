@@ -2,7 +2,7 @@
   <div class="px-4 py-6 sm:px-0">
     <h1 class="text-3xl font-bold text-gray-900 mb-6">New User</h1>
 
-    <%= form_with model: @user, url: users_path, class: "space-y-6" do |form| %>
+    <%= form_with model: @user, url: users_path, class: "space-y-6", data: { controller: "role-form" } do |form| %>
       <% if @user.errors.any? %>
         <div class="rounded-md bg-red-50 p-4">
           <h3 class="text-sm font-medium text-red-800">
@@ -20,7 +20,7 @@
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
             <h3 class="text-lg font-medium leading-6 text-gray-900">User Information</h3>
-            <p class="mt-1 text-sm text-gray-500">Enter the details for this new user. You can assign a role profile after creating the user.</p>
+            <p class="mt-1 text-sm text-gray-500">Enter the details for this new user and select their role.</p>
           </div>
           <div class="mt-5 md:mt-0 md:col-span-2">
             <div class="grid grid-cols-6 gap-6">
@@ -42,7 +42,7 @@
               <div class="col-span-6 sm:col-span-3">
                 <%= form.label :password, class: "block text-sm font-medium text-gray-700" %>
                 <%= form.password_field :password, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-                <p class="mt-1 text-xs text-gray-500">Must be at least 8 characters with uppercase, number, and special character</p>
+                <p class="mt-1 text-xs text-gray-500">Leave blank to generate a random password. If set, must be at least 8 characters with uppercase, number, and special character.</p>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -62,9 +62,64 @@
         </div>
       </div>
 
+      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Role</h3>
+            <p class="mt-1 text-sm text-gray-500">Select the role for this user. Additional fields may appear based on the selected role.</p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <div class="grid grid-cols-6 gap-6">
+              <div class="col-span-6 sm:col-span-4">
+                <label for="role" class="block text-sm font-medium text-gray-700">Role <span class="text-red-500">*</span></label>
+                <select name="role" id="role" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" data-role-form-target="roleSelect" data-action="change->role-form#toggleFields">
+                  <option value="">Select a role...</option>
+                  <option value="staff" <%= "selected" if @role == "staff" %>>Staff</option>
+                  <option value="mentor" <%= "selected" if @role == "mentor" %>>Mentor</option>
+                  <option value="mentee" <%= "selected" if @role == "mentee" %>>Mentee</option>
+                  <option value="guardian" <%= "selected" if @role == "guardian" %>>Guardian</option>
+                  <option value="volunteer" <%= "selected" if @role == "volunteer" %>>Volunteer</option>
+                </select>
+              </div>
+
+              <!-- Staff Fields -->
+              <div class="col-span-6 sm:col-span-4" data-role-form-target="staffFields" style="display: none;">
+                <label for="staff_permission_level" class="block text-sm font-medium text-gray-700">Permission Level</label>
+                <select name="staff[permission_level]" id="staff_permission_level" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="standard">Standard</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Admins have full system access including user management.</p>
+              </div>
+
+              <!-- Mentee Fields -->
+              <div class="col-span-6 sm:col-span-4" data-role-form-target="menteeFields" style="display: none;">
+                <label for="mentee_team_id" class="block text-sm font-medium text-gray-700">Team</label>
+                <select name="mentee[team_id]" id="mentee_team_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="">No team assigned</option>
+                  <% @teams.each do |team| %>
+                    <option value="<%= team.id %>"><%= team.name %></option>
+                  <% end %>
+                </select>
+              </div>
+
+              <div class="col-span-6 sm:col-span-4" data-role-form-target="menteeFields" style="display: none;">
+                <label for="mentee_mentor_id" class="block text-sm font-medium text-gray-700">Mentor</label>
+                <select name="mentee[mentor_id]" id="mentee_mentor_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                  <option value="">No mentor assigned</option>
+                  <% @mentors.each do |mentor| %>
+                    <option value="<%= mentor.id %>"><%= mentor.user.first_name %> <%= mentor.user.last_name %></option>
+                  <% end %>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex justify-end space-x-3">
         <%= link_to "Cancel", users_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-        <%= form.submit "Create User", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+        <%= form.submit "Create User", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
       </div>
     <% end %>
 

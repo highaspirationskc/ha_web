@@ -27,18 +27,37 @@ class UsersController < AuthenticatedController
     @available_mentees_for_mentor = available_mentees_for_mentor
   end
 
+  VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
+
   def new
-    @user = User.new
+    @user = User.new(active: true)
+    load_role_form_data
   end
 
   def create
-    @user = User.new(user_params_for_create)
+    @role = params[:role]
 
-    if @user.save
-      redirect_to user_path(@user), notice: "User was successfully created."
-    else
+    unless VALID_ROLES.include?(@role)
+      @user = User.new(user_params_for_create)
+      @user.errors.add(:base, "Role is required")
+      load_role_form_data
       render :new, status: :unprocessable_entity
+      return
     end
+
+    ActiveRecord::Base.transaction do
+      @user = User.new(user_params_for_create)
+      if @user.password.blank?
+        @user.password = generate_temporary_password
+        @user.password_confirmation = @user.password
+      end
+      @user.save!
+      create_role_profile!
+      redirect_to user_path(@user), notice: "User was successfully created."
+    end
+  rescue ActiveRecord::RecordInvalid
+    load_role_form_data
+    render :new, status: :unprocessable_entity
   end
 
   def edit
@@ -369,6 +388,35 @@ class UsersController < AuthenticatedController
   def load_mentee_form_data
     @teams = Team.all.order(:name)
     @mentors = Mentor.includes(:user).all
+  end
+
+  def load_role_form_data
+    @teams = Team.all.order(:name)
+    @mentors = Mentor.includes(:user).all
+  end
+
+  def create_role_profile!
+    case @role
+    when "staff"
+      Staff.create!(user: @user, permission_level: staff_params[:permission_level] || :standard)
+    when "mentor"
+      Mentor.create!(user: @user)
+    when "mentee"
+      mentee_attrs = { user: @user }
+      if params[:mentee].present?
+        mentee_attrs[:team_id] = params[:mentee][:team_id].presence
+        mentee_attrs[:mentor_id] = params[:mentee][:mentor_id].presence
+      end
+      Mentee.create!(mentee_attrs)
+    when "guardian"
+      Guardian.create!(user: @user)
+    when "volunteer"
+      Volunteer.create!(user: @user)
+    end
+  end
+
+  def staff_params
+    params[:staff].present? ? params.require(:staff).permit(:permission_level) : {}
   end
 
   def update_mentee_if_present

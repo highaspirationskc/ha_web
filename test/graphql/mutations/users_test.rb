@@ -14,13 +14,14 @@ class UsersMutationsTest < ActiveSupport::TestCase
 
   # CreateUser tests
 
-  test "admin can create user" do
+  test "admin can create mentor user" do
     mutation = <<~GQL
       mutation($input: CreateUserInput!) {
         createUser(input: $input) {
           user {
             id
             email
+            role
           }
           errors
         }
@@ -30,7 +31,8 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser@example.com",
-        password: "Password123!"
+        password: "Password123!",
+        role: "mentor"
       }
     }, context: { current_user: @admin })
 
@@ -39,7 +41,11 @@ class UsersMutationsTest < ActiveSupport::TestCase
 
     assert_not_nil user
     assert_equal "newuser@example.com", user["email"]
+    assert_equal "Mentor", user["role"]
     assert_empty errors
+
+    created_user = User.find_by(email: "newuser@example.com")
+    assert_not_nil created_user.mentor
   end
 
   test "staff can create user" do
@@ -58,7 +64,8 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser2@example.com",
-        password: "Password123!"
+        password: "Password123!",
+        role: "volunteer"
       }
     }, context: { current_user: @staff })
 
@@ -67,6 +74,200 @@ class UsersMutationsTest < ActiveSupport::TestCase
 
     assert_not_nil user
     assert_empty errors
+
+    created_user = User.find_by(email: "newuser2@example.com")
+    assert_not_nil created_user.volunteer
+  end
+
+  test "can create staff user with admin permission" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            email
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newadmin@example.com",
+        password: "Password123!",
+        role: "staff",
+        permissionLevel: "admin"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal "Admin", user["role"]
+    assert_empty errors
+
+    created_user = User.find_by(email: "newadmin@example.com")
+    assert created_user.staff.admin?
+  end
+
+  test "can create staff user with standard permission" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newstaff@example.com",
+        password: "Password123!",
+        role: "staff",
+        permissionLevel: "standard"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal "Staff", user["role"]
+    assert_empty errors
+
+    created_user = User.find_by(email: "newstaff@example.com")
+    assert created_user.staff.standard?
+  end
+
+  test "can create mentee user with team and mentor" do
+    mentor_user = create_mentor_user(email: "mentor2@example.com")
+
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newmentee@example.com",
+        password: "Password123!",
+        role: "mentee",
+        teamId: @team.id.to_s,
+        mentorId: mentor_user.mentor.id.to_s
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal "Mentee", user["role"]
+    assert_empty errors
+
+    created_user = User.find_by(email: "newmentee@example.com")
+    assert_not_nil created_user.mentee
+    assert_equal @team, created_user.mentee.team
+    assert_equal mentor_user.mentor, created_user.mentee.mentor
+  end
+
+  test "can create guardian user" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            role
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "newguardian@example.com",
+        password: "Password123!",
+        role: "guardian"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_equal "Guardian", user["role"]
+    assert_empty errors
+
+    created_user = User.find_by(email: "newguardian@example.com")
+    assert_not_nil created_user.guardian
+  end
+
+  test "can create user without password (generates random)" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            email
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "nopassword@example.com",
+        role: "mentor"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    errors = result.dig("data", "createUser", "errors")
+
+    assert_not_nil user
+    assert_empty errors
+
+    created_user = User.find_by(email: "nopassword@example.com")
+    assert created_user.password_digest.present?
+  end
+
+  test "user is active by default" do
+    mutation = <<~GQL
+      mutation($input: CreateUserInput!) {
+        createUser(input: $input) {
+          user {
+            id
+            active
+          }
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: {
+        email: "activeuser@example.com",
+        role: "mentor"
+      }
+    }, context: { current_user: @admin })
+
+    user = result.dig("data", "createUser", "user")
+    assert user["active"]
   end
 
   test "mentor cannot create user" do
@@ -84,7 +285,8 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser@example.com",
-        password: "Password123!"
+        password: "Password123!",
+        role: "mentor"
       }
     }, context: { current_user: @mentor })
 
@@ -110,7 +312,8 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser@example.com",
-        password: "Password123!"
+        password: "Password123!",
+        role: "mentor"
       }
     }, context: { current_user: @mentee })
 
@@ -136,7 +339,8 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         email: "newuser@example.com",
-        password: "Password123!"
+        password: "Password123!",
+        role: "mentor"
       }
     }, context: {})
 

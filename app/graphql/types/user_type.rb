@@ -10,6 +10,7 @@ module Types
     field :avatar_url, String, null: true
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
+    field :role, String, null: false, description: "The user's primary role", method: :role_name
 
     # Role profiles
     field :mentor, Types::MentorType, null: true

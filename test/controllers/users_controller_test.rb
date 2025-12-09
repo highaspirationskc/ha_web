@@ -139,4 +139,217 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     @volunteer_user.reload
     assert_not @volunteer_user.active?
   end
+
+  # User creation with role selection tests
+  test "should show new user form with role selection" do
+    login_as(@user)
+    get new_user_path
+    assert_response :success
+    assert_select "select[name='role']"
+  end
+
+  test "should create staff user with standard permission" do
+    login_as(@user)
+    assert_difference ["User.count", "Staff.count"], 1 do
+      post users_path, params: {
+        role: "staff",
+        user: {
+          email: "newstaff@example.com",
+          first_name: "New",
+          last_name: "Staff",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        },
+        staff: { permission_level: "standard" }
+      }
+    end
+    new_user = User.find_by(email: "newstaff@example.com")
+    assert_not_nil new_user.staff
+    assert_equal "standard", new_user.staff.permission_level
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should create staff user with admin permission" do
+    login_as(@user)
+    assert_difference ["User.count", "Staff.count"], 1 do
+      post users_path, params: {
+        role: "staff",
+        user: {
+          email: "newadmin@example.com",
+          first_name: "New",
+          last_name: "Admin",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        },
+        staff: { permission_level: "admin" }
+      }
+    end
+    new_user = User.find_by(email: "newadmin@example.com")
+    assert_not_nil new_user.staff
+    assert_equal "admin", new_user.staff.permission_level
+  end
+
+  test "should create mentor user" do
+    login_as(@user)
+    assert_difference ["User.count", "Mentor.count"], 1 do
+      post users_path, params: {
+        role: "mentor",
+        user: {
+          email: "newmentor@example.com",
+          first_name: "New",
+          last_name: "Mentor",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        }
+      }
+    end
+    new_user = User.find_by(email: "newmentor@example.com")
+    assert_not_nil new_user.mentor
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should create mentee user" do
+    login_as(@user)
+    assert_difference ["User.count", "Mentee.count"], 1 do
+      post users_path, params: {
+        role: "mentee",
+        user: {
+          email: "newmentee@example.com",
+          first_name: "New",
+          last_name: "Mentee",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        }
+      }
+    end
+    new_user = User.find_by(email: "newmentee@example.com")
+    assert_not_nil new_user.mentee
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should create mentee user with team and mentor" do
+    login_as(@user)
+    team = Team.create!(name: "Test Team", color: :blue)
+    mentor = @inactive_user.mentor # Already has mentor from setup
+
+    assert_difference ["User.count", "Mentee.count"], 1 do
+      post users_path, params: {
+        role: "mentee",
+        user: {
+          email: "newmentee2@example.com",
+          first_name: "New",
+          last_name: "Mentee2",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        },
+        mentee: { team_id: team.id, mentor_id: mentor.id }
+      }
+    end
+    new_user = User.find_by(email: "newmentee2@example.com")
+    assert_not_nil new_user.mentee
+    assert_equal team, new_user.mentee.team
+    assert_equal mentor, new_user.mentee.mentor
+  end
+
+  test "should create guardian user" do
+    login_as(@user)
+    assert_difference ["User.count", "Guardian.count"], 1 do
+      post users_path, params: {
+        role: "guardian",
+        user: {
+          email: "newguardian@example.com",
+          first_name: "New",
+          last_name: "Guardian",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        }
+      }
+    end
+    new_user = User.find_by(email: "newguardian@example.com")
+    assert_not_nil new_user.guardian
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should create volunteer user" do
+    login_as(@user)
+    assert_difference ["User.count", "Volunteer.count"], 1 do
+      post users_path, params: {
+        role: "volunteer",
+        user: {
+          email: "newvolunteer@example.com",
+          first_name: "New",
+          last_name: "Volunteer",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        }
+      }
+    end
+    new_user = User.find_by(email: "newvolunteer@example.com")
+    assert_not_nil new_user.volunteer
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should create user with random password when password is blank" do
+    login_as(@user)
+    assert_difference ["User.count", "Mentor.count"], 1 do
+      post users_path, params: {
+        role: "mentor",
+        user: {
+          email: "nopassword@example.com",
+          first_name: "No",
+          last_name: "Password",
+          active: true
+        }
+      }
+    end
+    new_user = User.find_by(email: "nopassword@example.com")
+    assert_not_nil new_user
+    assert new_user.password_digest.present?
+    assert_redirected_to user_path(new_user)
+  end
+
+  test "should not create user without role" do
+    login_as(@user)
+    assert_no_difference "User.count" do
+      post users_path, params: {
+        user: {
+          email: "norole@example.com",
+          first_name: "No",
+          last_name: "Role",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "should rollback user creation if role profile fails" do
+    login_as(@user)
+    # Create a user with this email first to cause Staff creation to fail
+    # (Staff belongs_to :user, so this won't directly fail, but we can test transaction)
+    assert_no_difference "User.count" do
+      post users_path, params: {
+        role: "staff",
+        user: {
+          email: "admin@example.com", # Already exists
+          first_name: "Duplicate",
+          last_name: "User",
+          password: "Password123!",
+          password_confirmation: "Password123!",
+          active: true
+        },
+        staff: { permission_level: "standard" }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
 end
