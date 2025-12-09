@@ -28,7 +28,8 @@
 
           <div class="col-span-6 sm:col-span-3">
             <%= form.label :color, class: "block text-sm font-medium text-gray-700" %>
-            <%= form.select :color, Team.colors.keys.map { |k| [k.titleize, k] }, {}, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+            <% available = team.persisted? ? (Team.available_colors + [team.color]).uniq : Team.available_colors %>
+            <%= form.select :color, available.map { |k| [k.titleize, k] }, {}, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
           </div>
 
           <div class="col-span-6 sm:col-span-3">

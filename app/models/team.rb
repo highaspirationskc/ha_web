@@ -6,6 +6,16 @@ class Team < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :color, presence: true
+  validate :color_must_be_available, on: :create
+
+  def self.available_colors
+    taken = pluck(:color)
+    colors.keys - taken
+  end
+
+  def self.colors_available?
+    available_colors.any?
+  end
 
   # Calculate total points for all mentees on this team for a given date range
   # If no date_range is provided, calculates for the current Olympic season
@@ -20,6 +30,15 @@ class Team < ApplicationRecord
   end
 
   private
+
+  def color_must_be_available
+    return if color.blank?
+
+    taken_colors = Team.where.not(id: id).pluck(:color)
+    if taken_colors.include?(color)
+      errors.add(:color, "has already been taken")
+    end
+  end
 
   def current_season_date_range
     current_season = OlympicSeason.current_season

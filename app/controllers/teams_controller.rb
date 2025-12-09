@@ -113,8 +113,14 @@ class TeamsController < AuthenticatedController
     end
 
     def authorize_create
-      return if current_user.can?(:create, :teams)
-      redirect_to teams_path, alert: "You don't have permission to create teams"
+      unless current_user.can?(:create, :teams)
+        redirect_to teams_path, alert: "You don't have permission to create teams"
+        return
+      end
+
+      unless Team.colors_available?
+        redirect_to teams_path, alert: "All team colors are in use. Delete a team to create a new one."
+      end
     end
 
     def authorize_edit

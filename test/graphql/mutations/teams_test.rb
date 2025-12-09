@@ -123,7 +123,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "Icon Team",
-        color: "blue",
+        color: "yellow",
         iconId: medium.id.to_s
       }
     }, context: { current_user: @admin })
