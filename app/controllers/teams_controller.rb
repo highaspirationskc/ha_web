@@ -20,7 +20,7 @@ class TeamsController < AuthenticatedController
       {
         mentee: mentee,
         user: mentee.user,
-        points: mentee.user.total_points
+        points: mentee.total_points
       }
     end.sort_by { |mp| -mp[:points] }
 

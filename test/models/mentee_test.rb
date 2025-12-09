@@ -91,4 +91,109 @@ class MenteeTest < ActiveSupport::TestCase
 
     assert_equal new_team, @mentee.team
   end
+
+  # Total points
+  test "total_points returns 0 when no event logs exist" do
+    @mentee.save!
+    assert_equal 0, @mentee.total_points
+  end
+
+  test "total_points returns 0 when no current season exists" do
+    @mentee.save!
+    OlympicSeason.delete_all
+
+    assert_equal 0, @mentee.total_points
+  end
+
+  test "total_points sums points from event logs within current season" do
+    @mentee.save!
+
+    # Create a current season (month/day based)
+    today = Date.current
+    season = OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
+    event = Event.create!(
+      name: "Test Event",
+      event_date: Time.current,
+      event_type: event_type,
+      created_by: @user
+    )
+
+    # Create event logs for this mentee's user
+    EventLog.create!(user: @user, event: event, points_awarded: 10)
+    EventLog.create!(user: @user, event: event, points_awarded: 5)
+
+    assert_equal 15, @mentee.total_points
+  end
+
+  test "total_points excludes points from events outside current season" do
+    @mentee.save!
+
+    # Create a current season (month/day based)
+    today = Date.current
+    season = OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
+
+    # Event within season
+    current_event = Event.create!(
+      name: "Current Event",
+      event_date: Time.current,
+      event_type: event_type,
+      created_by: @user
+    )
+
+    # Event outside season
+    old_event = Event.create!(
+      name: "Old Event",
+      event_date: 3.months.ago,
+      event_type: event_type,
+      created_by: @user
+    )
+
+    EventLog.create!(user: @user, event: current_event, points_awarded: 10)
+    EventLog.create!(user: @user, event: old_event, points_awarded: 100)
+
+    assert_equal 10, @mentee.total_points
+  end
+
+  test "total_points accepts custom date range" do
+    @mentee.save!
+
+    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
+
+    event1 = Event.create!(
+      name: "Event 1",
+      event_date: 2.days.ago,
+      event_type: event_type,
+      created_by: @user
+    )
+
+    event2 = Event.create!(
+      name: "Event 2",
+      event_date: 10.days.ago,
+      event_type: event_type,
+      created_by: @user
+    )
+
+    EventLog.create!(user: @user, event: event1, points_awarded: 5)
+    EventLog.create!(user: @user, event: event2, points_awarded: 20)
+
+    # Only include last week
+    week_range = 1.week.ago..Time.current
+    assert_equal 5, @mentee.total_points(week_range)
+  end
 end

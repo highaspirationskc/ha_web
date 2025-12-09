@@ -7,6 +7,7 @@ module Types
     field :mentor, Types::MentorType, null: true
     field :team, Types::TeamType, null: true
     field :guardians, [Types::GuardianType], null: false
+    field :total_points, Integer, null: false, description: "Total points for current Olympic season"
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
   end

@@ -16,13 +16,12 @@ class DashboardController < AuthenticatedController
       season_service = OlympicSeasonService.new(@current_season)
       season_range = season_service.date_range_from_reference_date
 
-      # Get all users who are mentees
-      mentee_users = User.joins(:mentee)
+      mentees = Mentee.includes(:user)
 
-      @top_season_mentees = mentee_users.map do |user|
+      @top_season_mentees = mentees.map do |mentee|
         {
-          user: user,
-          points: user.total_points(season_range)
+          user: mentee.user,
+          points: mentee.total_points(season_range)
         }
       end.select { |m| m[:points] > 0 }
         .sort_by { |m| -m[:points] }
@@ -33,10 +32,10 @@ class DashboardController < AuthenticatedController
       week_end = Date.current.end_of_week
       week_range = week_start..week_end
 
-      @top_week_mentees = mentee_users.map do |user|
+      @top_week_mentees = mentees.map do |mentee|
         {
-          user: user,
-          points: user.total_points(week_range)
+          user: mentee.user,
+          points: mentee.total_points(week_range)
         }
       end.select { |m| m[:points] > 0 }
         .sort_by { |m| -m[:points] }

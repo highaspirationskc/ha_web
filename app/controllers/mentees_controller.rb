@@ -9,7 +9,7 @@ class MenteesController < AuthenticatedController
   end
 
   def show
-    @total_points = @mentee.user.total_points
+    @total_points = @mentee.total_points
   end
 
   def create
