@@ -1,5 +1,6 @@
 class Team < ApplicationRecord
   has_many :mentees, dependent: :nullify
+  belongs_to :icon, class_name: "Medium", optional: true
 
   enum :color, { blue: "blue", green: "green", yellow: "yellow", red: "red" }
 

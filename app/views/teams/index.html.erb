@@ -27,7 +27,7 @@
                     Color
                   </th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Icon URL
+                    Icon
                   </th>
                   <th scope="col" class="relative px-6 py-3">
                     <span class="sr-only">Actions</span>
@@ -47,9 +47,8 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <% if team.icon_url.present? %>
-                          <% safe_url = team.icon_url.to_s %>
-                          <%= link_to h(safe_url), h(safe_url), target: "_blank", class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+                        <% if team.icon.present? %>
+                          <%= image_tag team.icon.thumbnail_url, alt: team.name, class: "h-8 w-8 rounded object-cover" %>
                         <% else %>
                           <span class="text-sm text-gray-500">—</span>
                         <% end %>

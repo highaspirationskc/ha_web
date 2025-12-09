@@ -1,0 +1,71 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Media Library</h1>
+    </div>
+
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="rounded-md bg-red-50 p-4 mb-6">
+        <p class="text-sm font-medium text-red-800"><%= alert %></p>
+      </div>
+    <% end %>
+
+    <!-- Category Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <% [["general", "Images"], ["avatar", "Avatars"], ["icon", "Icons"]].each do |category, label| %>
+          <%= link_to label, media_path(category: category),
+              class: "whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium #{@category == category ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}" %>
+        <% end %>
+      </nav>
+    </div>
+
+    <% if current_user.can?(:create, :media) %>
+      <div class="bg-white shadow sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-base font-semibold text-gray-900">Upload New <%= @category.titleize %></h3>
+          <%= form_with url: media_path, method: :post, multipart: true, class: "mt-4" do |f| %>
+            <%= f.hidden_field :category, value: @category %>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <div class="flex-1">
+                <%= f.file_field :file, accept: "image/*", class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %>
+              </div>
+              <div class="flex-1">
+                <%= f.text_field :alt_text, placeholder: "Alt text (optional)", class: "block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+              </div>
+              <div>
+                <%= f.submit "Upload", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @media.any? %>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <% @media.each do |medium| %>
+          <%= render "medium", medium: medium %>
+        <% end %>
+      </div>
+
+      <div class="mt-6">
+        <%= paginate @media %>
+      </div>
+    <% else %>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-semibold text-gray-900">No <%= @category.pluralize %></h3>
+        <p class="mt-1 text-sm text-gray-500">Upload your first <%= @category %> using the form above.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

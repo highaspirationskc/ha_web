@@ -5,14 +5,16 @@ class Authorization
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       messages: [:index, :show, :create, :support_inbox],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox]
+      media: [:index, :show, :create, :delete, :manage_all],
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       messages: [:index, :show, :create, :support_inbox],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox]
+      media: [:index, :show, :create, :delete, :manage_all],
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media]
     },
     mentor: {
       users: [],
@@ -20,24 +22,28 @@ class Authorization
       teams: [:index, :show],
       mentees: [:index, :show, :create, :destroy],
       messages: [:index, :show, :create],
+      media: [:index, :show, :create, :delete],
       navigation: [:dashboard, :mentees, :events, :teams, :inbox]
     },
     guardian: {
       users: [],
       events: [:index, :show],
       messages: [:index, :show, :create],
+      media: [:index, :show, :create, :delete],
       navigation: [:dashboard, :events, :inbox]
     },
     mentee: {
       users: [],
       events: [:index, :show],
       messages: [:index, :show, :create],
+      media: [:index, :show, :create, :delete],
       navigation: [:dashboard, :events, :inbox]
     },
     volunteer: {
       users: [],
       events: [:index, :show],
       messages: [:index, :show, :create],
+      media: [:index, :show, :create, :delete],
       navigation: [:dashboard, :events, :inbox]
     }
   }.freeze

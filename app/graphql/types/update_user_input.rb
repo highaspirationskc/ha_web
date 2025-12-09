@@ -9,6 +9,8 @@ module Types
     argument :password, String, required: false
     argument :first_name, String, required: false
     argument :last_name, String, required: false
+    argument :phone_number, String, required: false
+    argument :avatar_id, ID, required: false
     argument :active, Boolean, required: false
   end
 end

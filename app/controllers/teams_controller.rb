@@ -109,7 +109,7 @@ class TeamsController < AuthenticatedController
 
     # Only allow a list of trusted parameters through.
     def team_params
-      params.expect(team: [ :name, :color, :icon_url ])
+      params.expect(team: [ :name, :color, :icon_id ])
     end
 
     def authorize_create

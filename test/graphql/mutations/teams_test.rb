@@ -99,7 +99,14 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  test "create team with icon_url" do
+  test "create team with icon" do
+    medium = Medium.create!(
+      uploaded_by: @admin,
+      cloudflare_id: "test_icon_#{SecureRandom.hex(8)}",
+      filename: "icon.png",
+      media_type: "image"
+    )
+
     mutation = <<~GQL
       mutation($input: CreateTeamInput!) {
         createTeam(input: $input) {
@@ -117,7 +124,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
       input: {
         name: "Icon Team",
         color: "blue",
-        iconUrl: "https://example.com/icon.png"
+        iconId: medium.id.to_s
       }
     }, context: { current_user: @admin })
 
@@ -125,7 +132,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     errors = result.dig("data", "createTeam", "errors")
 
     assert_not_nil team
-    assert_equal "https://example.com/icon.png", team["iconUrl"]
+    assert_includes team["iconUrl"], medium.cloudflare_id
     assert_empty errors
   end
 

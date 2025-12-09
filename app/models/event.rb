@@ -1,6 +1,7 @@
 class Event < ApplicationRecord
   belongs_to :event_type
   belongs_to :created_by, class_name: "User"
+  belongs_to :image, class_name: "Medium", optional: true
   has_many :event_logs, dependent: :destroy
   has_many :users, through: :event_logs
 

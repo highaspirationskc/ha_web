@@ -83,7 +83,7 @@ class EventsController < AuthenticatedController
 
     # Only allow a list of trusted parameters through.
     def event_params
-      params.expect(event: [ :name, :description, :event_date, :location, :image_url, :event_type_id, :created_by_id ])
+      params.expect(event: [ :name, :description, :event_date, :location, :image_id, :event_type_id, :created_by_id ])
     end
 
     def authorize_create

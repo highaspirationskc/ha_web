@@ -44,6 +44,16 @@ Rails.application.routes.draw do
   resources :olympic_seasons
   resources :family_members
 
+  # Media
+  resources :media, only: [:index, :show, :create, :destroy] do
+    member do
+      get :usage
+    end
+    collection do
+      get :picker
+    end
+  end
+
   # Messaging
   resources :messages, only: [:index, :show, :new, :create] do
     member do

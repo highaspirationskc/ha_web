@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_09_190157) do
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -39,13 +39,14 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
     t.text "description"
     t.datetime "event_date", null: false
     t.integer "event_type_id", null: false
-    t.string "image_url"
+    t.integer "image_id"
     t.string "location"
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_events_on_created_by_id"
     t.index ["event_date"], name: "index_events_on_event_date"
     t.index ["event_type_id"], name: "index_events_on_event_type_id"
+    t.index ["image_id"], name: "index_events_on_image_id"
   end
 
   create_table "family_members", force: :cascade do |t|
@@ -64,6 +65,25 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_guardians_on_user_id", unique: true
+  end
+
+  create_table "media", force: :cascade do |t|
+    t.string "alt_text"
+    t.string "category", default: "general", null: false
+    t.string "cloudflare_id", null: false
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.integer "file_size"
+    t.string "filename", null: false
+    t.integer "height"
+    t.string "media_type", default: "image", null: false
+    t.datetime "updated_at", null: false
+    t.integer "uploaded_by_id", null: false
+    t.integer "width"
+    t.index ["category"], name: "index_media_on_category"
+    t.index ["cloudflare_id"], name: "index_media_on_cloudflare_id", unique: true
+    t.index ["media_type"], name: "index_media_on_media_type"
+    t.index ["uploaded_by_id"], name: "index_media_on_uploaded_by_id"
   end
 
   create_table "mentees", force: :cascade do |t|
@@ -132,9 +152,10 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
   create_table "teams", force: :cascade do |t|
     t.string "color", null: false
     t.datetime "created_at", null: false
-    t.string "icon_url"
+    t.integer "icon_id"
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["icon_id"], name: "index_teams_on_icon_id"
     t.index ["name"], name: "index_teams_on_name", unique: true
   end
 
@@ -167,7 +188,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
 
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: false, null: false
-    t.string "avatar_url"
+    t.integer "avatar_id"
     t.datetime "confirmation_sent_at"
     t.string "confirmation_token"
     t.datetime "created_at", null: false
@@ -175,7 +196,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
     t.string "first_name"
     t.string "last_name"
     t.string "password_digest", null: false
+    t.string "phone_number"
     t.datetime "updated_at", null: false
+    t.index ["avatar_id"], name: "index_users_on_avatar_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
   end
@@ -188,10 +211,12 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
   end
 
   add_foreign_key "events", "event_types"
+  add_foreign_key "events", "media", column: "image_id"
   add_foreign_key "events", "users", column: "created_by_id"
   add_foreign_key "family_members", "guardians"
   add_foreign_key "family_members", "mentees"
   add_foreign_key "guardians", "users"
+  add_foreign_key "media", "users", column: "uploaded_by_id"
   add_foreign_key "mentees", "mentors"
   add_foreign_key "mentees", "teams"
   add_foreign_key "mentees", "users"
@@ -201,7 +226,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_164019) do
   add_foreign_key "messages", "messages", column: "parent_id"
   add_foreign_key "messages", "users", column: "author_id"
   add_foreign_key "staff", "users"
+  add_foreign_key "teams", "media", column: "icon_id"
   add_foreign_key "tokens", "users"
   add_foreign_key "user_devices", "users"
+  add_foreign_key "users", "media", column: "avatar_id"
   add_foreign_key "volunteers", "users"
 end

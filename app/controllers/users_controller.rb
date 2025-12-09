@@ -327,10 +327,11 @@ class UsersController < AuthenticatedController
     permitted = []
 
     if current_user.can?(:edit, :users)
-      permitted = [:email, :password, :password_confirmation, :first_name, :last_name]
+      permitted = [:email, :password, :password_confirmation, :first_name, :last_name, :phone_number, :avatar_id]
       permitted << :active if current_user.can?(:change_status, :users, @user)
     elsif @user == current_user
-      permitted = [:password, :password_confirmation]
+      # Users can update their own password and avatar
+      permitted = [:password, :password_confirmation, :avatar_id]
     end
 
     return {} if permitted.empty?

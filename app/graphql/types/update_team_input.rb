@@ -7,6 +7,6 @@ module Types
     argument :id, ID, required: true
     argument :name, String, required: false
     argument :color, String, required: false
-    argument :icon_url, String, required: false
+    argument :icon_id, ID, required: false
   end
 end

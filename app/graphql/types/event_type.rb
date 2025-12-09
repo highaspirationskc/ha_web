@@ -8,6 +8,10 @@ module Types
     field :event_date, GraphQL::Types::ISO8601DateTime, null: false
     field :location, String, null: true
     field :image_url, String, null: true
+    def image_url
+      object.image&.url
+    end
+
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
 

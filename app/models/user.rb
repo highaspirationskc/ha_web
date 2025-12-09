@@ -3,6 +3,7 @@ class User < ApplicationRecord
 
   has_many :tokens, dependent: :destroy
   has_many :user_devices, dependent: :destroy
+  belongs_to :avatar, class_name: "Medium", optional: true
 
   # Role profiles
   has_one :mentor, dependent: :destroy
@@ -19,6 +20,9 @@ class User < ApplicationRecord
   has_many :sent_messages, class_name: "Message", foreign_key: :author_id, dependent: :destroy
   has_many :message_recipients, foreign_key: :recipient_id, dependent: :destroy
   has_many :received_messages, through: :message_recipients, source: :message
+
+  # Media associations
+  has_many :uploaded_media, class_name: "Medium", foreign_key: :uploaded_by_id, dependent: :destroy
 
   # Email validations
   validates :email, presence: true,

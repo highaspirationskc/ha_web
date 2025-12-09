@@ -6,6 +6,9 @@ module Types
     field :name, String, null: false
     field :color, String, null: false
     field :icon_url, String, null: true
+    def icon_url
+      object.icon&.thumbnail_url
+    end
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
 
