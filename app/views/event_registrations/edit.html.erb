@@ -1,10 +1,11 @@
 <% content_for :title, "Editing event registration" %>
 
 <div class="md:w-2/3 w-full">
-  <h1 class="font-bold text-4xl">Editing event registration</h1>
+  <%= render "shared/breadcrumbs", items: [
+    { label: "Event Registrations", path: event_registrations_path },
+    { label: "Registration ##{@event_registration.id}", path: event_registration_path(@event_registration) },
+    { label: "Edit" }
+  ] %>
 
   <%= render "form", event_registration: @event_registration %>
-
-  <%= link_to "Show this event registration", @event_registration, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= link_to "Back to event registrations", event_registrations_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
 </div>

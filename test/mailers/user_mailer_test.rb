@@ -30,4 +30,30 @@ class UserMailerTest < ActionMailer::TestCase
     mail = UserMailer.confirmation_email(@user)
     assert_match "Welcome to High Aspirations", mail.body.encoded
   end
+
+  # Password reset email tests
+  test "password_reset_email sends to correct recipient" do
+    @user.request_password_reset!
+    mail = UserMailer.password_reset_email(@user)
+    assert_equal [ "test@example.com" ], mail.to
+  end
+
+  test "password_reset_email has correct subject" do
+    @user.request_password_reset!
+    mail = UserMailer.password_reset_email(@user)
+    assert_equal "Reset your High Aspirations password", mail.subject
+  end
+
+  test "password_reset_email includes confirmation URL" do
+    @user.request_password_reset!
+    mail = UserMailer.password_reset_email(@user)
+    assert_match @user.confirmation_token, mail.body.encoded
+    assert_match "confirm", mail.body.encoded
+  end
+
+  test "password_reset_email includes reset message" do
+    @user.request_password_reset!
+    mail = UserMailer.password_reset_email(@user)
+    assert_match "reset", mail.body.encoded.downcase
+  end
 end

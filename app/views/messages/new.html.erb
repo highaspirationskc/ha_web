@@ -1,13 +1,11 @@
 <div class="py-6">
   <div class="px-4 sm:px-0">
-    <div class="mb-6">
-      <%= link_to "&larr; Back to Inbox".html_safe, messages_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
-    </div>
+    <%= render "shared/breadcrumbs", items: [
+      { label: "Inbox", path: messages_path },
+      { label: "Compose Message" }
+    ] %>
 
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <h1 class="text-xl font-bold text-gray-900">Compose Message</h1>
-      </div>
 
       <div class="px-4 py-5 sm:px-6">
         <%= form_with model: @message, url: messages_path, method: :post, class: "space-y-6" do |f| %>

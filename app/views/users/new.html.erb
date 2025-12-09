@@ -1,6 +1,9 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <div class="px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">New User</h1>
+    <%= render "shared/breadcrumbs", items: [
+      { label: "Users", path: users_path },
+      { label: "New User" }
+    ] %>
 
     <%= form_with model: @user, url: users_path, class: "space-y-6", data: { controller: "role-form" } do |form| %>
       <% if @user.errors.any? %>
@@ -29,6 +32,11 @@
                 <%= form.email_field :email, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
               </div>
 
+              <div class="col-span-6 sm:col-span-4">
+                <%= form.label :phone_number, "Phone Number", class: "block text-sm font-medium text-gray-700" %>
+                <%= form.telephone_field :phone_number, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+              </div>
+
               <div class="col-span-6 sm:col-span-3">
                 <%= form.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
                 <%= form.text_field :first_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
@@ -38,11 +46,22 @@
                 <%= form.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
                 <%= form.text_field :last_name, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="mt-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Password</h3>
+            <p class="mt-1 text-sm text-gray-500">Set an initial password or leave blank to send an email for the user to set their own.</p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 sm:col-span-3">
                 <%= form.label :password, class: "block text-sm font-medium text-gray-700" %>
                 <%= form.password_field :password, class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
-                <p class="mt-1 text-xs text-gray-500">Leave blank to send a confirmation email. User will set their own password.</p>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -54,7 +73,7 @@
         </div>
       </div>
 
-      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div class="mt-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
             <h3 class="text-lg font-medium leading-6 text-gray-900">Role</h3>
@@ -109,14 +128,10 @@
         </div>
       </div>
 
-      <div class="flex justify-end space-x-3">
+      <div class="mt-6 flex justify-end space-x-3">
         <%= link_to "Cancel", users_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
         <%= form.submit "Create User", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
       </div>
     <% end %>
-
-    <div class="mt-6">
-      <%= link_to "Back to Users", users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
-    </div>
   </div>
 </div>

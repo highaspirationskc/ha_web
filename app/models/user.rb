@@ -116,6 +116,21 @@ class User < ApplicationRecord
     UserMailer.confirmation_email(self).deliver_later
   end
 
+  def request_password_reset!
+    generate_confirmation_token
+    save!
+    UserMailer.password_reset_email(self).deliver_later
+  end
+
+  def confirmation_token_expired?
+    return true if confirmation_sent_at.nil?
+    confirmation_sent_at < 24.hours.ago
+  end
+
+  def clear_confirmation_token!
+    update!(confirmation_token: nil, confirmation_sent_at: nil)
+  end
+
   private
 
   def password_required?

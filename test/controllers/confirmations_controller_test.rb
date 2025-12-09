@@ -103,4 +103,68 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     @user.reload
     assert_not @user.active?
   end
+
+  # Token expiration tests
+  test "show with expired token redirects with error" do
+    @user.update!(confirmation_sent_at: 25.hours.ago)
+
+    get confirmation_path(token: @user.confirmation_token)
+
+    assert_redirected_to root_path
+    assert_equal "Invalid or expired confirmation link", flash[:error]
+  end
+
+  test "confirm with expired token shows error" do
+    @user.update!(confirmation_sent_at: 25.hours.ago)
+
+    post confirmation_path(token: @user.confirmation_token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
+
+    assert_redirected_to root_path
+    assert_equal "Invalid or expired confirmation link", flash[:error]
+  end
+
+  # Password reset for active users tests
+  test "show with valid token for active user displays password form" do
+    @user.activate!
+    @user.request_password_reset!
+
+    get confirmation_path(token: @user.confirmation_token)
+
+    assert_response :success
+    assert_select "input[name='password']"
+  end
+
+  test "confirm with valid token for active user updates password" do
+    @user.activate!
+    @user.request_password_reset!
+    token = @user.confirmation_token
+
+    post confirmation_path(token: token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
+
+    @user.reload
+    assert @user.active?
+    assert @user.authenticate("NewPassword123!")
+    assert_nil @user.confirmation_token
+    assert_redirected_to root_path
+    assert_equal "Your password has been updated! You can now log in.", flash[:success]
+  end
+
+  test "confirm clears token after successful password set" do
+    token = @user.confirmation_token
+
+    post confirmation_path(token: token), params: {
+      password: "NewPassword123!",
+      password_confirmation: "NewPassword123!"
+    }
+
+    @user.reload
+    assert_nil @user.confirmation_token
+    assert_nil @user.confirmation_sent_at
+  end
 end

@@ -1,6 +1,8 @@
 require "test_helper"
 
 class UsersControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   def setup
     @user = User.create!(
       email: "admin@example.com",
@@ -559,5 +561,43 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @volunteer_user.mentee
     assert_equal team, @volunteer_user.mentee.team
     assert_equal mentor, @volunteer_user.mentee.mentor
+  end
+
+  # Password reset tests
+  test "admin can send password reset email to user" do
+    login_as(@user)
+    assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
+      post reset_password_user_path(@staff_user)
+    end
+    assert_redirected_to edit_user_path(@staff_user)
+    assert_match "Password reset email sent", flash[:notice]
+  end
+
+  test "staff can send password reset email to user" do
+    login_as(@staff_user)
+    target_user = User.create!(email: "target@example.com", password: "Password123!")
+    Mentor.create!(user: target_user)
+    target_user.activate!
+
+    assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
+      post reset_password_user_path(target_user)
+    end
+    assert_redirected_to edit_user_path(target_user)
+  end
+
+  test "reset password requires authentication" do
+    post reset_password_user_path(@staff_user)
+    assert_redirected_to root_path
+  end
+
+  test "reset password generates new confirmation token" do
+    login_as(@user)
+    @staff_user.update!(confirmation_token: nil)
+
+    post reset_password_user_path(@staff_user)
+
+    @staff_user.reload
+    assert_not_nil @staff_user.confirmation_token
+    assert_not_nil @staff_user.confirmation_sent_at
   end
 end

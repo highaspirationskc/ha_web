@@ -27,6 +27,7 @@ Rails.application.routes.draw do
       post :create_guardian
       post :add_mentee
       delete :remove_mentee
+      post :reset_password
     end
   end
 

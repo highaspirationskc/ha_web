@@ -1,12 +1,13 @@
 class UsersController < AuthenticatedController
   before_action { require_navigation_access(:users) }
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show]
   before_action :authorize_edit, only: [:edit, :update]
   before_action :authorize_create, only: [:new, :create]
   before_action :authorize_destroy, only: [:destroy]
   before_action :authorize_activation, only: [:activate, :deactivate]
+  before_action :authorize_edit, only: [:reset_password]
   before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member, :create_guardian]
   before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
 
@@ -122,6 +123,11 @@ class UsersController < AuthenticatedController
   def deactivate
     @user.deactivate!
     redirect_to user_path(@user), notice: "User deactivated successfully"
+  end
+
+  def reset_password
+    @user.request_password_reset!
+    redirect_to edit_user_path(@user), notice: "Password reset email sent to #{@user.email}"
   end
 
   def add_family_member
@@ -320,7 +326,7 @@ class UsersController < AuthenticatedController
 
   def user_params_for_create
     return {} unless staff_member?
-    params.require(:user).permit(:email, :password, :password_confirmation, :active, :first_name, :last_name)
+    params.require(:user).permit(:email, :password, :password_confirmation, :active, :first_name, :last_name, :phone_number)
   end
 
   def permitted_update_params

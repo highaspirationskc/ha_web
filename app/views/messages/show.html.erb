@@ -1,8 +1,11 @@
 <%= turbo_stream_from "message_thread_#{@message.thread_root.id}" %>
 <div class="py-6">
   <div class="px-4 sm:px-0">
-    <div class="mb-6 flex items-center justify-between">
-      <%= link_to "&larr; Back to Inbox".html_safe, messages_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+    <div class="flex items-center justify-between">
+      <%= render "shared/breadcrumbs", items: [
+        { label: "Inbox", path: messages_path },
+        { label: @message.thread_root.subject.truncate(30) }
+      ] %>
       <% thread_message_ids = @message.thread_root.thread_messages.pluck(:id) %>
       <% is_recipient = current_user.message_recipients.where(message_id: thread_message_ids).exists? %>
       <% if is_recipient %>

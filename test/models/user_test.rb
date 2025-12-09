@@ -130,4 +130,63 @@ class UserTest < ActiveSupport::TestCase
       @user.send_confirmation_email
     end
   end
+
+  # Password reset
+  test "request_password_reset! generates new token for active user" do
+    @user.save!
+    @user.activate!
+    assert_nil @user.confirmation_token
+
+    @user.request_password_reset!
+
+    assert_not_nil @user.confirmation_token
+    assert_not_nil @user.confirmation_sent_at
+  end
+
+  test "request_password_reset! sends password reset email" do
+    @user.save!
+    @user.activate!
+
+    assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
+      @user.request_password_reset!
+    end
+  end
+
+  test "request_password_reset! regenerates token if one exists" do
+    @user.save!
+    old_token = @user.confirmation_token
+
+    @user.request_password_reset!
+
+    assert_not_equal old_token, @user.confirmation_token
+  end
+
+  # Token expiration
+  test "confirmation_token_expired? returns false for fresh token" do
+    @user.save!
+    assert_not @user.confirmation_token_expired?
+  end
+
+  test "confirmation_token_expired? returns true for old token" do
+    @user.save!
+    @user.update!(confirmation_sent_at: 25.hours.ago)
+    assert @user.confirmation_token_expired?
+  end
+
+  test "confirmation_token_expired? returns true if no sent_at" do
+    @user.save!
+    @user.update!(confirmation_sent_at: nil)
+    assert @user.confirmation_token_expired?
+  end
+
+  test "clear_confirmation_token! clears token and sent_at" do
+    @user.save!
+    assert_not_nil @user.confirmation_token
+    assert_not_nil @user.confirmation_sent_at
+
+    @user.clear_confirmation_token!
+
+    assert_nil @user.confirmation_token
+    assert_nil @user.confirmation_sent_at
+  end
 end
