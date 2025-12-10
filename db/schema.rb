@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_10_021105) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_10_211243) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -153,6 +153,23 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_021105) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "saturday_scoops", force: :cascade do |t|
+    t.string "author", null: false
+    t.datetime "created_at", null: false
+    t.integer "created_by_id", null: false
+    t.text "description"
+    t.integer "image_id"
+    t.date "publish_on"
+    t.boolean "published", default: false, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "video_id"
+    t.index ["created_by_id"], name: "index_saturday_scoops_on_created_by_id"
+    t.index ["image_id"], name: "index_saturday_scoops_on_image_id"
+    t.index ["published", "publish_on"], name: "index_saturday_scoops_on_published_and_publish_on"
+    t.index ["video_id"], name: "index_saturday_scoops_on_video_id"
+  end
+
   create_table "staff", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "permission_level", default: "standard", null: false
@@ -238,6 +255,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_021105) do
   add_foreign_key "message_recipients", "users", column: "recipient_id"
   add_foreign_key "messages", "messages", column: "parent_id"
   add_foreign_key "messages", "users", column: "author_id"
+  add_foreign_key "saturday_scoops", "media", column: "image_id"
+  add_foreign_key "saturday_scoops", "media", column: "video_id"
+  add_foreign_key "saturday_scoops", "users", column: "created_by_id"
   add_foreign_key "staff", "users"
   add_foreign_key "teams", "media", column: "icon_id"
   add_foreign_key "tokens", "users"

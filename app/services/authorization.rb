@@ -7,7 +7,8 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings]
+      saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
+      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
@@ -16,7 +17,8 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings]
+      saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
+      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     mentor: {
       users: [:show],

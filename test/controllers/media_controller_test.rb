@@ -110,7 +110,7 @@ class MediaControllerTest < ActionDispatch::IntegrationTest
       delete medium_url(@medium)
     end
 
-    assert_redirected_to media_url
+    assert_redirected_to media_url(media_type: "image")
   end
 
   test "cannot delete medium in use" do

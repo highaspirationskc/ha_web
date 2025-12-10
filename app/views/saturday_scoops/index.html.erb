@@ -1,0 +1,81 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Saturday Scoops</h1>
+      <% if current_user.can?(:create, :saturday_scoops) %>
+        <%= link_to "New Scoop", new_saturday_scoop_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+      <% end %>
+    </div>
+
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800" id="notice"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <% if @saturday_scoops.any? %>
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul role="list" class="divide-y divide-gray-200">
+          <% @saturday_scoops.each do |scoop| %>
+            <li>
+              <%= link_to saturday_scoop_path(scoop), class: "block hover:bg-gray-50" do %>
+                <div class="flex items-center px-4 py-4 sm:px-6">
+                  <% if scoop.image.present? %>
+                    <%= image_tag scoop.image.thumbnail_url, alt: scoop.title, class: "h-16 w-16 rounded object-cover flex-shrink-0" %>
+                  <% else %>
+                    <div class="h-16 w-16 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                      </svg>
+                    </div>
+                  <% end %>
+                  <div class="min-w-0 flex-1 px-4">
+                    <div class="flex items-center gap-2">
+                      <p class="text-sm font-medium text-indigo-600 truncate"><%= scoop.title %></p>
+                      <% if scoop.published_and_live? %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Published</span>
+                      <% elsif scoop.published? && scoop.publish_on&.future? %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Scheduled</span>
+                      <% else %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Draft</span>
+                      <% end %>
+                      <% if scoop.video.present? %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Video</span>
+                      <% end %>
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">By <%= scoop.author %></p>
+                  </div>
+                  <div class="flex-shrink-0 text-right">
+                    <% if scoop.publish_on.present? %>
+                      <p class="text-sm text-gray-500"><%= scoop.publish_on.strftime("%B %d, %Y") %></p>
+                    <% else %>
+                      <p class="text-sm text-gray-400">No publish date</p>
+                    <% end %>
+                    <p class="text-xs text-gray-400 mt-1">Created by <%= scoop.created_by.email %></p>
+                  </div>
+                </div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+
+      <div class="mt-4">
+        <%= paginate @saturday_scoops %>
+      </div>
+    <% else %>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No Saturday Scoops</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new Saturday Scoop.</p>
+        <% if current_user.can?(:create, :saturday_scoops) %>
+          <div class="mt-6">
+            <%= link_to "New Scoop", new_saturday_scoop_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

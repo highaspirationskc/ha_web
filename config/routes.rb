@@ -60,6 +60,14 @@ Rails.application.routes.draw do
   resources :family_members
   resources :community_service_records, path: "community_service"
 
+  # Saturday Scoops
+  resources :saturday_scoops do
+    member do
+      post :publish
+      post :unpublish
+    end
+  end
+
   # Media
   resources :media, only: [:index, :show, :create, :destroy] do
     member do

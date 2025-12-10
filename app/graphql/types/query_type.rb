@@ -240,6 +240,19 @@ module Types
       end
     end
 
+    # Saturday Scoops (public - no auth required)
+    field :saturday_scoops, [Types::SaturdayScoopType], null: false, description: "List published Saturday Scoops"
+    def saturday_scoops
+      SaturdayScoop.published.recent
+    end
+
+    field :saturday_scoop, Types::SaturdayScoopType, null: true, description: "Get a published Saturday Scoop by ID" do
+      argument :id, ID, required: true
+    end
+    def saturday_scoop(id:)
+      SaturdayScoop.published.find_by(id: id)
+    end
+
     private
 
     def require_authentication!

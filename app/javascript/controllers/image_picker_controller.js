@@ -2,7 +2,10 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input", "preview", "previewImage", "previewName", "placeholder", "modal", "modalContent", "backdrop", "uploadForm", "fileInput", "uploadButton", "uploadError", "uploadProgress", "categoryInput"]
-  static values = { category: { type: String, default: "general" } }
+  static values = {
+    category: { type: String, default: "general" },
+    mediaType: { type: String, default: "image" }
+  }
 
   connect() {
     this.updatePreview()
@@ -42,12 +45,13 @@ export default class extends Controller {
 
   async loadPicker() {
     try {
-      const url = `/media/picker?category=${encodeURIComponent(this.categoryValue)}`
+      const url = `/media/picker?category=${encodeURIComponent(this.categoryValue)}&media_type=${encodeURIComponent(this.mediaTypeValue)}`
       const response = await fetch(url)
       const html = await response.text()
       this.modalContentTarget.innerHTML = html
     } catch (error) {
-      this.modalContentTarget.innerHTML = '<p class="p-4 text-red-600">Failed to load images</p>'
+      const mediaLabel = this.mediaTypeValue === "video" ? "videos" : "images"
+      this.modalContentTarget.innerHTML = `<p class="p-4 text-red-600">Failed to load ${mediaLabel}</p>`
     }
   }
 
@@ -104,6 +108,9 @@ export default class extends Controller {
     } else {
       formData.append("category", this.categoryValue)
     }
+
+    // Include media type for video uploads
+    formData.append("media_type", this.mediaTypeValue)
 
     try {
       const response = await fetch("/media", {

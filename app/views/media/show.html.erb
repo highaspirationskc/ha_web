@@ -19,7 +19,11 @@
 
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="aspect-video overflow-hidden bg-gray-100">
-        <%= image_tag @medium.url, alt: @medium.alt_text || @medium.filename, class: "h-full w-full object-contain" %>
+        <% if @medium.video? %>
+          <iframe src="<%= @medium.embed_url %>" class="w-full h-full" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
+        <% else %>
+          <%= image_tag @medium.url, alt: @medium.alt_text || @medium.filename, class: "h-full w-full object-contain" %>
+        <% end %>
       </div>
 
       <div class="px-4 py-5 sm:px-6">
@@ -78,6 +82,8 @@
                   <%= link_to "View", user_path(usage[:record]), class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
                 <% when "Team" %>
                   <%= link_to "View", team_path(usage[:record]), class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+                <% when "SaturdayScoop" %>
+                  <%= link_to "View", saturday_scoop_path(usage[:record]), class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
                 <% end %>
               </li>
             <% end %>
@@ -91,7 +97,7 @@
           <% if @medium.in_use? %>
             <span class="text-sm text-gray-500 italic">Remove from all usages before deleting</span>
           <% else %>
-            <%= button_to "Delete", medium_path(@medium), method: :delete, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700", data: { turbo_confirm: "Are you sure you want to delete this image?" } %>
+            <%= button_to "Delete", medium_path(@medium), method: :delete, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700", data: { turbo_confirm: "Are you sure you want to delete this #{@medium.media_type}?" } %>
           <% end %>
         <% end %>
       </div>
