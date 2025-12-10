@@ -569,7 +569,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
       post reset_password_user_path(@staff_user)
     end
-    assert_redirected_to edit_user_path(@staff_user)
+    assert_redirected_to user_path(@staff_user)
     assert_match "Password reset email sent", flash[:notice]
   end
 
@@ -582,7 +582,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_enqueued_jobs 1, only: ActionMailer::MailDeliveryJob do
       post reset_password_user_path(target_user)
     end
-    assert_redirected_to edit_user_path(target_user)
+    assert_redirected_to user_path(target_user)
   end
 
   test "reset password requires authentication" do

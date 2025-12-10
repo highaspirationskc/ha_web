@@ -127,7 +127,7 @@ class UsersController < AuthenticatedController
 
   def reset_password
     @user.request_password_reset!
-    redirect_to edit_user_path(@user), notice: "Password reset email sent to #{@user.email}"
+    redirect_to user_path(@user), notice: "Password reset email sent to #{@user.email}"
   end
 
   def add_family_member
