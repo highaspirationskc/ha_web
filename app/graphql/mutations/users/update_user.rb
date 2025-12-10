@@ -44,7 +44,7 @@ module Mutations
 
       def self_update_only?(input)
         # Non-superusers can only update their own password
-        input.to_h.except(:id).keys.all? { |k| [:password].include?(k) }
+        input.to_h.except(:id).keys.all? { |k| [:password, :avatar_id, :email, :first_name, :last_name, :phone_number].include?(k) }
       end
 
       def permitted_attributes(user, input)
@@ -54,7 +54,7 @@ module Mutations
           attrs
         else
           # Non-superusers can only update password
-          attrs.slice(:password)
+          attrs.slice(:password, :avatar_id, :email, :first_name, :last_name, :phone_number)
         end
       end
     end

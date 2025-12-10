@@ -486,12 +486,13 @@ class UsersMutationsTest < ActiveSupport::TestCase
     assert_empty errors
   end
 
-  test "user cannot update other fields for themselves" do
+  test "user can update their own profile fields" do
     mutation = <<~GQL
       mutation($input: UpdateUserInput!) {
         updateUser(input: $input) {
           user {
             id
+            firstName
           }
           errors
         }
@@ -501,15 +502,16 @@ class UsersMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         id: @mentee.id.to_s,
-        firstName: "HackedName"
+        firstName: "NewName"
       }
     }, context: { current_user: @mentee })
 
     user = result.dig("data", "updateUser", "user")
     errors = result.dig("data", "updateUser", "errors")
 
-    assert_nil user
-    assert_includes errors, "You don't have permission to update this user"
+    assert_not_nil user
+    assert_equal "NewName", user["firstName"]
+    assert_empty errors
   end
 
   test "update user returns error for non-existent user" do
