@@ -8,6 +8,7 @@ class EventsController < AuthenticatedController
   # GET /admin/events or /admin/events.json
   def index
     load_calendar_data
+    @view_mode = params[:view] == "list" ? :list : :calendar
   end
 
   # GET /admin/events/1 or /admin/events/1.json

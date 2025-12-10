@@ -1,0 +1,40 @@
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      <% if @events.empty? %>
+        <tr>
+          <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+            No events found for this season.
+          </td>
+        </tr>
+      <% else %>
+        <% @events.each do |event| %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <%= event.event_date.strftime("%b %d, %Y") %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <%= link_to event_path(event), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
+                <%= event.name %>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <%= event.event_type&.name || "-" %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <%= event.location.presence || "-" %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
