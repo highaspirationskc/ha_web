@@ -38,7 +38,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :mentees
+  resources :mentees, only: [:create, :destroy]
   resources :events
   resources :event_types
   resources :event_registrations
@@ -51,6 +51,7 @@ Rails.application.routes.draw do
   end
   resources :olympic_seasons
   resources :family_members
+  resources :community_service_records, path: "community_service"
 
   # Media
   resources :media, only: [:index, :show, :create, :destroy] do

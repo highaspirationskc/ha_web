@@ -4,26 +4,29 @@ class Authorization
       users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
+      community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media]
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media, :community_service]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
+      community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media]
+      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media, :community_service]
     },
     mentor: {
-      users: [],
+      users: [:show],
       events: [:index, :show],
       teams: [:index, :show],
       mentees: [:index, :show, :create, :destroy],
+      community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :mentees, :events, :teams, :inbox]
+      navigation: [:dashboard, :users, :events, :inbox, :community_service]
     },
     guardian: {
       users: [],
@@ -35,9 +38,10 @@ class Authorization
     mentee: {
       users: [],
       events: [:index, :show],
+      community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :events, :inbox]
+      navigation: [:dashboard, :events, :inbox, :community_service]
     },
     volunteer: {
       users: [],

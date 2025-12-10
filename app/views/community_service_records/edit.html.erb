@@ -1,0 +1,14 @@
+<div class="max-w-2xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="mb-6">
+      <%= link_to "&larr; Back to Community Service".html_safe, community_service_records_path, class: "text-indigo-600 hover:text-indigo-900" %>
+    </div>
+
+    <div class="bg-white shadow sm:rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-6">Edit Community Service Record</h3>
+        <%= render "form" %>
+      </div>
+    </div>
+  </div>
+</div>

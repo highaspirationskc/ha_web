@@ -99,8 +99,8 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   # Mentor permissions
-  test "mentor cannot view users" do
-    assert_not Authorization.can?(@mentor_user, :show, :users)
+  test "mentor can view users" do
+    assert Authorization.can?(@mentor_user, :show, :users)
   end
 
   test "mentor cannot create users" do
@@ -163,8 +163,8 @@ class AuthorizationTest < ActiveSupport::TestCase
     nav = Authorization.navigation_for(@mentor_user)
     assert_includes nav, :dashboard
     assert_includes nav, :events
-    assert_includes nav, :teams
-    assert_not_includes nav, :users
+    assert_includes nav, :users
+    assert_not_includes nav, :teams
   end
 
   test "mentee has minimal navigation" do

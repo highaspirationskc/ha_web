@@ -29,6 +29,19 @@ class Team < ApplicationRecord
             .sum(:points_awarded)
   end
 
+  # Calculate total approved community service hours for all mentees on this team
+  def total_community_service_hours(date_range = nil)
+    date_range ||= current_season_date_range
+    return 0 unless date_range
+
+    CommunityServiceRecord
+      .joins(:mentee)
+      .where(mentees: { team_id: id })
+      .where(approved: true)
+      .where(event_date: date_range)
+      .sum(:hours)
+  end
+
   private
 
   def color_must_be_available

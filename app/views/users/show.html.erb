@@ -6,9 +6,11 @@
         { label: @user.email }
       ] %>
       <div class="flex space-x-4">
-        <%= link_to "Edit", edit_user_path(@user), class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200" %>
+        <% if current_user.can?(:edit, :users) %>
+          <%= link_to "Edit", edit_user_path(@user), class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200" %>
+        <% end %>
         <%= button_to "Reset Password", reset_password_user_path(@user), method: :post, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700", data: { turbo_confirm: "Send password reset email to #{@user.email}?" } %>
-        <% if real_current_user.admin? && @user != real_current_user %>
+        <% if current_user.admin? && @user != current_user %>
           <%= button_to "Spoof User", spoof_path(@user), method: :post, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600" %>
         <% end %>
         <% if @can_activate_deactivate %>
@@ -308,6 +310,151 @@
                   <% else %>
                     <tr>
                       <td colspan="<%= @can_manage_family_members ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No guardians</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% end %>
+
+    <!-- Community Service (only for mentees) -->
+    <% if @user.mentee.present? %>
+    <div class="mt-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Community Service
+          <% if @current_season %>
+            <span class="ml-2 text-sm font-normal text-gray-500">(<%= @current_season.name %> Season)</span>
+          <% end %>
+        </h3>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-pink-600"><%= @total_community_service_hours || 0 %></div>
+          <div class="text-xs text-gray-500">Total Hours</div>
+        </div>
+      </div>
+
+
+      <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Activity
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Hours
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <% if @can_manage_community_service %>
+                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    <% end %>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <% if @community_service_records&.any? %>
+                    <% @community_service_records.each do |record| %>
+                      <tr data-controller="modal">
+                        <td class="px-6 py-4">
+                          <div class="text-sm font-medium text-gray-900"><%= record.event %></div>
+                          <% if record.description.present? %>
+                            <div class="text-sm text-gray-500 truncate max-w-xs"><%= record.description %></div>
+                          <% end %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <%= record.event_date.strftime("%b %d, %Y") %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <%= record.hours %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <% if record.approved? %>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              Approved
+                            </span>
+                          <% else %>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                              Denied
+                            </span>
+                          <% end %>
+                        </td>
+                        <% if @can_manage_community_service %>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <% if record.approved? %>
+                              <button type="button"
+                                      data-action="click->modal#open"
+                                      class="text-red-600 hover:text-red-900">
+                                Deny
+                              </button>
+
+                              <!-- Deny Modal -->
+                              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                                <div data-modal-target="backdrop"
+                                     data-action="click->modal#closeOnBackdrop"
+                                     class="fixed inset-0 bg-black/50 transition-opacity"></div>
+
+                                <div class="fixed inset-0 z-10 overflow-y-auto">
+                                  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Deny Community Service Record</h3>
+                                        <p class="text-sm text-gray-500 mb-4">
+                                          You are denying <strong><%= record.event %></strong> (<%= number_with_precision(record.hours, precision: 1) %> hours) for <%= @user.first_name %> <%= @user.last_name %>.
+                                        </p>
+
+                                        <%= form_with url: community_service_record_path(record), method: :patch, class: "space-y-4" do |f| %>
+                                          <%= hidden_field_tag :redirect_to, user_path(@user) %>
+                                          <input type="hidden" name="community_service_record[approved]" value="false">
+
+                                          <div>
+                                            <%= label_tag :denial_reason, "Reason for denial", class: "block text-sm font-medium text-gray-700" %>
+                                            <%= text_area_tag :denial_reason, nil, rows: 3, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm", placeholder: "Please explain why this record is being denied..." %>
+                                            <p class="mt-1 text-xs text-gray-500">This message will be sent to <%= @user.first_name %>.</p>
+                                          </div>
+
+                                          <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                            <%= f.submit "Deny Record", class: "inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer" %>
+                                            <button type="button"
+                                                    data-action="click->modal#close"
+                                                    class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        <% end %>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            <% else %>
+                              <%= button_to "Approve", community_service_record_path(record), method: :patch, params: { community_service_record: { approved: true }, redirect_to: user_path(@user) }, class: "text-green-600 hover:text-green-900" %>
+                            <% end %>
+                          </td>
+                        <% end %>
+                      </tr>
+                    <% end %>
+                  <% else %>
+                    <tr>
+                      <td colspan="<%= @can_manage_community_service ? 5 : 4 %>" class="px-6 py-4 text-center text-sm text-gray-500">
+                        <% if @current_season %>
+                          No community service records for this season
+                        <% else %>
+                          No current season configured
+                        <% end %>
+                      </td>
                     </tr>
                   <% end %>
                 </tbody>

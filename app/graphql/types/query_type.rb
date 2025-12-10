@@ -225,6 +225,21 @@ module Types
       Authorization.messageable_users(context[:current_user])
     end
 
+    # Community Service Records
+    field :community_service_records, [Types::CommunityServiceRecordType], null: false, description: "Get community service records for the current user"
+    def community_service_records
+      require_authentication!
+      user = context[:current_user]
+
+      if user.mentee
+        # Mentees see their own records
+        user.mentee.community_service_records.order(event_date: :desc)
+      else
+        # Non-mentees see nothing (they should use mentee.communityServiceRecords)
+        []
+      end
+    end
+
     private
 
     def require_authentication!

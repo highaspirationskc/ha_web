@@ -52,5 +52,10 @@ module Types
     # Device mutations
     field :register_device, mutation: Mutations::Devices::RegisterDevice
     field :unregister_device, mutation: Mutations::Devices::UnregisterDevice
+
+    # Community Service Record mutations
+    field :create_community_service_record, mutation: Mutations::CommunityServiceRecords::CreateCommunityServiceRecord
+    field :update_community_service_record, mutation: Mutations::CommunityServiceRecords::UpdateCommunityServiceRecord
+    field :delete_community_service_record, mutation: Mutations::CommunityServiceRecords::DeleteCommunityServiceRecord
   end
 end

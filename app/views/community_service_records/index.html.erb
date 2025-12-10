@@ -1,0 +1,305 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Community Service</h1>
+        <% if current_user.mentee? %>
+          <p class="mt-1 text-sm text-gray-500">Track your community service hours</p>
+        <% else %>
+          <p class="mt-1 text-sm text-gray-500">Review and manage community service records</p>
+        <% end %>
+      </div>
+      <% if current_user.mentee? %>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-pink-600"><%= current_user.mentee.total_community_service_hours(@season_date_range) %></div>
+          <div class="text-xs text-gray-500">Total Approved Hours</div>
+        </div>
+      <% end %>
+    </div>
+
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="rounded-md bg-red-50 p-4 mb-6">
+        <p class="text-sm font-medium text-red-800"><%= alert %></p>
+      </div>
+    <% end %>
+
+    <% if current_user.mentee? %>
+      <!-- Add Record for Mentees -->
+      <div class="bg-white shadow sm:rounded-lg p-4 mb-6" data-controller="modal">
+        <div class="flex justify-between items-center">
+          <h4 class="text-sm font-medium text-gray-700">Log Community Service</h4>
+          <button type="button"
+                  data-action="click->modal#open"
+                  class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700 cursor-pointer">
+            Add
+          </button>
+        </div>
+
+        <!-- Add Community Service Modal -->
+        <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+          <div data-modal-target="backdrop"
+               data-action="click->modal#closeOnBackdrop"
+               class="fixed inset-0 bg-black/50 transition-opacity"></div>
+
+          <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                  <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add Community Service Record</h3>
+
+                  <%= form_with model: CommunityServiceRecord.new, url: community_service_records_path, method: :post, class: "space-y-4", data: { turbo: false } do |f| %>
+                    <div>
+                      <%= f.label :event, "Activity", class: "block text-sm font-medium text-gray-700" %>
+                      <%= f.text_field :event, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm", placeholder: "e.g., Mowed lawn, Volunteered at food bank" %>
+                    </div>
+
+                    <div>
+                      <%= f.label :event_date, "Date of Service", class: "block text-sm font-medium text-gray-700" %>
+                      <%= f.date_field :event_date, required: true, value: Date.current, max: Date.current, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" %>
+                    </div>
+
+                    <div>
+                      <%= f.label :hours, class: "block text-sm font-medium text-gray-700" %>
+                      <%= f.number_field :hours, required: true, step: 0.5, min: 0.5, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm", placeholder: "e.g., 2.5" %>
+                    </div>
+
+                    <div>
+                      <%= f.label :description, class: "block text-sm font-medium text-gray-700" %>
+                      <%= f.text_area :description, rows: 3, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm", placeholder: "Describe what you did..." %>
+                    </div>
+
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                      <%= f.submit "Add Record", class: "inline-flex w-full justify-center rounded-md bg-pink-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-pink-500 sm:col-start-2 cursor-pointer" %>
+                      <button type="button"
+                              data-action="click->modal#close"
+                              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                        Cancel
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <!-- Filter Section for Mentors/Staff -->
+      <div class="bg-white shadow sm:rounded-lg p-4 mb-6">
+        <div class="flex flex-wrap items-end gap-4">
+          <%= form_with url: community_service_records_path, method: :get, class: "flex items-end gap-4", data: { turbo: false } do %>
+            <div class="w-64">
+              <%= render "shared/combobox",
+                  name: "mentee_id",
+                  label: "Filter by Mentee",
+                  options: @filterable_mentees,
+                  selected_value: params[:mentee_id],
+                  selected_text: @selected_mentee ? "#{@selected_mentee.user.first_name} #{@selected_mentee.user.last_name}".strip : nil,
+                  placeholder: "All mentees..." %>
+            </div>
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+              Filter
+            </button>
+            <% if params[:mentee_id].present? %>
+              <%= link_to "Clear", community_service_records_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+            <% end %>
+          <% end %>
+
+          <% if @selected_mentee %>
+            <div class="ml-auto text-right">
+              <div class="text-sm text-gray-500">Total Approved Hours</div>
+              <div class="text-2xl font-bold text-pink-600"><%= @selected_mentee.total_community_service_hours(@season_date_range) %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <% unless current_user.mentee? %>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee</th>
+            <% end %>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% if @records.empty? %>
+            <tr>
+              <td colspan="<%= current_user.mentee? ? 5 : 6 %>" class="px-6 py-8 text-center text-gray-500">
+                <% if current_user.mentee? %>
+                  No community service records yet. Add your first record above!
+                <% elsif @selected_mentee %>
+                  No community service records found for <%= @selected_mentee.user.first_name %> <%= @selected_mentee.user.last_name %>.
+                <% else %>
+                  No community service records found.
+                <% end %>
+              </td>
+            </tr>
+          <% else %>
+            <% @records.each do |record| %>
+              <tr class="hover:bg-gray-50" data-controller="modal">
+                <% unless current_user.mentee? %>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">
+                      <%= link_to "#{record.mentee.user.first_name} #{record.mentee.user.last_name}".strip, user_path(record.mentee.user), class: "text-indigo-600 hover:text-indigo-900" %>
+                    </div>
+                    <div class="text-sm text-gray-500"><%= record.mentee.user.email %></div>
+                  </td>
+                <% end %>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= record.event_date.strftime("%b %d, %Y") %>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm font-medium text-gray-900"><%= record.event %></div>
+                  <% if record.description.present? %>
+                    <div class="text-sm text-gray-500 truncate max-w-xs"><%= record.description %></div>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= number_with_precision(record.hours, precision: 1) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <% if record.approved? %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Approved
+                    </span>
+                  <% else %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Denied
+                    </span>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <% if current_user.mentee? %>
+                    <!-- Mentee actions: Edit only if not denied -->
+                    <% if record.approved? %>
+                      <button type="button"
+                              data-action="click->modal#open"
+                              class="text-indigo-600 hover:text-indigo-900">
+                        Edit
+                      </button>
+
+                      <!-- Edit Modal for Mentee -->
+                      <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                        <div data-modal-target="backdrop"
+                             data-action="click->modal#closeOnBackdrop"
+                             class="fixed inset-0 bg-black/50 transition-opacity"></div>
+
+                        <div class="fixed inset-0 z-10 overflow-y-auto">
+                          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                              <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Community Service Record</h3>
+
+                                <%= form_with model: record, url: community_service_record_path(record), method: :patch, class: "space-y-4", data: { turbo: false } do |f| %>
+                                  <div>
+                                    <%= f.label :event, "Activity", class: "block text-sm font-medium text-gray-700" %>
+                                    <%= f.text_field :event, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" %>
+                                  </div>
+
+                                  <div>
+                                    <%= f.label :event_date, "Date of Service", class: "block text-sm font-medium text-gray-700" %>
+                                    <%= f.date_field :event_date, required: true, max: Date.current, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" %>
+                                  </div>
+
+                                  <div>
+                                    <%= f.label :hours, class: "block text-sm font-medium text-gray-700" %>
+                                    <%= f.number_field :hours, required: true, step: 0.5, min: 0.5, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" %>
+                                  </div>
+
+                                  <div>
+                                    <%= f.label :description, class: "block text-sm font-medium text-gray-700" %>
+                                    <%= f.text_area :description, rows: 3, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 sm:text-sm" %>
+                                  </div>
+
+                                  <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                    <%= f.submit "Save Changes", class: "inline-flex w-full justify-center rounded-md bg-pink-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-pink-500 sm:col-start-2 cursor-pointer" %>
+                                    <button type="button"
+                                            data-action="click->modal#close"
+                                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                                      Cancel
+                                    </button>
+                                  </div>
+                                <% end %>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    <% else %>
+                      <%= button_to "Delete", community_service_record_path(record), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure you want to delete this denied record?" } %>
+                    <% end %>
+                  <% else %>
+                    <!-- Mentor/Staff actions: Approve/Deny -->
+                    <% if record.approved? %>
+                      <button type="button"
+                              data-action="click->modal#open"
+                              class="text-red-600 hover:text-red-900">
+                        Deny
+                      </button>
+
+                      <!-- Deny Modal -->
+                      <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                        <div data-modal-target="backdrop"
+                             data-action="click->modal#closeOnBackdrop"
+                             class="fixed inset-0 bg-black/50 transition-opacity"></div>
+
+                        <div class="fixed inset-0 z-10 overflow-y-auto">
+                          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                              <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Deny Community Service Record</h3>
+                                <p class="text-sm text-gray-500 mb-4">
+                                  You are denying <strong><%= record.event %></strong> (<%= number_with_precision(record.hours, precision: 1) %> hours) for <%= record.mentee.user.first_name %> <%= record.mentee.user.last_name %>.
+                                </p>
+
+                                <%= form_with url: community_service_record_path(record), method: :patch, class: "space-y-4" do |f| %>
+                                  <%= f.hidden_field :community_service_record, value: "", name: "community_service_record[approved]" %>
+                                  <input type="hidden" name="community_service_record[approved]" value="false">
+
+                                  <div>
+                                    <%= label_tag :denial_reason, "Reason for denial", class: "block text-sm font-medium text-gray-700" %>
+                                    <%= text_area_tag :denial_reason, nil, rows: 3, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm", placeholder: "Please explain why this record is being denied..." %>
+                                    <p class="mt-1 text-xs text-gray-500">This message will be sent to <%= record.mentee.user.first_name %>.</p>
+                                  </div>
+
+                                  <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                    <%= f.submit "Deny Record", class: "inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer" %>
+                                    <button type="button"
+                                            data-action="click->modal#close"
+                                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                                      Cancel
+                                    </button>
+                                  </div>
+                                <% end %>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    <% else %>
+                      <%= button_to "Approve", community_service_record_path(record), method: :patch, params: { community_service_record: { approved: true } }, class: "text-green-600 hover:text-green-900" %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -196,4 +196,86 @@ class MenteeTest < ActiveSupport::TestCase
     week_range = 1.week.ago..Time.current
     assert_equal 5, @mentee.total_points(week_range)
   end
+
+  # Community Service Hours
+  test "has many community_service_records" do
+    @mentee.save!
+    assert_respond_to @mentee, :community_service_records
+  end
+
+  test "total_community_service_hours returns 0 when no records exist" do
+    @mentee.save!
+    assert_equal 0, @mentee.total_community_service_hours
+  end
+
+  test "total_community_service_hours returns 0 when no current season exists" do
+    @mentee.save!
+    OlympicSeason.delete_all
+
+    assert_equal 0, @mentee.total_community_service_hours
+  end
+
+  test "total_community_service_hours sums approved hours within current season" do
+    @mentee.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Event 1", event_date: Date.current, hours: 2.5)
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Event 2", event_date: Date.current, hours: 1.5)
+
+    assert_equal 4.0, @mentee.total_community_service_hours
+  end
+
+  test "total_community_service_hours excludes denied records" do
+    @mentee.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Approved", event_date: Date.current, hours: 3.0, approved: true)
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Denied", event_date: Date.current, hours: 10.0, approved: false)
+
+    assert_equal 3.0, @mentee.total_community_service_hours
+  end
+
+  test "total_community_service_hours excludes records outside current season" do
+    @mentee.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Current", event_date: Date.current, hours: 2.0)
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Old", event_date: 3.months.ago.to_date, hours: 50.0)
+
+    assert_equal 2.0, @mentee.total_community_service_hours
+  end
+
+  test "total_community_service_hours accepts custom date range" do
+    @mentee.save!
+
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Recent", event_date: 2.days.ago.to_date, hours: 1.5)
+    CommunityServiceRecord.create!(mentee: @mentee, event: "Older", event_date: 10.days.ago.to_date, hours: 5.0)
+
+    week_range = 1.week.ago.to_date..Date.current
+    assert_equal 1.5, @mentee.total_community_service_hours(week_range)
+  end
 end

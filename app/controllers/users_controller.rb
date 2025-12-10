@@ -1,13 +1,12 @@
 class UsersController < AuthenticatedController
-  before_action { require_navigation_access(:users) }
+  before_action :require_users_navigation_or_related_access
   before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log]
   before_action :authorize_index, only: [:index]
-  before_action :authorize_show, only: [:show]
+  before_action :authorize_show, only: [:show, :reset_password]
   before_action :authorize_edit, only: [:edit, :update]
   before_action :authorize_create, only: [:new, :create]
   before_action :authorize_destroy, only: [:destroy]
   before_action :authorize_activation, only: [:activate, :deactivate]
-  before_action :authorize_edit, only: [:reset_password]
   before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member, :create_guardian]
   before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
   before_action :authorize_event_log_management, only: [:add_event_log, :remove_event_log]
@@ -17,6 +16,11 @@ class UsersController < AuthenticatedController
     @users = apply_role_filter(@users)
     @users = apply_search_filter(@users)
     @users = @users.order(created_at: :desc).page(params[:page])
+
+    # For mentors, load available mentees for the "Add Mentee" form
+    if current_user.mentor.present?
+      @available_mentees = Mentee.where(mentor_id: nil).includes(:user)
+    end
   end
 
   def show
@@ -29,6 +33,7 @@ class UsersController < AuthenticatedController
     @allowed_relationship_types = allowed_relationship_types
     @available_mentees_for_mentor = available_mentees_for_mentor
     load_event_log_data
+    load_community_service_data
   end
 
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
@@ -99,6 +104,7 @@ class UsersController < AuthenticatedController
     ActiveRecord::Base.transaction do
       @user.update!(permitted)
       update_role_if_changed
+      update_mentee_if_present
     end
 
     redirect_to user_path(@user), notice: "User updated successfully"
@@ -271,6 +277,17 @@ class UsersController < AuthenticatedController
     @user = User.find(params[:id])
   end
 
+  def require_users_navigation_or_related_access
+    # Allow if user has users navigation access (staff/admin)
+    return if current_user.can_access?(:users)
+    # Allow mentors (they can view their mentees)
+    return if current_user.mentor.present?
+    # Allow guardians (they can view their children)
+    return if current_user.guardian.present?
+
+    redirect_to dashboard_path, alert: "You don't have access to this section"
+  end
+
   # Authorization methods
   def staff_member?
     current_user.staff.present?
@@ -351,9 +368,9 @@ class UsersController < AuthenticatedController
     return User.all if staff_member?
 
     if current_user.mentor.present?
-      # Mentors can see themselves and their mentees
+      # Mentors see only their mentees
       mentee_user_ids = current_user.mentor.mentees.joins(:user).pluck("users.id")
-      User.where(id: [current_user.id] + mentee_user_ids)
+      User.where(id: mentee_user_ids)
     elsif current_user.guardian.present?
       # Guardians can see themselves and their children
       child_user_ids = current_user.guardian.children.joins(:user).pluck("users.id")
@@ -593,5 +610,34 @@ class UsersController < AuthenticatedController
       .where.not(id: arrived_event_ids)
       .includes(:event_type)
       .order(event_date: :desc)
+  end
+
+  def load_community_service_data
+    return unless @user.mentee.present?
+
+    @current_season ||= Current.season
+    @season_date_range ||= current_season_date_range
+
+    # Get community service records for this mentee
+    @community_service_records = @user.mentee.community_service_records
+      .order(event_date: :desc)
+
+    # Filter by season if available
+    if @season_date_range
+      @community_service_records = @community_service_records.where(event_date: @season_date_range)
+    end
+
+    # Calculate total hours for the season
+    @total_community_service_hours = @user.mentee.total_community_service_hours(@season_date_range)
+
+    # Check if current user can manage community service records for this user
+    @can_manage_community_service = can_manage_community_service?
+  end
+
+  def can_manage_community_service?
+    return true if current_user.admin? || current_user.staff?
+    return true if current_user.mentor? && @user.mentee&.mentor_id == current_user.mentor&.id
+    return true if current_user == @user
+    false
   end
 end

@@ -1,8 +1,10 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <div class="px-4 py-6 sm:px-0">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Users</h1>
-      <%= link_to "New User", new_user_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+      <h1 class="text-3xl font-bold text-gray-900"><%= current_user.mentor? ? "Mentees" : "Users" %></h1>
+      <% if current_user.can?(:create, :users) %>
+        <%= link_to "New User", new_user_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+      <% end %>
     </div>
 
     <% if notice.present? %>
@@ -11,25 +13,48 @@
       </div>
     <% end %>
 
-    <!-- Filters -->
-    <div class="bg-white shadow sm:rounded-lg mb-6">
-      <div class="px-4 py-5 sm:p-6">
-        <%= form_with url: users_path, method: :get, class: "flex flex-wrap gap-4 items-end" do |f| %>
-          <div class="flex-1 min-w-[200px]">
-            <%= f.label :search, "Search", class: "block text-sm font-medium text-gray-700" %>
-            <%= f.text_field :search, value: params[:search], placeholder: "Email, first name, or last name", class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+    <% if current_user.mentor? %>
+      <!-- Add Mentee for Mentors -->
+      <% if @available_mentees&.any? %>
+        <div class="bg-white shadow sm:rounded-lg mb-6">
+          <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-base font-semibold text-gray-900">Add a Mentee</h3>
+            <div class="mt-4 max-w-xl">
+              <%= form_with url: mentees_path, method: :post, class: "flex items-end gap-4" do |f| %>
+                <div class="flex-1">
+                  <%= render "shared/combobox",
+                      name: "mentee_id",
+                      label: "Select Mentee",
+                      options: @available_mentees.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
+                      placeholder: "Search available mentees..." %>
+                </div>
+                <%= f.submit "Add Mentee", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+              <% end %>
+            </div>
           </div>
-          <div class="w-48">
-            <%= f.label :role, "Role", class: "block text-sm font-medium text-gray-700" %>
-            <%= f.select :role, [["All Users", ""], ["Staff", "staff"], ["Mentors", "mentor"], ["Mentees", "mentee"], ["Guardians", "guardian"], ["Volunteers", "volunteer"]], { selected: params[:role] }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
-          </div>
-          <div class="flex gap-2">
-            <%= f.submit "Filter", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
-            <%= link_to "Clear", users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50" %>
-          </div>
-        <% end %>
+        </div>
+      <% end %>
+    <% else %>
+      <!-- Filters for Staff/Admin -->
+      <div class="bg-white shadow sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+          <%= form_with url: users_path, method: :get, class: "flex flex-wrap gap-4 items-end" do |f| %>
+            <div class="flex-1 min-w-[200px]">
+              <%= f.label :search, "Search", class: "block text-sm font-medium text-gray-700" %>
+              <%= f.text_field :search, value: params[:search], placeholder: "Email, first name, or last name", class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+            </div>
+            <div class="w-48">
+              <%= f.label :role, "Role", class: "block text-sm font-medium text-gray-700" %>
+              <%= f.select :role, [["All Users", ""], ["Staff", "staff"], ["Mentors", "mentor"], ["Mentees", "mentee"], ["Guardians", "guardian"], ["Volunteers", "volunteer"]], { selected: params[:role] }, { class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" } %>
+            </div>
+            <div class="flex gap-2">
+              <%= f.submit "Filter", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+              <%= link_to "Clear", users_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50" %>
+            </div>
+          <% end %>
+        </div>
       </div>
-    </div>
+    <% end %>
 
     <div class="flex flex-col">
       <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -59,7 +84,9 @@
                 <% @users.each do |user| %>
                   <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900"><%= user.first_name %> <%= user.last_name %></div>
+                      <div class="text-sm font-medium text-gray-900">
+                        <%= link_to "#{user.first_name} #{user.last_name}".strip, user_path(user), class: "text-indigo-600 hover:text-indigo-900" %>
+                      </div>
                       <div class="text-sm text-gray-500"><%= user.email %></div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -83,9 +110,11 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <%= link_to "View", user_path(user), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
-                      <%= link_to "Edit", edit_user_path(user), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
-                      <% if real_current_user.admin? %>
-                        <% if user != real_current_user %>
+                      <% if current_user.can?(:edit, :users) %>
+                        <%= link_to "Edit", edit_user_path(user), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                      <% end %>
+                      <% if current_user.admin? %>
+                        <% if user != current_user %>
                           <%= button_to "Spoof", spoof_path(user), method: :post, class: "text-yellow-600 hover:text-yellow-900", form: { class: "inline" } %>
                         <% else %>
                           <span class="text-gray-400 cursor-not-allowed">Spoof</span>

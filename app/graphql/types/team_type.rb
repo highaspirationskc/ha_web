@@ -18,5 +18,6 @@ module Types
     field :mentors, [Types::UserType], null: false
     field :event_logs, [Types::EventLogType], null: false
     field :total_points, Integer, null: false, description: "Total points for current Olympic season"
+    field :total_community_service_hours, Float, null: false, description: "Total approved community service hours for current Olympic season"
   end
 end

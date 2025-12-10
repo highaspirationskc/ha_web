@@ -1,7 +1,7 @@
 <%= turbo_stream_from "message_thread_#{@message.thread_root.id}" %>
 <div class="py-6">
   <div class="px-4 sm:px-0">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between mb-4">
       <%= render "shared/breadcrumbs", items: [
         { label: "Inbox", path: messages_path },
         { label: @message.thread_root.subject.truncate(30) }

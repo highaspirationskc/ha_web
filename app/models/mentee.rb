@@ -5,6 +5,7 @@ class Mentee < ApplicationRecord
 
   has_many :family_members, dependent: :destroy
   has_many :guardians, through: :family_members
+  has_many :community_service_records, dependent: :destroy
 
   # Calculate total points for a given date range
   # If no date_range is provided, calculates for the current Olympic season
@@ -15,6 +16,17 @@ class Mentee < ApplicationRecord
     user.event_logs.joins(:event)
         .where(events: { event_date: date_range })
         .sum(:points_awarded)
+  end
+
+  # Calculate total approved community service hours for a given date range
+  def total_community_service_hours(date_range = nil)
+    date_range ||= current_season_date_range
+    return 0 unless date_range
+
+    community_service_records
+      .approved
+      .where(event_date: date_range)
+      .sum(:hours)
   end
 
   private

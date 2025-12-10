@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_190157) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_10_021105) do
+  create_table "community_service_records", force: :cascade do |t|
+    t.boolean "approved", default: true, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "event", null: false
+    t.date "event_date", null: false
+    t.decimal "hours", precision: 5, scale: 2, null: false
+    t.integer "mentee_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mentee_id"], name: "index_community_service_records_on_mentee_id"
+  end
+
   create_table "event_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "event_id", null: false
@@ -210,6 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_190157) do
     t.index ["user_id"], name: "index_volunteers_on_user_id", unique: true
   end
 
+  add_foreign_key "community_service_records", "mentees"
   add_foreign_key "events", "event_types"
   add_foreign_key "events", "media", column: "image_id"
   add_foreign_key "events", "users", column: "created_by_id"
