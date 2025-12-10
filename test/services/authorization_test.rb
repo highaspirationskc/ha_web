@@ -156,7 +156,12 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_includes nav, :dashboard
     assert_includes nav, :users
     assert_includes nav, :events
-    assert_includes nav, :teams
+    assert_includes nav, :settings
+    # Settings sub-items are accessible via can_access?
+    assert Authorization.can_access?(@user, :teams)
+    assert Authorization.can_access?(@user, :event_types)
+    assert Authorization.can_access?(@user, :olympic_seasons)
+    assert Authorization.can_access?(@user, :media)
   end
 
   test "mentor has limited navigation" do

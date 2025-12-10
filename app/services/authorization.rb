@@ -7,7 +7,7 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media, :community_service]
+      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
@@ -16,7 +16,7 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
-      navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media, :community_service]
+      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings]
     },
     mentor: {
       users: [:show],
@@ -79,8 +79,15 @@ class Authorization
     PERMISSIONS.dig(@role, :navigation) || []
   end
 
+  SETTINGS_ITEMS = [:event_types, :teams, :olympic_seasons, :media].freeze
+
   def can_access?(nav_item)
-    navigation.include?(nav_item)
+    # Settings sub-items are accessible if user has :settings in their navigation
+    if SETTINGS_ITEMS.include?(nav_item)
+      navigation.include?(:settings)
+    else
+      navigation.include?(nav_item)
+    end
   end
 
   def role
