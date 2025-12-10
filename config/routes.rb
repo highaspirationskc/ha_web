@@ -28,6 +28,8 @@ Rails.application.routes.draw do
       post :add_mentee
       delete :remove_mentee
       post :reset_password
+      post :add_event_log
+      delete :remove_event_log
     end
   end
 

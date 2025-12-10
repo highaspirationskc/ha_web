@@ -1,7 +1,7 @@
 class Authorization
   PERMISSIONS = {
     admin: {
-      users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees],
+      users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       messages: [:index, :show, :create, :support_inbox],
@@ -9,7 +9,7 @@ class Authorization
       navigation: [:dashboard, :users, :events, :teams, :event_types, :olympic_seasons, :inbox, :media]
     },
     staff: {
-      users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees],
+      users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       messages: [:index, :show, :create, :support_inbox],

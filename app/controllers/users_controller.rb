@@ -1,6 +1,6 @@
 class UsersController < AuthenticatedController
   before_action { require_navigation_access(:users) }
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show]
   before_action :authorize_edit, only: [:edit, :update]
@@ -10,6 +10,7 @@ class UsersController < AuthenticatedController
   before_action :authorize_edit, only: [:reset_password]
   before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member, :create_guardian]
   before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
+  before_action :authorize_event_log_management, only: [:add_event_log, :remove_event_log]
 
   def index
     @users = users_for_current_user
@@ -21,11 +22,13 @@ class UsersController < AuthenticatedController
   def show
     @can_manage_family_members = current_user.can?(:manage_family_members, :users)
     @can_manage_mentees = current_user.can?(:manage_mentees, :users)
+    @can_manage_event_logs = current_user.can?(:manage_event_logs, :users)
     @can_activate_deactivate = current_user.can?(:change_status, :users, @user)
     @can_delete = current_user.can?(:delete, :users, @user)
     @available_guardians_for_family = available_guardians_for_family
     @allowed_relationship_types = allowed_relationship_types
     @available_mentees_for_mentor = available_mentees_for_mentor
+    load_event_log_data
   end
 
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
@@ -231,6 +234,37 @@ class UsersController < AuthenticatedController
     end
   end
 
+  def add_event_log
+    event = Event.find_by(id: params[:event_id])
+    return redirect_to user_path(@user), alert: "Event not found" unless event
+
+    logged_at = params[:logged_at].present? ? Time.zone.parse(params[:logged_at]) : Time.current
+
+    event_log = EventLog.new(
+      event: event,
+      user: @user,
+      log_type: "arrived",
+      logged_at: logged_at
+    )
+
+    if event_log.save
+      points_msg = event_log.points_awarded > 0 ? " (#{event_log.points_awarded} points)" : ""
+      redirect_to user_path(@user), notice: "Attendance added successfully#{points_msg}"
+    else
+      redirect_to user_path(@user), alert: event_log.errors.full_messages.join(", ")
+    end
+  end
+
+  def remove_event_log
+    event_log = @user.event_logs.find_by(id: params[:event_log_id])
+
+    if event_log&.destroy
+      redirect_to user_path(@user), notice: "Attendance removed successfully"
+    else
+      redirect_to user_path(@user), alert: "Could not remove attendance"
+    end
+  end
+
   private
 
   def set_user
@@ -295,6 +329,12 @@ class UsersController < AuthenticatedController
     return if current_user.can?(:manage_mentees, :users)
 
     redirect_to users_path, alert: "You don't have permission to manage mentees"
+  end
+
+  def authorize_event_log_management
+    return if current_user.can?(:manage_event_logs, :users)
+
+    redirect_to users_path, alert: "You don't have permission to manage event logs"
   end
 
   # Permission check methods
@@ -528,5 +568,33 @@ class UsersController < AuthenticatedController
     password += %w[! @ # $ % ^ & *].sample # special
     password += Array.new(13) { chars.sample }.join # fill to 16 chars
     password.chars.shuffle.join
+  end
+
+  def load_event_log_data
+    @current_season = OlympicSeason.current_season
+    return unless @current_season
+
+    # Get season date range
+    season_service = OlympicSeasonService.new(@current_season)
+    @season_date_range = season_service.date_range_from_reference_date
+
+    # Get event logs for this user in the current season (only arrived logs)
+    @event_logs = @user.event_logs
+      .joins(:event)
+      .where(events: { event_date: @season_date_range })
+      .where(log_type: "arrived")
+      .includes(event: :event_type)
+      .order("events.event_date DESC")
+
+    # Calculate total points for the season (only for mentees who earn points)
+    @total_points = @user.mentee&.total_points(@season_date_range) || 0
+
+    # Get available events for adding new event logs (past/current events in current season not already marked as arrived)
+    arrived_event_ids = @user.event_logs.where(log_type: "arrived").pluck(:event_id)
+    @available_events = Event.where(event_date: @season_date_range)
+      .where("event_date <= ?", Date.current)
+      .where.not(id: arrived_event_ids)
+      .includes(:event_type)
+      .order(event_date: :desc)
   end
 end
