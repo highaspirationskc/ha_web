@@ -39,6 +39,10 @@ export default class extends Controller {
     }
   }
 
+  stopPropagation(event) {
+    event.stopPropagation()
+  }
+
   isOpen() {
     return !this.modalTarget.classList.contains("hidden")
   }
@@ -86,7 +90,7 @@ export default class extends Controller {
     }
   }
 
-  async upload(event) {
+  upload(event) {
     event.preventDefault()
 
     if (!this.hasFileInputTarget) return
@@ -112,25 +116,52 @@ export default class extends Controller {
     // Include media type for video uploads
     formData.append("media_type", this.mediaTypeValue)
 
-    try {
-      const response = await fetch("/media", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "X-CSRF-Token": this.csrfToken()
-        },
-        body: formData
-      })
+    const xhr = new XMLHttpRequest()
 
-      const data = await response.json()
-
-      if (response.ok) {
-        this.selectImage(data.id, data.url, data.filename)
-      } else {
-        this.showUploadError(data.error || "Upload failed")
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100)
+        this.updateUploadProgress(percent, e.loaded, e.total)
       }
-    } catch (error) {
+    })
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          this.selectImage(data.id, data.url, data.filename)
+        } catch (e) {
+          this.showUploadError("Upload failed. Invalid response.")
+        }
+      } else {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          this.showUploadError(data.error || "Upload failed")
+        } catch (e) {
+          this.showUploadError("Upload failed. Please try again.")
+        }
+      }
+    })
+
+    xhr.addEventListener("error", () => {
       this.showUploadError("Upload failed. Please try again.")
+    })
+
+    xhr.open("POST", "/media")
+    xhr.setRequestHeader("Accept", "application/json")
+    xhr.setRequestHeader("X-CSRF-Token", this.csrfToken())
+    xhr.send(formData)
+  }
+
+  updateUploadProgress(percent, loaded, total) {
+    if (this.hasUploadProgressTarget) {
+      const loadedMB = (loaded / (1024 * 1024)).toFixed(1)
+      const totalMB = (total / (1024 * 1024)).toFixed(1)
+      if (percent < 100) {
+        this.uploadProgressTarget.textContent = `Uploading... ${percent}% (${loadedMB}MB / ${totalMB}MB)`
+      } else {
+        this.uploadProgressTarget.textContent = "Processing..."
+      }
     }
   }
 
