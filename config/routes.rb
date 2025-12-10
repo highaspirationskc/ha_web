@@ -39,7 +39,14 @@ Rails.application.routes.draw do
   end
 
   resources :mentees, only: [:create, :destroy]
-  resources :events
+  resources :events do
+    member do
+      get :kiosk
+      get :kiosk_search
+      post :kiosk_checkin
+      get :kiosk_exit
+    end
+  end
   resources :event_types
   resources :event_registrations
   resources :event_logs

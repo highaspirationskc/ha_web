@@ -1,9 +1,11 @@
 class EventsController < AuthenticatedController
-  before_action { require_navigation_access(:events) }
-  before_action :set_event, only: %i[ show edit update destroy ]
+  skip_before_action :require_authentication, only: [:kiosk]
+  before_action(except: [:kiosk]) { require_navigation_access(:events) }
+  before_action :set_event, only: %i[ show edit update destroy kiosk kiosk_search kiosk_checkin kiosk_exit ]
   before_action :authorize_create, only: %i[ new create ]
   before_action :authorize_edit, only: %i[ edit update ]
   before_action :authorize_delete, only: %i[ destroy ]
+  before_action :authorize_kiosk_action, only: %i[ kiosk_search kiosk_checkin kiosk_exit ]
 
   # GET /admin/events or /admin/events.json
   def index
@@ -72,6 +74,44 @@ class EventsController < AuthenticatedController
     end
   end
 
+  # GET /events/:id/kiosk - Public kiosk view
+  def kiosk
+    render layout: "kiosk"
+  end
+
+  # GET /events/:id/kiosk_search - Search all users (requires auth)
+  def kiosk_search
+    query = params[:query].to_s.strip
+
+    users = User.where("LOWER(first_name || ' ' || last_name) LIKE ?", "%#{query.downcase}%")
+      .or(User.where("LOWER(email) LIKE ?", "%#{query.downcase}%"))
+      .limit(20)
+      .map { |user| { id: user.id, name: "#{user.first_name} #{user.last_name}", email: user.email } }
+
+    render json: { users: users }
+  end
+
+  # POST /events/:id/kiosk_checkin - Check in a user (requires auth)
+  def kiosk_checkin
+    user = User.find(params[:user_id])
+
+    event_log = EventLog.new(event: @event, user: user, log_type: :arrived)
+
+    if event_log.save
+      render json: { success: true, name: "#{user.first_name} #{user.last_name}" }
+    else
+      render json: { success: false, errors: event_log.errors.full_messages }
+    end
+  end
+
+  # GET /events/:id/kiosk_exit - Exit kiosk mode (requires auth)
+  def kiosk_exit
+    respond_to do |format|
+      format.html { redirect_to event_path(@event) }
+      format.json { render json: { success: true, redirect_url: event_path(@event) } }
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_event
@@ -96,6 +136,14 @@ class EventsController < AuthenticatedController
     def authorize_delete
       return if current_user.can?(:delete, :events)
       redirect_to event_path(@event), alert: "You don't have permission to delete events"
+    end
+
+    def authorize_kiosk_action
+      return if current_user&.can?(:edit, :events)
+      respond_to do |format|
+        format.html { redirect_to login_path, alert: "You must be logged in as staff to perform this action" }
+        format.json { render json: { error: "Unauthorized" }, status: :unauthorized }
+      end
     end
 
     def load_calendar_data

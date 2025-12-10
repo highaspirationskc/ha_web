@@ -1,0 +1,152 @@
+<div class="min-h-screen flex flex-col items-center justify-center p-4" data-controller="kiosk" data-kiosk-event-id-value="<%= @event.id %>" data-kiosk-search-url-value="<%= kiosk_search_event_path(@event) %>" data-kiosk-checkin-url-value="<%= kiosk_checkin_event_path(@event) %>" data-kiosk-exit-url-value="<%= kiosk_exit_event_path(@event) %>">
+  <!-- Exit button (subtle, top-right) -->
+  <button type="button" data-action="click->kiosk#showExitModal" class="absolute top-4 right-4 text-sm text-gray-400 hover:text-gray-600">
+    Exit
+  </button>
+
+  <!-- Main Card -->
+  <div class="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+    <!-- Logo -->
+    <div class="mb-6">
+      <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "h-16 mx-auto" %>
+    </div>
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Time to check in!</h1>
+    <p class="text-gray-500 mb-6">Scan the code from your app</p>
+
+    <!-- QR Code -->
+    <div class="flex justify-center mb-6">
+      <%
+        qrcode = RQRCode::QRCode.new(@event.id.to_s)
+        svg = qrcode.as_svg(
+          color: "000",
+          shape_rendering: "crispEdges",
+          module_size: 6,
+          standalone: true,
+          use_path: true
+        )
+      %>
+      <%= svg.html_safe %>
+    </div>
+
+    <!-- Divider -->
+    <p class="text-gray-400 mb-6">Or</p>
+
+    <!-- Search Form -->
+    <div class="space-y-4">
+      <input type="text"
+             data-kiosk-target="searchInput"
+             data-action="keydown.enter->kiosk#search"
+             placeholder="Search for your name"
+             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg">
+      <button type="button"
+              data-action="click->kiosk#search"
+              class="w-full bg-[#1e3a5f] hover:bg-[#152a45] text-white font-semibold py-3 px-4 rounded-lg text-lg transition-colors">
+        Search
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Results Modal (hidden by default) -->
+  <div data-kiosk-target="searchModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-black/50" data-action="click->kiosk#closeModal"></div>
+
+      <!-- Modal Content -->
+      <div class="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <!-- Header -->
+        <div class="p-6 border-b border-gray-200">
+          <button type="button" data-action="click->kiosk#closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+          <p class="text-sm text-gray-500">Showing results for</p>
+          <h2 data-kiosk-target="searchTerm" class="text-2xl font-bold text-gray-900"></h2>
+        </div>
+
+        <!-- Results List -->
+        <div data-kiosk-target="searchResults" class="overflow-y-auto max-h-96">
+          <!-- Results will be populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal (hidden by default) -->
+  <div data-kiosk-target="successModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-black/50"></div>
+
+      <!-- Modal Content -->
+      <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-8 text-center">
+        <p class="text-gray-500 mb-2">Checking in</p>
+        <h2 class="text-3xl font-bold text-gray-900 mb-6">Success!</h2>
+
+        <!-- Checkmark Circle -->
+        <div class="flex justify-center mb-6">
+          <div class="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <button type="button"
+                data-action="click->kiosk#back"
+                class="w-full bg-[#1e3a5f] hover:bg-[#152a45] text-white font-semibold py-3 px-4 rounded-lg text-lg transition-colors">
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exit/Login Modal (hidden by default) -->
+  <div data-kiosk-target="exitModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-black/50" data-action="click->kiosk#closeExitModal"></div>
+
+      <!-- Modal Content -->
+      <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+        <button type="button" data-action="click->kiosk#closeExitModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Staff Login Required</h2>
+        <p class="text-sm text-gray-500 mb-4">Please login to exit kiosk mode</p>
+
+        <!-- Error message -->
+        <div data-kiosk-target="exitError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+
+        <form data-action="submit->kiosk#submitLogin">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email"
+                     data-kiosk-target="exitEmail"
+                     required
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input type="password"
+                     data-kiosk-target="exitPassword"
+                     required
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <button type="submit"
+                    class="w-full bg-[#1e3a5f] hover:bg-[#152a45] text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+              Login & Exit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

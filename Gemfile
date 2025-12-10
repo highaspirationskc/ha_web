@@ -78,3 +78,5 @@ gem "googleauth", "~> 1.11"
 gem "webmock", "~> 3.26", group: :test
 
 gem "mocha", "~> 2.8", group: :test
+
+gem "rqrcode", "~> 2.2"
