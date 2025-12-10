@@ -295,6 +295,90 @@ class EventLogsMutationsTest < ActiveSupport::TestCase
     assert_includes errors, "Event not found"
   end
 
+  # Unregister tests
+
+  test "authenticated user can unregister from event" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        unregister(input: $input) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: { current_user: @mentee })
+
+    success = result.dig("data", "unregister", "success")
+    errors = result.dig("data", "unregister", "errors")
+
+    assert success
+    assert_empty errors
+    assert_nil EventLog.find_by(event: @event, user: @mentee, log_type: :registered)
+  end
+
+  test "unregister requires authentication" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        unregister(input: $input) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: {})
+
+    assert_nil result.dig("data", "unregister")
+    assert_includes result["errors"].first["message"], "Authentication required"
+  end
+
+  test "unregister returns error for non-existent event" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        unregister(input: $input) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: "99999" }
+    }, context: { current_user: @mentee })
+
+    success = result.dig("data", "unregister", "success")
+    errors = result.dig("data", "unregister", "errors")
+
+    assert_not success
+    assert_includes errors, "Event not found"
+  end
+
+  test "unregister returns error when not registered" do
+    mutation = <<~GQL
+      mutation($input: RegisterInput!) {
+        unregister(input: $input) {
+          success
+          errors
+        }
+      }
+    GQL
+
+    result = execute_graphql(mutation, variables: {
+      input: { eventId: @event.id.to_s }
+    }, context: { current_user: @admin })
+
+    success = result.dig("data", "unregister", "success")
+    errors = result.dig("data", "unregister", "errors")
+
+    assert_not success
+    assert_includes errors, "You are not registered for this event"
+  end
+
   # CheckIn tests
 
   test "authenticated user can check in to event" do

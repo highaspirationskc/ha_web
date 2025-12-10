@@ -36,6 +36,7 @@ module Types
     field :update_event_log, mutation: Mutations::EventLogs::UpdateEventLog
     field :delete_event_log, mutation: Mutations::EventLogs::DeleteEventLog
     field :register, mutation: Mutations::EventLogs::Register
+    field :unregister, mutation: Mutations::EventLogs::Unregister
     field :check_in, mutation: Mutations::EventLogs::CheckIn
 
     # Family Member mutations
