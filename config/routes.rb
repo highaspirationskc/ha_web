@@ -18,6 +18,11 @@ Rails.application.routes.draw do
   post "spoof/:user_id", to: "spoof#create", as: :spoof
   delete "spoof", to: "spoof#destroy", as: :unspoof
 
+  # Season switching (staff only)
+  resource :season, only: [:update] do
+    delete :reset, on: :collection
+  end
+
   resources :users do
     member do
       patch :activate

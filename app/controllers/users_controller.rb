@@ -571,14 +571,11 @@ class UsersController < AuthenticatedController
   end
 
   def load_event_log_data
-    @current_season = OlympicSeason.current_season
-    return unless @current_season
+    @current_season = Current.season
+    @season_date_range = current_season_date_range
+    return unless @current_season && @season_date_range
 
-    # Get season date range
-    season_service = OlympicSeasonService.new(@current_season)
-    @season_date_range = season_service.date_range_from_reference_date
-
-    # Get event logs for this user in the current season (only arrived logs)
+    # Get event logs for this user in the selected season (only arrived logs)
     @event_logs = @user.event_logs
       .joins(:event)
       .where(events: { event_date: @season_date_range })
@@ -589,7 +586,7 @@ class UsersController < AuthenticatedController
     # Calculate total points for the season (only for mentees who earn points)
     @total_points = @user.mentee&.total_points(@season_date_range) || 0
 
-    # Get available events for adding new event logs (past/current events in current season not already marked as arrived)
+    # Get available events for adding new event logs (past/current events in selected season not already marked as arrived)
     arrived_event_ids = @user.event_logs.where(log_type: "arrived").pluck(:event_id)
     @available_events = Event.where(event_date: @season_date_range)
       .where("event_date <= ?", Date.current)

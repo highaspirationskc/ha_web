@@ -13,14 +13,15 @@ class TeamsController < AuthenticatedController
 
   # GET /admin/teams/1 or /admin/teams/1.json
   def show
-    @current_season = OlympicSeason.current_season
+    @current_season = Current.season
+    @season_date_range = current_season_date_range
 
-    # Calculate points for each mentee on this team
+    # Calculate points for each mentee on this team using selected season's date range
     @mentee_points = @team.mentees.includes(:user).map do |mentee|
       {
         mentee: mentee,
         user: mentee.user,
-        points: mentee.total_points
+        points: mentee.total_points(@season_date_range)
       }
     end.sort_by { |mp| -mp[:points] }
 

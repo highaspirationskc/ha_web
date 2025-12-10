@@ -13,24 +13,6 @@
       </div>
     <% end %>
 
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-      <%= month_calendar(events: @events, attribute: :event_date, start_date: @start_date) do |date, events| %>
-        <div class="h-32 overflow-y-auto">
-          <div class="font-medium text-gray-900 mb-1"><%= date.day %></div>
-          <% events.each do |event| %>
-            <div class="mb-1">
-              <%= link_to event_path(event), class: "block text-xs px-2 py-1 rounded hover:opacity-80" do %>
-                <div class="bg-indigo-100 text-indigo-800 rounded px-1 py-0.5">
-                  <div class="font-medium truncate"><%= event.name %></div>
-                  <% if event.event_type %>
-                    <div class="text-indigo-600 text-xs"><%= event.event_type.name %></div>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
+    <%= render "calendar" %>
   </div>
 </div>

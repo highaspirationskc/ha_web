@@ -7,11 +7,7 @@ class EventsController < AuthenticatedController
 
   # GET /admin/events or /admin/events.json
   def index
-    # Get the start date for the calendar (defaults to current month)
-    @start_date = params[:start_date] ? Date.parse(params[:start_date]) : Date.current
-
-    # Get all events (simple_calendar will filter by the displayed month)
-    @events = Event.includes(:event_type).order(:event_date)
+    load_calendar_data
   end
 
   # GET /admin/events/1 or /admin/events/1.json
@@ -99,5 +95,29 @@ class EventsController < AuthenticatedController
     def authorize_delete
       return if current_user.can?(:delete, :events)
       redirect_to event_path(@event), alert: "You don't have permission to delete events"
+    end
+
+    def load_calendar_data
+      @current_season = Current.season
+      @season_date_range = current_season_date_range
+
+      # Get the start date for the calendar
+      # If viewing historical season and no explicit start_date, default to season start
+      if params[:start_date].present?
+        @start_date = Date.parse(params[:start_date])
+      elsif viewing_historical_season? && @season_date_range
+        @start_date = @season_date_range.begin
+      else
+        @start_date = Date.current
+      end
+
+      # Filter events to the selected season's date range
+      if @season_date_range
+        @events = Event.includes(:event_type)
+                       .where(event_date: @season_date_range)
+                       .order(:event_date)
+      else
+        @events = Event.includes(:event_type).order(:event_date)
+      end
     end
 end

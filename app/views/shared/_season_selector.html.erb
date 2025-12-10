@@ -1,0 +1,96 @@
+<% if can_switch_season? %>
+  <div class="px-2 py-3">
+    <%
+      # Get year range based on event data
+      oldest_event_year = Event.minimum(:event_date)&.year || Date.current.year
+      current_year = Date.current.year
+      years = (oldest_event_year..current_year).to_a.reverse
+
+      seasons = OlympicSeason.order(:start_month)
+      actual_current = OlympicSeason.current_season
+      actual_current_year = Date.current.year
+
+      viewing_historical = viewing_historical_season?
+
+      # Generate display name for current selection
+      season_display = current_season&.name || "Season"
+      year_display = current_season_year.to_s
+    %>
+    <div class="space-y-2">
+      <% if viewing_historical %>
+        <div class="flex items-center justify-between text-xs text-amber-700 bg-amber-50 rounded px-2 py-1">
+          <span>Viewing Historical</span>
+          <%= button_to reset_season_path, method: :delete, class: "text-amber-800 hover:text-amber-900 font-medium" do %>
+            Reset
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="space-y-2">
+        <!-- Season Dropdown -->
+        <div class="relative" data-controller="dropdown">
+          <button type="button"
+                  data-action="click->dropdown#toggle"
+                  class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium <%= viewing_historical ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>">
+            <span class="truncate"><%= season_display %></span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform" data-dropdown-target="icon">
+              <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <div data-dropdown-target="menu" class="hidden absolute left-0 right-0 z-10 mt-1 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+            <div class="py-1">
+              <% seasons.each do |season| %>
+                <%
+                  is_current_actual = (season == actual_current)
+                  is_selected = (season == current_season)
+                %>
+                <%= button_to season_path(id: season.id, year: current_season_year), method: :patch, class: "flex w-full items-center justify-between px-3 py-1.5 text-sm #{is_selected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}" do %>
+                  <span><%= season.name %></span>
+                  <% if is_current_actual && current_season_year == actual_current_year %>
+                    <span class="text-xs text-green-600 font-medium">Now</span>
+                  <% elsif is_selected %>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-indigo-600">
+                      <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
+                    </svg>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Year Dropdown -->
+        <div class="relative" data-controller="dropdown">
+          <button type="button"
+                  data-action="click->dropdown#toggle"
+                  class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium <%= viewing_historical ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' %>">
+            <span><%= year_display %></span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform" data-dropdown-target="icon">
+              <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <div data-dropdown-target="menu" class="hidden absolute left-0 right-0 z-10 mt-1 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none max-h-48 overflow-y-auto">
+            <div class="py-1">
+              <% years.each do |year| %>
+                <%
+                  is_current_actual = (year == actual_current_year)
+                  is_selected = (year == current_season_year)
+                %>
+                <%= button_to season_path(id: current_season&.id || actual_current&.id, year: year), method: :patch, class: "flex w-full items-center justify-between px-3 py-1.5 text-sm #{is_selected ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}" do %>
+                  <span><%= year %></span>
+                  <% if is_current_actual && current_season == actual_current %>
+                    <span class="text-xs text-green-600 font-medium">Now</span>
+                  <% elsif is_selected %>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-indigo-600">
+                      <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
+                    </svg>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
