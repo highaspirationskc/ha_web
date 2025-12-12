@@ -49,8 +49,9 @@ module Mutations
       private
 
       def can_reply_to?(message)
-        thread_participants = message.thread_participants
-        thread_participants.include?(current_user)
+        return true if current_user.can?(:reply_any, :messages)
+
+        message.thread_participants.include?(current_user)
       end
 
       def determine_recipients(parent)

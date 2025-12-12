@@ -5,7 +5,7 @@ class Authorization
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       community_service_records: [:index, :show, :create, :edit, :delete],
-      messages: [:index, :show, :create, :support_inbox],
+      messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
@@ -15,7 +15,7 @@ class Authorization
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       community_service_records: [:index, :show, :create, :edit, :delete],
-      messages: [:index, :show, :create, :support_inbox],
+      messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]

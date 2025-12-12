@@ -15,9 +15,17 @@ module Types
     field :thread_root, Types::MessageType, null: false
 
     field :is_reply, Boolean, null: false
+    field :is_read, Boolean, null: false, description: "Whether the current user has read this message"
 
     def is_reply
       object.reply?
+    end
+
+    def is_read
+      return true if context[:current_user].nil?
+
+      recipient = object.message_recipients.find_by(recipient: context[:current_user])
+      recipient&.is_read || false
     end
   end
 end
