@@ -99,6 +99,42 @@ class TeamTest < ActiveSupport::TestCase
     assert_not_respond_to @team, :members
   end
 
+  # Icon cascade delete tests
+  test "should destroy icon medium when team is destroyed" do
+    admin = create_user
+    icon = Medium.create!(
+      uploaded_by: admin,
+      cloudflare_id: "icon_team_test_#{SecureRandom.hex(8)}",
+      filename: "icon.png",
+      media_type: "image",
+      category: "icon"
+    )
+    @team.icon = icon
+    @team.save!
+
+    CloudflareImagesService.stubs(:delete).returns(true)
+    assert_difference "Medium.count", -1 do
+      @team.destroy
+    end
+  end
+
+  test "should not destroy general medium when team is destroyed" do
+    admin = create_user
+    general_medium = Medium.create!(
+      uploaded_by: admin,
+      cloudflare_id: "general_team_test_#{SecureRandom.hex(8)}",
+      filename: "image.jpg",
+      media_type: "image",
+      category: "general"
+    )
+    @team.icon = general_medium
+    @team.save!
+
+    assert_no_difference "Medium.count" do
+      @team.destroy
+    end
+  end
+
   # Community Service Hours
   test "total_community_service_hours returns 0 when no mentees have records" do
     @team.save!

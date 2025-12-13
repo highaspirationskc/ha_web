@@ -1,6 +1,6 @@
 class UsersController < AuthenticatedController
   before_action :require_users_navigation_or_related_access
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show, :reset_password]
   before_action :authorize_edit, only: [:edit, :update]
@@ -10,6 +10,7 @@ class UsersController < AuthenticatedController
   before_action :authorize_family_member_management, only: [:add_family_member, :remove_family_member, :create_guardian]
   before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
   before_action :authorize_event_log_management, only: [:add_event_log, :remove_event_log]
+  before_action :authorize_grade_card_view, only: [:add_grade_card, :remove_grade_card]
 
   def index
     @users = users_for_current_user
@@ -34,6 +35,7 @@ class UsersController < AuthenticatedController
     @available_mentees_for_mentor = available_mentees_for_mentor
     load_event_log_data
     load_community_service_data
+    load_grade_card_data
   end
 
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
@@ -271,6 +273,65 @@ class UsersController < AuthenticatedController
     end
   end
 
+  def add_grade_card
+    unless @user.mentee.present?
+      return respond_with_error("Can only add grade cards to mentees")
+    end
+
+    unless current_user.can?(:create, :grade_cards, @user.mentee)
+      return respond_with_error("You don't have permission to add grade cards for this mentee")
+    end
+
+    unless params[:file].present?
+      return respond_with_error("Please select a file to upload")
+    end
+
+    begin
+      # Upload to Cloudflare
+      result = CloudflareImagesService.upload(params[:file])
+
+      # Create medium (result uses symbol keys: :cloudflare_id, :filename, etc.)
+      medium = Medium.create!(
+        uploaded_by: current_user,
+        cloudflare_id: result[:cloudflare_id],
+        filename: result[:filename],
+        content_type: result[:content_type],
+        width: result[:width],
+        height: result[:height],
+        media_type: "image",
+        category: "grade_card"
+      )
+
+      # Create grade card
+      GradeCard.create!(
+        mentee: @user.mentee,
+        medium: medium,
+        description: params[:description]
+      )
+
+      redirect_to user_path(@user), notice: "Grade card added successfully"
+    rescue CloudflareImagesService::UploadError => e
+      respond_with_error("Failed to upload grade card: #{e.message}")
+    rescue ActiveRecord::RecordInvalid => e
+      respond_with_error("Failed to save grade card: #{e.message}")
+    end
+  end
+
+  def remove_grade_card
+    unless current_user.can?(:delete, :grade_cards)
+      return redirect_to user_path(@user), alert: "You don't have permission to delete grade cards"
+    end
+
+    grade_card = @user.mentee&.grade_cards&.find_by(id: params[:grade_card_id])
+
+    unless grade_card
+      return redirect_to user_path(@user), alert: "Grade card not found"
+    end
+
+    grade_card.destroy
+    redirect_to user_path(@user), notice: "Grade card removed successfully"
+  end
+
   private
 
   def set_user
@@ -284,6 +345,8 @@ class UsersController < AuthenticatedController
     return if current_user.mentor.present?
     # Allow guardians (they can view their children)
     return if current_user.guardian.present?
+    # Allow users to access their own profile (for grade card upload etc.)
+    return if params[:id].present? && params[:id].to_i == current_user.id
 
     redirect_to dashboard_path, alert: "You don't have access to this section"
   end
@@ -352,6 +415,12 @@ class UsersController < AuthenticatedController
     return if current_user.can?(:manage_event_logs, :users)
 
     redirect_to users_path, alert: "You don't have permission to manage event logs"
+  end
+
+  def authorize_grade_card_view
+    return if can_manage_user?(@user)
+
+    redirect_to users_path, alert: "You don't have permission to manage grade cards for this user"
   end
 
   # Permission check methods
@@ -639,5 +708,32 @@ class UsersController < AuthenticatedController
     return true if current_user.mentor? && @user.mentee&.mentor_id == current_user.mentor&.id
     return true if current_user == @user
     false
+  end
+
+  def load_grade_card_data
+    return unless @user.mentee.present?
+
+    @current_season ||= Current.season
+    @season_date_range ||= current_season_date_range
+
+    # Get grade cards for this mentee
+    @grade_cards = @user.mentee.grade_cards.includes(:medium).order(created_at: :desc)
+
+    # Filter by season if available
+    if @season_date_range
+      @grade_cards = @grade_cards.where(created_at: @season_date_range)
+    end
+
+    # Check permissions
+    @can_upload_grade_cards = current_user.can?(:create, :grade_cards, @user.mentee)
+    @can_delete_grade_cards = current_user.can?(:delete, :grade_cards)
+  end
+
+  def respond_with_error(message)
+    if request.xhr?
+      render plain: message, status: :unprocessable_entity
+    else
+      redirect_to user_path(@user), alert: message
+    end
   end
 end

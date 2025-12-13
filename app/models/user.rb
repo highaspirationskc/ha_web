@@ -34,6 +34,7 @@ class User < ApplicationRecord
   validate :password_complexity, if: :password_required?
 
   before_create :generate_confirmation_token
+  after_destroy :cleanup_avatar_medium
 
   # Normalize email to lowercase
   before_save :normalize_email
@@ -160,5 +161,16 @@ class User < ApplicationRecord
   def generate_confirmation_token
     self.confirmation_token = SecureRandom.urlsafe_base64(32)
     self.confirmation_sent_at = Time.current
+  end
+
+  def cleanup_avatar_medium
+    return unless avatar&.single_use?
+
+    begin
+      CloudflareImagesService.delete(avatar.cloudflare_id)
+    rescue CloudflareImagesService::DeleteError => e
+      Rails.logger.warn("Failed to delete avatar from Cloudflare: #{e.message}")
+    end
+    avatar.destroy
   end
 end

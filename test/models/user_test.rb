@@ -89,6 +89,41 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
+  test "should destroy avatar medium when user is destroyed" do
+    admin = create_user
+    avatar = Medium.create!(
+      uploaded_by: admin,
+      cloudflare_id: "avatar_user_test_#{SecureRandom.hex(8)}",
+      filename: "avatar.jpg",
+      media_type: "image",
+      category: "avatar"
+    )
+    @user.avatar = avatar
+    @user.save!
+
+    CloudflareImagesService.stubs(:delete).returns(true)
+    assert_difference "Medium.count", -1 do
+      @user.destroy
+    end
+  end
+
+  test "should not destroy general medium when user is destroyed" do
+    admin = create_user
+    general_medium = Medium.create!(
+      uploaded_by: admin,
+      cloudflare_id: "general_user_test_#{SecureRandom.hex(8)}",
+      filename: "image.jpg",
+      media_type: "image",
+      category: "general"
+    )
+    @user.avatar = general_medium
+    @user.save!
+
+    assert_no_difference "Medium.count" do
+      @user.destroy
+    end
+  end
+
   # Active status
   test "should default to inactive" do
     user = User.create!(email: "inactive@example.com", password: "Password123!")

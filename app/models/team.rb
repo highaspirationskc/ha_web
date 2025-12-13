@@ -8,6 +8,8 @@ class Team < ApplicationRecord
   validates :color, presence: true
   validate :color_must_be_available, on: :create
 
+  after_destroy :cleanup_icon_medium
+
   def self.available_colors
     taken = pluck(:color)
     colors.keys - taken
@@ -58,5 +60,16 @@ class Team < ApplicationRecord
     return nil unless current_season
 
     OlympicSeasonService.new(current_season).date_range_from_reference_date
+  end
+
+  def cleanup_icon_medium
+    return unless icon&.single_use?
+
+    begin
+      CloudflareImagesService.delete(icon.cloudflare_id)
+    rescue CloudflareImagesService::DeleteError => e
+      Rails.logger.warn("Failed to delete icon from Cloudflare: #{e.message}")
+    end
+    icon.destroy
   end
 end

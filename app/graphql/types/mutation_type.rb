@@ -58,5 +58,9 @@ module Types
     field :create_community_service_record, mutation: Mutations::CommunityServiceRecords::CreateCommunityServiceRecord
     field :update_community_service_record, mutation: Mutations::CommunityServiceRecords::UpdateCommunityServiceRecord
     field :delete_community_service_record, mutation: Mutations::CommunityServiceRecords::DeleteCommunityServiceRecord
+
+    # Grade Card mutations
+    field :create_grade_card, mutation: Mutations::GradeCards::CreateGradeCard
+    field :delete_grade_card, mutation: Mutations::GradeCards::DeleteGradeCard
   end
 end

@@ -8,6 +8,7 @@ class Authorization
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
+      grade_cards: [:index, :show, :create, :delete],
       navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
@@ -18,6 +19,7 @@ class Authorization
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
+      grade_cards: [:index, :show, :create, :delete],
       navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     mentor: {
@@ -28,6 +30,7 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
+      grade_cards: [:index, :show, :create],
       navigation: [:dashboard, :users, :events, :inbox, :community_service]
     },
     guardian: {
@@ -35,6 +38,7 @@ class Authorization
       events: [:index, :show],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
+      grade_cards: [:index, :show, :create],
       navigation: [:dashboard, :events, :inbox]
     },
     mentee: {
@@ -43,13 +47,15 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :events, :inbox, :community_service]
+      grade_cards: [:index, :show, :create],
+      navigation: [:dashboard, :events, :inbox, :community_service, :grade_cards]
     },
     volunteer: {
       users: [],
       events: [:index, :show],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
+      grade_cards: [],
       navigation: [:dashboard, :events, :inbox]
     }
   }.freeze
@@ -71,6 +77,11 @@ class Authorization
     # Check self-restriction
     if SELF_RESTRICTED.include?(action) && target == @user
       return false
+    end
+
+    # Check target-specific permissions for grade_cards
+    if resource == :grade_cards && action == :create && target.is_a?(Mentee)
+      return can_create_grade_card_for?(target)
     end
 
     true
@@ -146,6 +157,26 @@ class Authorization
     end
   end
 
+  # Get grade cards accessible to this user
+  def accessible_grade_cards
+    return GradeCard.none unless @user
+
+    case @role
+    when :admin, :staff
+      GradeCard.all
+    when :mentor
+      mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
+      GradeCard.where(mentee_id: mentee_ids)
+    when :guardian
+      mentee_ids = @user.guardian&.children&.pluck(:id) || []
+      GradeCard.where(mentee_id: mentee_ids)
+    when :mentee
+      @user.mentee&.grade_cards || GradeCard.none
+    else
+      GradeCard.none
+    end
+  end
+
   # Get list of users this user can message
   def messageable_users
     return User.none unless @user
@@ -197,6 +228,10 @@ class Authorization
 
     def messageable_users(user)
       new(user).messageable_users
+    end
+
+    def accessible_grade_cards(user)
+      new(user).accessible_grade_cards
     end
 
     # Returns users who have a specific permission
@@ -261,6 +296,21 @@ class Authorization
       :mentee
     elsif user.volunteer.present?
       :volunteer
+    end
+  end
+
+  def can_create_grade_card_for?(mentee)
+    case @role
+    when :admin, :staff
+      true
+    when :mentor
+      mentee.mentor_id == @user.mentor&.id
+    when :guardian
+      FamilyMember.exists?(guardian_id: @user.guardian&.id, mentee_id: mentee.id)
+    when :mentee
+      @user.mentee&.id == mentee.id
+    else
+      false
     end
   end
 end

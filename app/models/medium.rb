@@ -1,7 +1,8 @@
 class Medium < ApplicationRecord
   self.table_name = "media"
 
-  CATEGORIES = %w[general avatar icon].freeze
+  CATEGORIES = %w[general avatar icon grade_card].freeze
+  SINGLE_USE_CATEGORIES = %w[avatar icon grade_card].freeze
 
   belongs_to :uploaded_by, class_name: "User"
 
@@ -10,6 +11,7 @@ class Medium < ApplicationRecord
   has_many :teams, foreign_key: :icon_id, dependent: :nullify
   has_many :saturday_scoops_as_image, class_name: "SaturdayScoop", foreign_key: :image_id, dependent: :nullify
   has_many :saturday_scoops_as_video, class_name: "SaturdayScoop", foreign_key: :video_id, dependent: :nullify
+  has_one :grade_card, dependent: :nullify
 
   validates :cloudflare_id, presence: true, uniqueness: true
   validates :filename, presence: true
@@ -23,6 +25,8 @@ class Medium < ApplicationRecord
   scope :general, -> { where(category: "general") }
   scope :avatars, -> { where(category: "avatar") }
   scope :icons, -> { where(category: "icon") }
+  scope :grade_cards, -> { where(category: "grade_card") }
+  scope :library, -> { where(category: "general") }
 
   def url(variant: "public")
     if video?
@@ -57,6 +61,10 @@ class Medium < ApplicationRecord
     media_type == "video"
   end
 
+  def single_use?
+    SINGLE_USE_CATEGORIES.include?(category)
+  end
+
   def in_use?
     usage.any?
   end
@@ -68,10 +76,11 @@ class Medium < ApplicationRecord
     usages.concat(teams.map { |t| { type: "Team", record: t, name: t.name } })
     usages.concat(saturday_scoops_as_image.map { |s| { type: "SaturdayScoop", record: s, name: s.title } })
     usages.concat(saturday_scoops_as_video.map { |s| { type: "SaturdayScoop", record: s, name: s.title } })
+    usages << { type: "GradeCard", record: grade_card, name: "Grade Card for #{grade_card.mentee&.user&.email}" } if grade_card
     usages
   end
 
   def usage_count
-    events.count + users_as_avatar.count + teams.count + saturday_scoops_as_image.count + saturday_scoops_as_video.count
+    events.count + users_as_avatar.count + teams.count + saturday_scoops_as_image.count + saturday_scoops_as_video.count + (grade_card ? 1 : 0)
   end
 end

@@ -240,6 +240,21 @@ module Types
       end
     end
 
+    # Grade Cards
+    field :grade_cards, [Types::GradeCardType], null: false, description: "Get grade cards accessible to the current user"
+    def grade_cards
+      require_authentication!
+      GradeCardsService.new(context[:current_user]).list.order(created_at: :desc)
+    end
+
+    field :grade_card, Types::GradeCardType, null: true, description: "Get a grade card by ID" do
+      argument :id, ID, required: true
+    end
+    def grade_card(id:)
+      require_authentication!
+      GradeCardsService.new(context[:current_user]).find(id)
+    end
+
     # Saturday Scoops (public - no auth required)
     field :saturday_scoops, [Types::SaturdayScoopType], null: false, description: "List published Saturday Scoops"
     def saturday_scoops

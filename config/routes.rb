@@ -35,6 +35,8 @@ Rails.application.routes.draw do
       post :reset_password
       post :add_event_log
       delete :remove_event_log
+      post :add_grade_card
+      delete :remove_grade_card
     end
   end
 
@@ -59,6 +61,7 @@ Rails.application.routes.draw do
   resources :olympic_seasons
   resources :family_members
   resources :community_service_records, path: "community_service"
+  resources :grade_cards, only: [:index, :show, :new, :create, :destroy]
 
   # Saturday Scoops
   resources :saturday_scoops do

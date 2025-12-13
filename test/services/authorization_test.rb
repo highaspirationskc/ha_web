@@ -347,4 +347,47 @@ class AuthorizationTest < ActiveSupport::TestCase
     # Admin can edit themselves (edit is not self-restricted)
     assert Authorization.can?(@user, :edit, :users)
   end
+
+  # Grade Cards permissions
+  test "admin can manage grade cards" do
+    assert Authorization.can?(@user, :index, :grade_cards)
+    assert Authorization.can?(@user, :show, :grade_cards)
+    assert Authorization.can?(@user, :create, :grade_cards)
+    assert Authorization.can?(@user, :delete, :grade_cards)
+  end
+
+  test "staff can manage grade cards" do
+    assert Authorization.can?(@staff_user, :index, :grade_cards)
+    assert Authorization.can?(@staff_user, :show, :grade_cards)
+    assert Authorization.can?(@staff_user, :create, :grade_cards)
+    assert Authorization.can?(@staff_user, :delete, :grade_cards)
+  end
+
+  test "mentor can create and view grade cards but not delete" do
+    assert Authorization.can?(@mentor_user, :index, :grade_cards)
+    assert Authorization.can?(@mentor_user, :show, :grade_cards)
+    assert Authorization.can?(@mentor_user, :create, :grade_cards)
+    assert_not Authorization.can?(@mentor_user, :delete, :grade_cards)
+  end
+
+  test "guardian can create and view grade cards but not delete" do
+    assert Authorization.can?(@guardian_user, :index, :grade_cards)
+    assert Authorization.can?(@guardian_user, :show, :grade_cards)
+    assert Authorization.can?(@guardian_user, :create, :grade_cards)
+    assert_not Authorization.can?(@guardian_user, :delete, :grade_cards)
+  end
+
+  test "mentee can create and view grade cards but not delete" do
+    assert Authorization.can?(@mentee_user, :index, :grade_cards)
+    assert Authorization.can?(@mentee_user, :show, :grade_cards)
+    assert Authorization.can?(@mentee_user, :create, :grade_cards)
+    assert_not Authorization.can?(@mentee_user, :delete, :grade_cards)
+  end
+
+  test "volunteer cannot access grade cards" do
+    assert_not Authorization.can?(@volunteer_user, :index, :grade_cards)
+    assert_not Authorization.can?(@volunteer_user, :show, :grade_cards)
+    assert_not Authorization.can?(@volunteer_user, :create, :grade_cards)
+    assert_not Authorization.can?(@volunteer_user, :delete, :grade_cards)
+  end
 end

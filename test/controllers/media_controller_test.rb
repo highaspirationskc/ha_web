@@ -50,6 +50,38 @@ class MediaControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index only shows general category by default" do
+    login_as @admin
+
+    # Create media of different categories with unique filenames
+    general_medium = create_medium(@admin, category: "general", filename: "general_unique.jpg")
+    avatar_medium = create_medium(@admin, category: "avatar", filename: "avatar_unique.jpg")
+    icon_medium = create_medium(@admin, category: "icon", filename: "icon_unique.jpg")
+    grade_card_medium = create_medium(@admin, category: "grade_card", filename: "grade_card_unique.jpg")
+
+    get media_url
+    assert_response :success
+
+    # Only general category should be shown in response
+    assert_match "general_unique.jpg", response.body
+    assert_no_match(/avatar_unique\.jpg/, response.body)
+    assert_no_match(/icon_unique\.jpg/, response.body)
+    assert_no_match(/grade_card_unique\.jpg/, response.body)
+  end
+
+  test "index can filter by specific category" do
+    login_as @admin
+
+    avatar_medium = create_medium(@admin, category: "avatar", filename: "avatar_filter_test.jpg")
+    general_medium = create_medium(@admin, category: "general", filename: "general_filter_test.jpg")
+
+    get media_url(category: "avatar")
+    assert_response :success
+
+    assert_match "avatar_filter_test.jpg", response.body
+    assert_no_match(/general_filter_test\.jpg/, response.body)
+  end
+
   test "show requires authentication" do
     get medium_url(@medium)
     assert_redirected_to root_path
@@ -190,13 +222,14 @@ class MediaControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_medium(user)
+  def create_medium(user, category: "general", filename: "test.jpg")
     Medium.create!(
       uploaded_by: user,
       cloudflare_id: "test_cf_id_#{SecureRandom.hex(8)}",
-      filename: "test.jpg",
+      filename: filename,
       media_type: "image",
-      content_type: "image/jpeg"
+      content_type: "image/jpeg",
+      category: category
     )
   end
 

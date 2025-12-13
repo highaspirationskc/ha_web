@@ -197,8 +197,8 @@ class MediumTest < ActiveSupport::TestCase
     assert_includes @medium.errors[:category], "is not included in the list"
   end
 
-  test "category can be general, avatar, or icon" do
-    %w[general avatar icon].each do |cat|
+  test "category can be general, avatar, icon, or grade_card" do
+    %w[general avatar icon grade_card].each do |cat|
       @medium.category = cat
       assert @medium.valid?, "Expected #{cat} to be valid"
     end
@@ -265,5 +265,77 @@ class MediumTest < ActiveSupport::TestCase
     @medium.category = "icon"
     @medium.save!
     assert_includes @medium.thumbnail_url, "icon"
+  end
+
+  test "grade_cards scope returns only grade_card media" do
+    @medium.save!
+    grade_card_medium = Medium.create!(
+      uploaded_by: @user,
+      cloudflare_id: "grade_card_id_#{SecureRandom.hex(8)}",
+      filename: "grade_card.jpg",
+      media_type: "image",
+      category: "grade_card"
+    )
+
+    grade_cards = Medium.grade_cards
+    assert_not_includes grade_cards, @medium
+    assert_includes grade_cards, grade_card_medium
+  end
+
+  test "library scope returns only general media" do
+    @medium.save!
+    avatar = Medium.create!(
+      uploaded_by: @user,
+      cloudflare_id: "avatar_lib_#{SecureRandom.hex(8)}",
+      filename: "avatar.jpg",
+      media_type: "image",
+      category: "avatar"
+    )
+    icon = Medium.create!(
+      uploaded_by: @user,
+      cloudflare_id: "icon_lib_#{SecureRandom.hex(8)}",
+      filename: "icon.png",
+      media_type: "image",
+      category: "icon"
+    )
+    grade_card_medium = Medium.create!(
+      uploaded_by: @user,
+      cloudflare_id: "gc_lib_#{SecureRandom.hex(8)}",
+      filename: "grade_card.jpg",
+      media_type: "image",
+      category: "grade_card"
+    )
+
+    library = Medium.library
+    assert_includes library, @medium
+    assert_not_includes library, avatar
+    assert_not_includes library, icon
+    assert_not_includes library, grade_card_medium
+  end
+
+  test "single_use? returns false for general category" do
+    @medium.category = "general"
+    assert_not @medium.single_use?
+  end
+
+  test "single_use? returns true for avatar category" do
+    @medium.category = "avatar"
+    assert @medium.single_use?
+  end
+
+  test "single_use? returns true for icon category" do
+    @medium.category = "icon"
+    assert @medium.single_use?
+  end
+
+  test "single_use? returns true for grade_card category" do
+    @medium.category = "grade_card"
+    assert @medium.single_use?
+  end
+
+  test "thumbnail_url returns thumbnail variant for grade_card" do
+    @medium.category = "grade_card"
+    @medium.save!
+    assert_includes @medium.thumbnail_url, "thumbnail"
   end
 end
