@@ -383,7 +383,7 @@ class MessagesMutationsTest < ActiveSupport::TestCase
     }, context: { current_user: @mentor })
 
     errors = result.dig("data", "archiveMessage", "errors")
-    assert_includes errors, "You are not a recipient of this message"
+    assert_includes errors, "You are not a recipient of this thread"
   end
 
   private

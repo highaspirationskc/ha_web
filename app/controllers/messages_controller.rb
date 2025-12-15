@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class MessagesController < AuthenticatedController
   before_action { require_navigation_access(:inbox) }
   before_action :set_message, only: [:show, :archive, :unarchive]
@@ -5,36 +7,15 @@ class MessagesController < AuthenticatedController
   before_action :authorize_recipient_action, only: [:archive, :unarchive]
 
   def index
-    # Get root messages where user is a recipient (not archived) of the root OR any reply
-    non_archived_recipients = current_user.message_recipients.not_archived
-    root_ids_from_direct = non_archived_recipients.joins(:message).where(messages: { parent_id: nil }).pluck(:message_id)
-    root_ids_from_replies = non_archived_recipients.joins(:message).where.not(messages: { parent_id: nil }).pluck("messages.parent_id")
-
-    all_root_ids = (root_ids_from_direct + root_ids_from_replies).uniq
-
-    @messages = Message.where(id: all_root_ids)
-                       .includes(:author, :message_recipients)
-                       .order(support: :desc, created_at: :desc)
+    @messages = messages_service.inbox
   end
 
   def sent
-    @messages = current_user.sent_messages
-                            .includes(:recipients)
-                            .roots
-                            .recent
+    @messages = messages_service.sent
   end
 
   def archived
-    # Get root messages where user has archived messages
-    archived_recipients = current_user.message_recipients.archived
-    root_ids_from_direct = archived_recipients.joins(:message).where(messages: { parent_id: nil }).pluck(:message_id)
-    root_ids_from_replies = archived_recipients.joins(:message).where.not(messages: { parent_id: nil }).pluck("messages.parent_id")
-
-    all_root_ids = (root_ids_from_direct + root_ids_from_replies).uniq
-
-    @messages = Message.where(id: all_root_ids)
-                       .includes(:author, :message_recipients)
-                       .recent
+    @messages = messages_service.archived
   end
 
   def show
@@ -53,9 +34,8 @@ class MessagesController < AuthenticatedController
                           .order(:created_at)
     end
 
-    # Mark visible messages as read for current user
-    MessageRecipient.where(message_id: @thread_messages.map(&:id), recipient: current_user, is_read: false)
-                    .update_all(is_read: true)
+    # Mark visible messages as read
+    messages_service.mark_thread_read(message_id: @message.id)
 
     # For reply form - determine recipients based on thread root's reply_mode
     if thread_root.reply_to_all?
@@ -83,99 +63,81 @@ class MessagesController < AuthenticatedController
       @message.subject = parent.subject.start_with?("Re:") ? parent.subject : "Re: #{parent.subject}"
     end
 
-    @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-    @group_recipients = build_group_recipients if current_user.staff?
+    recipients = messages_service.compose_recipients
+    @messageable_users = recipients[:users]
+    @group_recipients = recipients[:groups]
   end
 
   def archive
-    thread_message_ids = @message.thread_root.thread_messages.pluck(:id)
-    current_user.message_recipients.where(message_id: thread_message_ids).update_all(archived: true)
-    redirect_to messages_path, notice: "Message archived"
+    result = messages_service.archive(message_id: @message.id)
+    if result.success?
+      redirect_to messages_path, notice: "Message archived"
+    else
+      redirect_to messages_path, alert: result.error
+    end
   end
 
   def unarchive
-    thread_message_ids = @message.thread_root.thread_messages.pluck(:id)
-    current_user.message_recipients.where(message_id: thread_message_ids).update_all(archived: false)
-    redirect_to archived_messages_path, notice: "Message moved to inbox"
+    result = messages_service.unarchive(message_id: @message.id)
+    if result.success?
+      redirect_to archived_messages_path, notice: "Message moved to inbox"
+    else
+      redirect_to archived_messages_path, alert: result.error
+    end
   end
 
   def create
-    @message = Message.new(message_params)
-    @message.author = current_user
+    if params[:message][:parent_id].present?
+      # This is a reply
+      result = messages_service.reply(
+        parent_id: params[:message][:parent_id],
+        body: params[:message][:message]
+      )
 
-    # Validate and expand recipients (groups get expanded to individual users)
-    recipient_ids = params[:message][:recipient_ids]&.reject(&:blank?) || []
-
-    # Check if this is a support message
-    is_support_message = recipient_ids.include?("support")
-    recipient_ids = recipient_ids.reject { |id| id == "support" }
-
-    if is_support_message
-      @message.support = true
-      @message.reply_mode = :reply_to_all  # Support messages are group conversations
-    end
-
-    expanded_ids = expand_group_recipients(recipient_ids)
-    recipients = User.where(id: expanded_ids)
-
-    # Get parent message for reply permission checking
-    parent_message = @message.parent_id.present? ? Message.find_by(id: @message.parent_id) : nil
-
-    # Check permissions for each recipient (skip for support messages - anyone can message support)
-    unless is_support_message
-      unauthorized_recipients = recipients.reject do |recipient|
-        Authorization.can_message?(current_user, recipient, in_thread_with: parent_message)
-      end
-
-      if unauthorized_recipients.any?
-        @message.errors.add(:base, "You don't have permission to message some of the selected recipients")
-        @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-        render :new, status: :unprocessable_entity
-        return
-      end
-    end
-
-    # For reply_to_sender with multiple recipients, create separate messages
-    if @message.reply_to_sender? && recipients.size > 1 && @message.parent_id.blank?
-      create_separate_messages_for_recipients(recipients)
-    else
-      if @message.save
-        # Add recipients
-        recipients.each do |recipient|
-          @message.recipients << recipient
-        end
-
-        # For support messages, add all users with support_inbox permission as recipients
-        if is_support_message
-          support_users = Authorization.users_with_permission(:support_inbox, :messages)
-                                       .where.not(id: current_user.id)
-          support_users.each do |user|
-            @message.recipients << user unless @message.recipients.include?(user)
-          end
-        end
-
-        # Auto-add guardians when messaging mentees
-        add_guardians_for_mentees(recipients)
-
-        # Broadcast to recipients for real-time updates
-        @message.broadcast_to_recipients
-
-        if @message.reply?
-          respond_to do |format|
-            format.turbo_stream
-            format.html { redirect_to message_path(@message.thread_root), notice: "Reply sent" }
-          end
-        else
-          redirect_to sent_messages_path, notice: "Message sent successfully"
+      if result.success?
+        @message = result.message
+        respond_to do |format|
+          format.turbo_stream
+          format.html { redirect_to message_path(result.message.thread_root), notice: "Reply sent" }
         end
       else
-        @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
+        @message = Message.new(message_params)
+        @message.errors.add(:base, result.error)
+        recipients = messages_service.compose_recipients
+        @messageable_users = recipients[:users]
+        @group_recipients = recipients[:groups]
+        render :new, status: :unprocessable_entity
+      end
+    else
+      # This is a new message
+      recipient_ids = params[:message][:recipient_ids]&.reject(&:blank?) || []
+      result = messages_service.compose(
+        subject: params[:message][:subject],
+        body: params[:message][:message],
+        recipient_ids: recipient_ids,
+        reply_mode: params[:message][:reply_mode] || :reply_to_sender
+      )
+
+      if result.success?
+        count = result.messages&.size || 1
+        notice = count > 1 ? "Message sent to #{count} recipients" : "Message sent successfully"
+        redirect_to sent_messages_path, notice: notice
+      else
+        @message = Message.new(message_params)
+        @message.errors.add(:base, result.error)
+        recipients = messages_service.compose_recipients
+        @messageable_users = recipients[:users]
+        @group_recipients = recipients[:groups]
         render :new, status: :unprocessable_entity
       end
     end
   end
 
   private
+
+  def messages_service
+    @messages_service ||= MessagesService.new(current_user)
+  end
 
   def set_message
     @message = Message.find(params[:id])
@@ -206,111 +168,5 @@ class MessagesController < AuthenticatedController
 
   def message_params
     params.require(:message).permit(:subject, :message, :parent_id, :reply_mode)
-  end
-
-  def create_separate_messages_for_recipients(recipients)
-    # Create a separate message for each recipient (for reply_to_sender mode)
-    messages_created = []
-
-    recipients.each do |recipient|
-      msg = Message.new(
-        author: current_user,
-        subject: @message.subject,
-        message: @message.message,
-        reply_mode: :reply_to_sender
-      )
-
-      if msg.save
-        msg.recipients << recipient
-        add_guardians_for_mentee(msg, recipient)
-        msg.broadcast_to_recipients
-        messages_created << msg
-      end
-    end
-
-    if messages_created.any?
-      redirect_to sent_messages_path, notice: "Message sent to #{messages_created.size} recipient#{'s' if messages_created.size > 1}"
-    else
-      @message.errors.add(:base, "Failed to send messages")
-      @messageable_users = Authorization.messageable_users(current_user).order(:first_name, :last_name)
-      render :new, status: :unprocessable_entity
-    end
-  end
-
-  def add_guardians_for_mentees(recipients)
-    recipients.each do |recipient|
-      add_guardians_for_mentee(@message, recipient)
-    end
-  end
-
-  def build_group_recipients
-    groups = []
-
-    # Everyone
-    groups << { id: "group:everyone", name: "Everyone", description: "All users" }
-
-    # Role-based groups
-    groups << { id: "group:staff", name: "Staff", description: "All staff members" }
-    groups << { id: "group:mentors", name: "Mentors", description: "All mentors" }
-    groups << { id: "group:mentees", name: "Mentees", description: "All mentees" }
-    groups << { id: "group:guardians", name: "Guardians", description: "All guardians" }
-
-    # Team-based groups
-    Team.order(:name).each do |team|
-      groups << { id: "group:team:#{team.id}", name: team.name, description: "All members of #{team.name}" }
-    end
-
-    groups
-  end
-
-  def expand_group_recipients(recipient_ids)
-    expanded_ids = []
-
-    recipient_ids.each do |id|
-      if id.start_with?("group:")
-        expanded_ids.concat(expand_group(id))
-      else
-        expanded_ids << id
-      end
-    end
-
-    expanded_ids.uniq
-  end
-
-  def expand_group(group_id)
-    case group_id
-    when "group:everyone"
-      User.where.not(id: current_user.id).pluck(:id)
-    when "group:staff"
-      User.joins(:staff).pluck(:id)
-    when "group:mentors"
-      User.joins(:mentor).pluck(:id)
-    when "group:mentees"
-      User.joins(:mentee).pluck(:id)
-    when "group:guardians"
-      User.joins(:guardian).pluck(:id)
-    when /^group:team:(\d+)$/
-      team_id = $1.to_i
-      User.joins(mentee: :team).where(teams: { id: team_id }).pluck(:id)
-    else
-      []
-    end
-  end
-
-  def add_guardians_for_mentee(message, recipient)
-    return unless recipient.mentee?
-
-    # Get guardians of this mentee
-    guardian_user_ids = recipient.mentee.family_members
-                                 .joins(guardian: :user)
-                                 .pluck("users.id")
-
-    guardian_user_ids.each do |guardian_id|
-      # Don't add if already a recipient
-      unless message.recipients.exists?(id: guardian_id)
-        guardian = User.find(guardian_id)
-        message.recipients << guardian
-      end
-    end
   end
 end

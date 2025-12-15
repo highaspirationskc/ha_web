@@ -96,7 +96,8 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
   test "mentor can send message to their mentee" do
     login_as(@mentor)
 
-    assert_difference "Message.count", 1 do
+    # Creates 2 messages: one to mentee, one CC to guardian
+    assert_difference "Message.count", 2 do
       post messages_path, params: {
         message: {
           subject: "Mentor message",
@@ -154,20 +155,28 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
     assert message.support?
   end
 
-  test "sending to mentee auto-adds guardians" do
+  test "sending to mentee creates CC message for guardian" do
     login_as(@mentor)
 
-    post messages_path, params: {
-      message: {
-        subject: "Family message",
-        message: "Hello",
-        recipient_ids: [@mentee.id]
+    assert_difference "Message.count", 2 do
+      post messages_path, params: {
+        message: {
+          subject: "Family message",
+          message: "Hello",
+          recipient_ids: [@mentee.id]
+        }
       }
-    }
+    end
 
-    message = Message.last
-    assert_includes message.recipients, @mentee
-    assert_includes message.recipients, @guardian
+    # Original message to mentee
+    original = Message.find_by(subject: "Family message")
+    assert_includes original.recipients, @mentee
+    assert_not_includes original.recipients, @guardian
+
+    # CC message to guardian
+    cc_message = Message.find_by(subject: "cc: Family message")
+    assert_not_nil cc_message
+    assert_includes cc_message.recipients, @guardian
   end
 
   # Reply tests

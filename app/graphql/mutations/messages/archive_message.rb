@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Mutations
   module Messages
     class ArchiveMessage < AuthenticatedMutation
-      description "Archive a message for the current user"
+      description "Archive or unarchive an entire message thread for the current user"
 
       argument :message_id, ID, required: true
       argument :archive, Boolean, required: false, default_value: true
@@ -10,28 +12,19 @@ module Mutations
       field :errors, [String], null: false
 
       def resolve(message_id:, archive:)
-        message = Message.find_by(id: message_id)
+        service = MessagesService.new(current_user)
 
-        unless message
-          return { success: false, errors: ["Message not found"] }
-        end
-
-        recipient = MessageRecipient.find_by(
-          message: message,
-          recipient: current_user
-        )
-
-        unless recipient
-          return { success: false, errors: ["You are not a recipient of this message"] }
-        end
-
-        if archive
-          recipient.archive!
+        result = if archive
+          service.archive(message_id: message_id)
         else
-          recipient.unarchive!
+          service.unarchive(message_id: message_id)
         end
 
-        { success: true, errors: [] }
+        if result.success?
+          { success: true, errors: [] }
+        else
+          { success: false, errors: [result.error] }
+        end
       end
     end
   end
