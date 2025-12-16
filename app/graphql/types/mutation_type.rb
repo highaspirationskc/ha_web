@@ -5,6 +5,7 @@ module Types
     # Auth mutations (unauthenticated)
     field :login, mutation: Mutations::Login
     field :logout, mutation: Mutations::Logout
+    field :request_password_reset, mutation: Mutations::RequestPasswordReset
 
     # User mutations
     field :create_user, mutation: Mutations::Users::CreateUser
