@@ -122,17 +122,16 @@ class GradeCardsControllerTest < ActionDispatch::IntegrationTest
     assert_match "select a file", flash[:alert]
   end
 
-  # Mentees cannot delete grade cards (only staff/admin can, via users/:id page)
-
-  test "mentee cannot delete grade cards" do
+  test "mentee can delete their own grade cards" do
     login_as(@mentee_user)
+    CloudflareImagesService.stubs(:delete).returns(true)
 
-    assert_no_difference "GradeCard.count" do
+    assert_difference "GradeCard.count", -1 do
       delete grade_card_path(@grade_card)
     end
 
     assert_redirected_to grade_cards_path
-    assert_match "permission", flash[:alert]
+    assert_match "removed", flash[:notice]
   end
 
   test "requires authentication" do

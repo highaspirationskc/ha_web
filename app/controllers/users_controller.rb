@@ -318,14 +318,14 @@ class UsersController < AuthenticatedController
   end
 
   def remove_grade_card
-    unless current_user.can?(:delete, :grade_cards)
-      return redirect_to user_path(@user), alert: "You don't have permission to delete grade cards"
-    end
-
     grade_card = @user.mentee&.grade_cards&.find_by(id: params[:grade_card_id])
 
     unless grade_card
       return redirect_to user_path(@user), alert: "Grade card not found"
+    end
+
+    unless current_user.can?(:delete, :grade_cards, grade_card)
+      return redirect_to user_path(@user), alert: "You don't have permission to delete this grade card"
     end
 
     grade_card.destroy

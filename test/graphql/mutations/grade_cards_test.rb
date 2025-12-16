@@ -320,6 +320,8 @@ class GradeCardsMutationsTest < ActiveSupport::TestCase
       }
     GQL
 
+    CloudflareImagesService.stubs(:delete).returns(true)
+
     assert_difference "GradeCard.count", -1 do
       result = execute_graphql(mutation, variables: {
         id: grade_card.id.to_s

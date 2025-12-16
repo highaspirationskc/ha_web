@@ -274,30 +274,32 @@ class UsersControllerGradeCardsTest < ActionDispatch::IntegrationTest
     assert_match "permission", flash[:alert]
   end
 
-  test "mentee cannot remove grade cards from their own profile" do
+  test "mentee can remove their own grade cards" do
     login_as(@mentee_user)
+    CloudflareImagesService.stubs(:delete).returns(true)
 
-    assert_no_difference "GradeCard.count" do
+    assert_difference "GradeCard.count", -1 do
       delete remove_grade_card_user_path(@mentee_user), params: {
         grade_card_id: @grade_card.id
       }
     end
 
     assert_redirected_to user_path(@mentee_user)
-    assert_match "permission", flash[:alert]
+    assert_match "removed", flash[:notice]
   end
 
-  test "guardian cannot remove grade cards" do
+  test "guardian can remove grade cards for their mentees" do
     login_as(@guardian_user)
+    CloudflareImagesService.stubs(:delete).returns(true)
 
-    assert_no_difference "GradeCard.count" do
+    assert_difference "GradeCard.count", -1 do
       delete remove_grade_card_user_path(@mentee_user), params: {
         grade_card_id: @grade_card.id
       }
     end
 
     assert_redirected_to user_path(@mentee_user)
-    assert_match "permission", flash[:alert]
+    assert_match "removed", flash[:notice]
   end
 
   test "remove grade card requires authentication" do
