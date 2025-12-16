@@ -250,6 +250,8 @@ class MessagesServiceTest < ActiveSupport::TestCase
     cc_message = Message.find_by(subject: "cc: For Mentee")
     assert_not_nil cc_message, "CC message should be created for guardian"
     assert_includes cc_message.recipients, @guardian_user
+    assert_equal original.message, cc_message.message, "CC message should have same body as original"
+    assert_equal original.reply_mode, cc_message.reply_mode, "CC message should have same reply_mode as original"
   end
 
   test "compose does not CC guardian already in recipient list" do

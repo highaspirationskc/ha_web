@@ -55,12 +55,12 @@ class MessagesService
     if reply_mode_sym == :reply_to_sender && recipients.size > 1
       result = create_separate_messages(subject, body, recipients, is_support)
       # CC guardians for each mentee
-      create_guardian_cc_messages(subject, guardians_to_cc) if guardians_to_cc.any?
+      create_guardian_cc_messages(subject, body, reply_mode_sym, guardians_to_cc) if guardians_to_cc.any?
       result
     else
       result = create_single_message(subject, body, recipients, reply_mode_sym, is_support)
       # CC guardians who aren't already recipients
-      create_guardian_cc_messages(subject, guardians_to_cc) if result.success? && guardians_to_cc.any?
+      create_guardian_cc_messages(subject, body, reply_mode_sym, guardians_to_cc) if result.success? && guardians_to_cc.any?
       result
     end
   end
@@ -253,13 +253,13 @@ class MessagesService
     guardians_to_cc.uniq
   end
 
-  def create_guardian_cc_messages(original_subject, guardians)
+  def create_guardian_cc_messages(original_subject, original_body, original_reply_mode, guardians)
     guardians.each do |guardian|
       cc_message = Message.new(
         author: @user,
         subject: "cc: #{original_subject}",
-        message: "This is a copy of a message sent to your mentee.",
-        reply_mode: :no_replies
+        message: original_body,
+        reply_mode: original_reply_mode
       )
 
       if cc_message.save
