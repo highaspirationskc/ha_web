@@ -105,7 +105,7 @@ Rails.application.routes.draw do
 
   # Legal pages
   get "privacy_policy", to: "pages#privacy_policy"
-  get "terms_and_conditions", to: "pages#terms_and_conditions"
+  get "terms_of_use", to: "pages#terms_of_use"
 
   # Defines the root path route ("/")
   root "sessions#new"
