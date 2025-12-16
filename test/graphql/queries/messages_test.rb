@@ -275,6 +275,51 @@ class MessagesQueriesTest < ActiveSupport::TestCase
     assert recipient.reload.is_read
   end
 
+  test "message thread marks all replies as read" do
+    root = Message.create!(
+      author: @admin,
+      subject: "Thread with replies",
+      message: "Original message",
+      reply_mode: :reply_to_all
+    )
+    root_recipient = MessageRecipient.create!(message: root, recipient: @staff, is_read: false)
+
+    reply1 = Message.create!(
+      author: @mentor,
+      parent: root,
+      subject: "Re: Thread with replies",
+      message: "First reply",
+      reply_mode: :reply_to_all
+    )
+    reply1_recipient = MessageRecipient.create!(message: reply1, recipient: @staff, is_read: false)
+
+    reply2 = Message.create!(
+      author: @admin,
+      parent: root,
+      subject: "Re: Thread with replies",
+      message: "Second reply",
+      reply_mode: :reply_to_all
+    )
+    reply2_recipient = MessageRecipient.create!(message: reply2, recipient: @staff, is_read: false)
+
+    query = <<~GQL
+      query($messageId: ID!) {
+        messageThread(messageId: $messageId) {
+          id
+          replies {
+            id
+          }
+        }
+      }
+    GQL
+
+    execute_graphql(query, variables: { messageId: root.id.to_s }, context: { current_user: @staff })
+
+    assert root_recipient.reload.is_read, "Root message should be marked as read"
+    assert reply1_recipient.reload.is_read, "First reply should be marked as read"
+    assert reply2_recipient.reload.is_read, "Second reply should be marked as read"
+  end
+
   test "message thread returns nil for non-existent message" do
     query = <<~GQL
       query($messageId: ID!) {

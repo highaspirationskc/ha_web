@@ -557,6 +557,78 @@ class MessagesServiceTest < ActiveSupport::TestCase
     assert_match(/not found/i, result.error)
   end
 
+  test "mark_thread_read marks thread with one reply as read" do
+    original = Message.create!(
+      author: @admin,
+      subject: "Thread with reply",
+      message: "Original message",
+      reply_mode: :reply_to_all
+    )
+    mr_original = MessageRecipient.create!(message: original, recipient: @staff, is_read: false)
+
+    reply = Message.create!(
+      author: @admin,
+      parent: original,
+      subject: "Re: Thread with reply",
+      message: "Reply message",
+      reply_mode: :reply_to_all
+    )
+    mr_reply = MessageRecipient.create!(message: reply, recipient: @staff, is_read: false)
+
+    service = MessagesService.new(@staff)
+    result = service.mark_thread_read(message_id: original.id)
+
+    assert result.success?
+    assert mr_original.reload.is_read, "Original message should be marked as read"
+    assert mr_reply.reload.is_read, "Reply should be marked as read"
+  end
+
+  test "mark_thread_read marks thread with multiple replies as read" do
+    original = Message.create!(
+      author: @admin,
+      subject: "Thread with multiple replies",
+      message: "Original message",
+      reply_mode: :reply_to_all
+    )
+    mr_original = MessageRecipient.create!(message: original, recipient: @staff, is_read: false)
+
+    reply1 = Message.create!(
+      author: @admin,
+      parent: original,
+      subject: "Re: Thread with multiple replies",
+      message: "First reply",
+      reply_mode: :reply_to_all
+    )
+    mr_reply1 = MessageRecipient.create!(message: reply1, recipient: @staff, is_read: false)
+
+    reply2 = Message.create!(
+      author: @admin,
+      parent: original,
+      subject: "Re: Thread with multiple replies",
+      message: "Second reply",
+      reply_mode: :reply_to_all
+    )
+    mr_reply2 = MessageRecipient.create!(message: reply2, recipient: @staff, is_read: false)
+
+    reply3 = Message.create!(
+      author: @admin,
+      parent: original,
+      subject: "Re: Thread with multiple replies",
+      message: "Third reply",
+      reply_mode: :reply_to_all
+    )
+    mr_reply3 = MessageRecipient.create!(message: reply3, recipient: @staff, is_read: false)
+
+    service = MessagesService.new(@staff)
+    result = service.mark_thread_read(message_id: original.id)
+
+    assert result.success?
+    assert mr_original.reload.is_read, "Original message should be marked as read"
+    assert mr_reply1.reload.is_read, "First reply should be marked as read"
+    assert mr_reply2.reload.is_read, "Second reply should be marked as read"
+    assert mr_reply3.reload.is_read, "Third reply should be marked as read"
+  end
+
   # ============================================
   # list method tests
   # ============================================
