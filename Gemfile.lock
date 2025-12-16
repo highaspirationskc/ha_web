@@ -202,7 +202,7 @@ GEM
     matrix (0.4.3)
     mini_mime (1.1.5)
     minitest (5.26.2)
-    mocha (2.8.2)
+    mocha (3.0.0)
       ruby2_keywords (>= 0.0.5)
     msgpack (1.8.0)
     multi_json (1.18.0)
@@ -457,7 +457,7 @@ DEPENDENCIES
   jbuilder
   kamal
   kaminari (~> 1.2)
-  mocha (~> 2.8)
+  mocha (~> 3.0)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.1)
