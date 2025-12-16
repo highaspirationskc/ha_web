@@ -63,8 +63,8 @@ class GradeCardsService
       return Result.new(success?: false, error: "Grade card not found")
     end
 
-    unless @user.can?(:delete, :grade_cards)
-      return Result.new(success?: false, error: "You don't have permission to delete grade cards")
+    unless @user.can?(:delete, :grade_cards, grade_card)
+      return Result.new(success?: false, error: "You don't have permission to delete this grade card")
     end
 
     # GradeCard has after_destroy callback that cleans up the medium

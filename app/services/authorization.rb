@@ -38,7 +38,7 @@ class Authorization
       events: [:index, :show],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
-      grade_cards: [:index, :show, :create],
+      grade_cards: [:index, :show, :create, :delete],
       navigation: [:dashboard, :events, :inbox]
     },
     mentee: {
@@ -47,7 +47,7 @@ class Authorization
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
-      grade_cards: [:index, :show, :create],
+      grade_cards: [:index, :show, :create, :delete],
       navigation: [:dashboard, :events, :inbox, :community_service, :grade_cards]
     },
     volunteer: {
@@ -82,6 +82,10 @@ class Authorization
     # Check target-specific permissions for grade_cards
     if resource == :grade_cards && action == :create && target.is_a?(Mentee)
       return can_create_grade_card_for?(target)
+    end
+
+    if resource == :grade_cards && action == :delete && target.is_a?(GradeCard)
+      return can_delete_grade_card?(target)
     end
 
     true
@@ -309,6 +313,21 @@ class Authorization
       FamilyMember.exists?(guardian_id: @user.guardian&.id, mentee_id: mentee.id)
     when :mentee
       @user.mentee&.id == mentee.id
+    else
+      false
+    end
+  end
+
+  def can_delete_grade_card?(grade_card)
+    case @role
+    when :admin, :staff
+      true
+    when :mentor
+      grade_card.mentee&.mentor_id == @user.mentor&.id
+    when :guardian
+      FamilyMember.exists?(guardian_id: @user.guardian&.id, mentee_id: grade_card.mentee_id)
+    when :mentee
+      @user.mentee&.id == grade_card.mentee_id
     else
       false
     end

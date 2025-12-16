@@ -370,18 +370,18 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_not Authorization.can?(@mentor_user, :delete, :grade_cards)
   end
 
-  test "guardian can create and view grade cards but not delete" do
+  test "guardian can create, view, and delete grade cards for their mentees" do
     assert Authorization.can?(@guardian_user, :index, :grade_cards)
     assert Authorization.can?(@guardian_user, :show, :grade_cards)
     assert Authorization.can?(@guardian_user, :create, :grade_cards)
-    assert_not Authorization.can?(@guardian_user, :delete, :grade_cards)
+    assert Authorization.can?(@guardian_user, :delete, :grade_cards)
   end
 
-  test "mentee can create and view grade cards but not delete" do
+  test "mentee can create, view, and delete their own grade cards" do
     assert Authorization.can?(@mentee_user, :index, :grade_cards)
     assert Authorization.can?(@mentee_user, :show, :grade_cards)
     assert Authorization.can?(@mentee_user, :create, :grade_cards)
-    assert_not Authorization.can?(@mentee_user, :delete, :grade_cards)
+    assert Authorization.can?(@mentee_user, :delete, :grade_cards)
   end
 
   test "volunteer cannot access grade cards" do

@@ -301,7 +301,7 @@ class GradeCardsMutationsTest < ActiveSupport::TestCase
     assert_includes result["errors"].first["message"], "permission"
   end
 
-  test "mentee cannot delete grade cards" do
+  test "mentee can delete their own grade cards" do
     medium4 = Medium.create!(
       uploaded_by: @admin,
       cloudflare_id: "gc_test4_#{SecureRandom.hex(8)}",
@@ -320,12 +320,14 @@ class GradeCardsMutationsTest < ActiveSupport::TestCase
       }
     GQL
 
-    result = execute_graphql(mutation, variables: {
-      id: grade_card.id.to_s
-    }, context: { current_user: @mentee_user })
+    assert_difference "GradeCard.count", -1 do
+      result = execute_graphql(mutation, variables: {
+        id: grade_card.id.to_s
+      }, context: { current_user: @mentee_user })
 
-    assert_not_nil result["errors"]
-    assert_includes result["errors"].first["message"], "permission"
+      assert_nil result["errors"]
+      assert result["data"]["deleteGradeCard"]["success"]
+    end
   end
 
   # Authentication tests
