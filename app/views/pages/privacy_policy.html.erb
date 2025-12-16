@@ -1,0 +1,88 @@
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white shadow rounded-lg p-8">
+      <div class="flex justify-center mb-6">
+        <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "w-auto", style: "height: 60px;" %>
+      </div>
+
+      <h1 class="text-3xl font-bold text-gray-900 text-center mb-2">Privacy Policy</h1>
+      <p class="text-sm text-gray-500 text-center mb-8">Last updated: December 9th, 2025</p>
+
+      <div class="prose prose-gray max-w-none">
+        <p class="text-gray-700 mb-6">
+          High Aspirations Inc operates the High Aspirations mobile application (the "App").
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">1. What Information We Collect</h2>
+        <p class="text-gray-700 mb-4">From every user (kids and adults) we only collect:</p>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>Email address OR phone number (used only for sign-in and mentee communication)</li>
+          <li>Basic device information (device type, OS version) to make the app work and fix bugs</li>
+          <li>Anonymized analytics (which screens are used, crashes) – we never tie this to an individual child</li>
+        </ul>
+        <p class="text-gray-700 mb-4">
+          We do not collect names, precise location, photos, contacts, microphone, camera, or anything else.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">2. How We Get Parental Consent (COPPA)</h2>
+        <p class="text-gray-700 mb-4">
+          Because children under 13 use our app, we are required by U.S. law (COPPA) to get verifiable parental consent before collecting the email or phone number.
+        </p>
+        <p class="text-gray-700 mb-4">Here's exactly how we do it:</p>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>When a child is enrolled in High Aspirations we are given consent by parents or guardians to create an account, we immediately send an email or SMS to the parent/guardian with a clear consent request.</li>
+          <li>The parent must click a link or reply to approve before an account can be created for them.</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">3. How We Use the Information</h2>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>To let the child log in securely</li>
+          <li>To recover the account if they forget their password</li>
+          <li>To send important safety or service messages to the parent</li>
+          <li>To keep the app running smoothly</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">4. Sharing & Advertising</h2>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>We do not sell children's data.</li>
+          <li>We do not show any advertising to children under 13.</li>
+          <li>We only share data with trusted service providers who help us run the app (cloud hosting, email/SMS delivery, parental consent service). All are bound by strict contracts and COPPA.</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">5. Parental Rights</h2>
+        <p class="text-gray-700 mb-4">Parents can at any time:</p>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>Review their child's information</li>
+          <li>Delete their child's account and all data</li>
+          <li>Stop any further collection or use</li>
+        </ul>
+        <p class="text-gray-700 mb-4">
+          Just email us at <%= mail_to "app@highaspirationskc.org", "app@highaspirationskc.org", class: "text-indigo-600 hover:text-indigo-500" %>
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">6. Teens 13–17 & Adults</h2>
+        <p class="text-gray-700 mb-4">
+          If you are 13 or older you can sign up normally. The same privacy protections still apply — we still collect only the minimum.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">7. Security & Retention</h2>
+        <p class="text-gray-700 mb-4">
+          We use strong encryption and security practices. We delete accounts after 24 months of inactivity (or immediately on parental request).
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">8. Contact</h2>
+        <p class="text-gray-700 mb-4">
+          Email: <%= mail_to "app@highaspirationskc.org", "app@highaspirationskc.org", class: "text-indigo-600 hover:text-indigo-500" %>
+        </p>
+
+        <p class="text-sm text-gray-500 mt-8 pt-4 border-t border-gray-200">
+          Effective date: December 9th, 2025
+        </p>
+      </div>
+
+      <div class="mt-8 text-center">
+        <%= link_to "Back to Login", root_path, class: "text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    </div>
+  </div>
+</div>

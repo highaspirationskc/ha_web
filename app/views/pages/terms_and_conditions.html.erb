@@ -1,0 +1,73 @@
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white shadow rounded-lg p-8">
+      <div class="flex justify-center mb-6">
+        <%= image_tag "ha-icon.png", alt: "High Aspirations", class: "w-auto", style: "height: 60px;" %>
+      </div>
+
+      <h1 class="text-3xl font-bold text-gray-900 text-center mb-2">Terms of Use</h1>
+      <p class="text-sm text-gray-500 text-center mb-8">Last updated: December 9th, 2025</p>
+
+      <div class="prose prose-gray max-w-none">
+        <p class="text-gray-700 mb-6">
+          By using High Aspirations App you (or your parent/guardian) agree to these Terms.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">1. Age Requirements</h2>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>Children under 13 in the U.S. may only use the app after we receive verifiable parental consent.</li>
+          <li>Everyone else must be at least 13.</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">2. Parent/Guardian Responsibility</h2>
+        <p class="text-gray-700 mb-4">
+          If your child is under 13 (U.S.) the parent or legal guardian is agreeing to these Terms on behalf of the child and is responsible for their activity.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">3. Rules of Behavior (apply to everyone)</h2>
+        <p class="text-gray-700 mb-4">You agree not to:</p>
+        <ul class="list-disc pl-6 text-gray-700 mb-4 space-y-2">
+          <li>Bully, harass, or post anything harmful content</li>
+          <li>Try to hack or interfere with the app</li>
+          <li>Pretend to be someone else</li>
+        </ul>
+        <p class="text-gray-700 mb-4">
+          We may suspend or delete accounts that break these rules.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">4. Ownership</h2>
+        <p class="text-gray-700 mb-4">
+          The app and all its content belong to High Aspirations. You only get a limited right to use it.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">5. Disclaimer & Liability</h2>
+        <p class="text-gray-700 mb-4">
+          The app is provided "as-is". To the maximum extent allowed by law, we are not liable for indirect damages. Total liability is capped at $100.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">6. Governing Law</h2>
+        <p class="text-gray-700 mb-4">
+          Missouri, USA law applies.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">7. Changes</h2>
+        <p class="text-gray-700 mb-4">
+          We may update these Terms and will notify parents and users inside the app.
+        </p>
+
+        <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">8. Contact</h2>
+        <p class="text-gray-700 mb-4">
+          Email: <%= mail_to "app@highaspirationskc.org", "app@highaspirationskc.org", class: "text-indigo-600 hover:text-indigo-500" %>
+        </p>
+
+        <p class="text-sm text-gray-500 mt-8 pt-4 border-t border-gray-200">
+          Effective date: December 9th, 2025
+        </p>
+      </div>
+
+      <div class="mt-8 text-center">
+        <%= link_to "Back to Login", root_path, class: "text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -103,6 +103,10 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # Legal pages
+  get "privacy_policy", to: "pages#privacy_policy"
+  get "terms_and_conditions", to: "pages#terms_and_conditions"
+
   # Defines the root path route ("/")
   root "sessions#new"
 end
