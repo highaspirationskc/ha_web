@@ -96,6 +96,11 @@ class MessagesService
     if message.save
       recipients.each { |r| message.recipients << r }
       message.broadcast_to_recipients
+
+      # CC guardians of mentee recipients who aren't already in the thread
+      guardians_to_cc = find_guardians_to_cc(recipients)
+      create_guardian_cc_messages(subject, body, thread_root.reply_mode, guardians_to_cc) if guardians_to_cc.any?
+
       Result.new(success?: true, message: message)
     else
       Result.new(success?: false, error: message.errors.full_messages.join(", "))
@@ -242,8 +247,8 @@ class MessagesService
                                    .pluck("users.id")
 
       guardian_user_ids.each do |guardian_id|
-        # Only CC if guardian is NOT already a recipient
-        unless recipient_ids.include?(guardian_id)
+        # Only CC if guardian is NOT already a recipient and NOT the sender
+        unless recipient_ids.include?(guardian_id) || guardian_id == @user.id
           guardian = User.find_by(id: guardian_id)
           guardians_to_cc << guardian if guardian
         end

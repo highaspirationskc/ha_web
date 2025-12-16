@@ -277,6 +277,26 @@ class MessagesServiceTest < ActiveSupport::TestCase
     assert_nil cc_message, "No CC message should be created when guardian is already recipient"
   end
 
+  test "compose does not CC guardian when they are the sender" do
+    service = MessagesService.new(@guardian_user)
+
+    # Guardian sends message to their mentee
+    assert_difference "Message.count", 1 do
+      result = service.compose(
+        subject: "From Guardian",
+        body: "Message to my child",
+        recipient_ids: [@mentee_user.id.to_s]
+      )
+
+      assert result.success?
+      assert_includes result.message.recipients, @mentee_user
+    end
+
+    # No CC message should exist - guardian sent the message
+    cc_message = Message.find_by(subject: "cc: From Guardian")
+    assert_nil cc_message, "Guardian sender should not be CC'd on their own message"
+  end
+
   # Support message tests
 
   test "compose support message adds support staff" do
@@ -455,6 +475,85 @@ class MessagesServiceTest < ActiveSupport::TestCase
     assert result.success?
     assert_includes result.message.recipients, @admin
     assert_not_includes result.message.recipients, @mentor
+  end
+
+  test "reply CCs guardians when replying to mentee" do
+    # Admin sends message to mentee
+    original = Message.create!(
+      author: @admin,
+      subject: "To Mentee",
+      message: "Hello mentee",
+      reply_mode: :reply_to_all
+    )
+    original.recipients << @mentee_user
+
+    # Admin replies to the mentee (mentee is in recipients of reply)
+    service = MessagesService.new(@admin)
+
+    # Should create reply + CC for guardian
+    assert_difference "Message.count", 2 do
+      result = service.reply(parent_id: original.id, body: "Follow up message")
+
+      assert result.success?
+      assert_includes result.message.recipients, @mentee_user
+    end
+
+    # CC message should exist for guardian
+    cc_message = Message.find_by(subject: "cc: Re: To Mentee")
+    assert_not_nil cc_message, "Guardian should receive CC of reply to mentee"
+    assert_includes cc_message.recipients, @guardian_user
+  end
+
+  test "reply does not CC guardian who is already thread participant" do
+    # Message to both mentee and guardian
+    original = Message.create!(
+      author: @admin,
+      subject: "Family Thread",
+      message: "Hello family",
+      reply_mode: :reply_to_all
+    )
+    original.recipients << @mentee_user
+    original.recipients << @guardian_user
+
+    service = MessagesService.new(@admin)
+
+    # Reply should only create 1 message (no CC needed)
+    assert_difference "Message.count", 1 do
+      result = service.reply(parent_id: original.id, body: "Follow up")
+
+      assert result.success?
+      assert_includes result.message.recipients, @mentee_user
+      assert_includes result.message.recipients, @guardian_user
+    end
+
+    # No CC message should exist
+    cc_message = Message.find_by(subject: "cc: Re: Family Thread")
+    assert_nil cc_message, "No CC when guardian is already in thread"
+  end
+
+  test "reply does not CC guardian when they are replying" do
+    # Mentee initiates message to guardian
+    original = Message.create!(
+      author: @mentee_user,
+      subject: "From Mentee",
+      message: "Hello guardian",
+      reply_mode: :reply_to_all
+    )
+    original.recipients << @guardian_user
+
+    # Guardian replies - should not CC themselves
+    service = MessagesService.new(@guardian_user)
+
+    assert_difference "Message.count", 1 do
+      result = service.reply(parent_id: original.id, body: "Reply from guardian")
+
+      assert result.success?
+      assert_includes result.message.recipients, @mentee_user
+    end
+
+    # No CC message should exist
+    cc_message = Message.find_by(subject: "cc: Re: From Mentee")
+    assert_nil cc_message, "Guardian replier should not be CC'd"
   end
 
   # ============================================
