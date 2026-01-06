@@ -49,7 +49,13 @@ class ApplicationController < ActionController::Base
       if current_user&.staff.present? && session[:selected_season_year].present?
         session[:selected_season_year].to_i
       else
-        Date.current.year
+        # Calculate the correct start year for the current season
+        # (handles seasons that span year boundaries, e.g., Winter 2025 = Dec 2025 - Feb 2026)
+        actual_season = OlympicSeason.current_season
+        return Date.current.year unless actual_season
+
+        service = OlympicSeasonService.new(actual_season)
+        service.date_range_from_reference_date.begin.year
       end
     end
   end
@@ -67,7 +73,7 @@ class ApplicationController < ActionController::Base
     current_user&.staff.present?
   end
 
-  def viewing_historical_season?
+  def viewing_different_season?
     return false unless current_season && OlympicSeason.current_season
 
     actual_service = OlympicSeasonService.new(OlympicSeason.current_season)
@@ -77,5 +83,14 @@ class ApplicationController < ActionController::Base
     current_range != actual_range
   end
 
-  helper_method :current_user, :real_current_user, :spoofing?, :unread_message_count, :current_season, :current_season_year, :current_season_date_range, :can_switch_season?, :viewing_historical_season?
+  def formatted_season_range
+    return nil unless current_season && current_season_date_range
+
+    range = current_season_date_range
+    start_str = range.begin.strftime("%b %-d, %Y")
+    end_str = range.end.strftime("%b %-d, %Y")
+    "#{current_season.name} #{start_str} - #{end_str}"
+  end
+
+  helper_method :current_user, :real_current_user, :spoofing?, :unread_message_count, :current_season, :current_season_year, :current_season_date_range, :can_switch_season?, :viewing_different_season?, :formatted_season_range
 end

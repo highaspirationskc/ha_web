@@ -151,10 +151,10 @@ class EventsController < AuthenticatedController
       @season_date_range = current_season_date_range
 
       # Get the start date for the calendar
-      # If viewing historical season and no explicit start_date, default to season start
+      # If viewing a different season and no explicit start_date, default to season start
       if params[:start_date].present?
         @start_date = Date.parse(params[:start_date])
-      elsif viewing_historical_season? && @season_date_range
+      elsif viewing_different_season? && @season_date_range
         @start_date = @season_date_range.begin
       else
         @start_date = Date.current
