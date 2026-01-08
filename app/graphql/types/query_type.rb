@@ -41,29 +41,7 @@ module Types
     end
     def events(input: nil)
       require_authentication!
-      scope = Event.all
-
-      if input
-        start_date = input[:start_date] || Date.current
-
-        if input[:end_date]
-          end_date = input[:end_date]
-        else
-          # Find current olympic season and use its end date
-          current_season = find_current_olympic_season(start_date)
-          if current_season
-            end_date = calculate_season_end_date(current_season, start_date.year)
-          else
-            # If no season found, return all future events
-            end_date = nil
-          end
-        end
-
-        scope = scope.where("event_date >= ?", start_date)
-        scope = scope.where("event_date <= ?", end_date) if end_date
-      end
-
-      scope.order(event_date: :asc)
+      Event.all.order(event_date: :asc)
     end
 
     field :event, Types::EventType, null: true, description: "Get an event by ID" do
