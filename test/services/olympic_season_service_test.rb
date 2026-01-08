@@ -92,16 +92,16 @@ class OlympicSeasonServiceTest < ActiveSupport::TestCase
     service = OlympicSeasonService.new(@summer)
     range = service.date_range(2025)
 
-    assert_equal Date.new(2025, 6, 1), range.begin
-    assert_equal Date.new(2025, 8, 31), range.end
+    assert_equal Date.new(2025, 6, 1), range.begin.to_date
+    assert_equal Date.new(2025, 8, 31), range.end.to_date
   end
 
   test "date_range returns correct range for winter season (spans years)" do
     service = OlympicSeasonService.new(@winter)
     range = service.date_range(2025)
 
-    assert_equal Date.new(2025, 12, 1), range.begin
-    assert_equal Date.new(2026, 2, 28), range.end
+    assert_equal Date.new(2025, 12, 1), range.begin.to_date
+    assert_equal Date.new(2026, 2, 28), range.end.to_date
   end
 
   # Test start_date and end_date
@@ -147,23 +147,23 @@ class OlympicSeasonServiceTest < ActiveSupport::TestCase
     service = OlympicSeasonService.new(@summer)
     range = service.date_range_from_reference_date(Date.new(2025, 7, 15))
 
-    assert_equal Date.new(2025, 6, 1), range.begin
-    assert_equal Date.new(2025, 8, 31), range.end
+    assert_equal Date.new(2025, 6, 1), range.begin.to_date
+    assert_equal Date.new(2025, 8, 31), range.end.to_date
   end
 
   test "date_range_from_reference_date returns correct range for winter season (in December)" do
     service = OlympicSeasonService.new(@winter)
     range = service.date_range_from_reference_date(Date.new(2025, 12, 15))
 
-    assert_equal Date.new(2025, 12, 1), range.begin
-    assert_equal Date.new(2026, 2, 28), range.end
+    assert_equal Date.new(2025, 12, 1), range.begin.to_date
+    assert_equal Date.new(2026, 2, 28), range.end.to_date
   end
 
   test "date_range_from_reference_date returns correct range for winter season (in February)" do
     service = OlympicSeasonService.new(@winter)
     range = service.date_range_from_reference_date(Date.new(2025, 2, 15))
 
-    assert_equal Date.new(2024, 12, 1), range.begin
-    assert_equal Date.new(2025, 2, 28), range.end
+    assert_equal Date.new(2024, 12, 1), range.begin.to_date
+    assert_equal Date.new(2025, 2, 28), range.end.to_date
   end
 end

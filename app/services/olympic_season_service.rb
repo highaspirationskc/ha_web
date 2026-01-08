@@ -31,10 +31,10 @@ class OlympicSeasonService
   end
 
   # Get the date range for this season in a specific year
-  # Returns a Range of Date objects
+  # Returns a Range of DateTime objects (start at beginning_of_day, end at end_of_day)
   def date_range(year = Date.current.year)
-    start_date = Date.new(year, season.start_month, season.start_day)
-    end_date = Date.new(end_year(year), season.end_month, season.end_day)
+    start_date = Date.new(year, season.start_month, season.start_day).beginning_of_day
+    end_date = Date.new(end_year(year), season.end_month, season.end_day).end_of_day
     start_date..end_date
   end
 
@@ -61,6 +61,7 @@ class OlympicSeasonService
 
   # Get the date range for this season based on a reference date
   # Handles the case where we're in the middle of a season that spans years
+  # Returns a Range of DateTime objects (start at beginning_of_day, end at end_of_day)
   def date_range_from_reference_date(reference_date = Date.current)
     year = reference_date.year
 
@@ -79,6 +80,6 @@ class OlympicSeasonService
       end_date = Date.new(year, season.end_month, season.end_day)
     end
 
-    start_date..end_date
+    start_date.beginning_of_day..end_date.end_of_day
   end
 end
