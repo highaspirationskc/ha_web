@@ -79,4 +79,4 @@ gem "webmock", "~> 3.26", group: :test
 
 gem "mocha", "~> 2.8", group: :test
 
-gem "rqrcode", "~> 3.1"
+gem "rqrcode", "~> 3.2"
