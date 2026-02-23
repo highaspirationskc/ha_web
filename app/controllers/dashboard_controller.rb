@@ -17,6 +17,7 @@ class DashboardController < AuthenticatedController
         latest_activity: latest_activity || Date.new(1900, 1, 1)
       }
     end.sort_by { |standing| [-standing[:points], -standing[:latest_activity].to_time.to_i] }
+      .take(3)
 
     # Get top mentees for the season
     if @current_season && @season_date_range

@@ -197,7 +197,7 @@ class MessagesServiceTest < ActiveSupport::TestCase
   end
 
   test "compose expands group:team:id for staff" do
-    team = Team.create!(name: "Test Team", color: :blue)
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     @mentee_user.mentee.update!(team: team)
     service = MessagesService.new(@admin)
 
@@ -848,7 +848,7 @@ class MessagesServiceTest < ActiveSupport::TestCase
   end
 
   test "compose_recipients includes team groups for staff" do
-    team = Team.create!(name: "Alpha Team", color: :green)
+    team = Team.create!(name: "Alpha Team", color: "#22C55E")
     service = MessagesService.new(@admin)
 
     result = service.compose_recipients

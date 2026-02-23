@@ -63,9 +63,7 @@
               <dt class="text-sm font-medium text-gray-500">Team</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 <% if @user.mentee.team.present? %>
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= @user.mentee.team.color %>-100 text-<%= @user.mentee.team.color %>-800">
-                    <%= @user.mentee.team.name %>
-                  </span>
+                  <%= team_color_badge(@user.mentee.team) %>
                 <% else %>
                   <span class="text-gray-500">Unassigned</span>
                 <% end %>
@@ -148,9 +146,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <% if mentee.team.present? %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee.team.color %>-100 text-<%= mentee.team.color %>-800">
-                              <%= mentee.team.name %>
-                            </span>
+                            <%= team_color_badge(mentee.team) %>
                           <% else %>
                             <span class="text-sm text-gray-500">Unassigned</span>
                           <% end %>

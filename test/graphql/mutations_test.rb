@@ -9,7 +9,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     @token = AuthService.generate_token(@user)
 
     # Create test data
-    @team = Team.create!(name: "Test Team", color: :blue)
+    @team = Team.create!(name: "Test Team", color: "#3B82F6")
     @event_type = EventType.create!(name: "Test Event Type", point_value: 10, category: :org)
   end
 
@@ -29,7 +29,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     GQL
 
     result = execute_graphql(mutation, variables: {
-      input: { name: "New Team", color: "red" }
+      input: { name: "New Team", color: "#E11D48" }
     }, context: { current_user: @user })
 
     team_data = result.dig("data", "createTeam", "team")
@@ -37,7 +37,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
 
     assert_not_nil team_data
     assert_equal "New Team", team_data["name"]
-    assert_equal "red", team_data["color"]
+    assert_equal "#E11D48", team_data["color"]
     assert_empty errors
   end
 
@@ -179,7 +179,7 @@ class GraphQL::MutationsTest < ActiveSupport::TestCase
     GQL
 
     result = execute_graphql(mutation, variables: {
-      input: { name: "New Team", color: "red" }
+      input: { name: "New Team", color: "#E11D48" }
     }, context: {})
 
     assert_nil result.dig("data", "createTeam")

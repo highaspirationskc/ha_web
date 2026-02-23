@@ -124,9 +124,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <% if log.user.mentee&.team %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= log.user.mentee.team.color %>-100 text-<%= log.user.mentee.team.color %>-800">
-                              <%= log.user.mentee.team.name %>
-                            </span>
+                            <%= team_color_badge(log.user.mentee.team) %>
                           <% else %>
                             <span class="text-sm text-gray-500">—</span>
                           <% end %>
@@ -196,9 +194,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <% if log.user.mentee&.team %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= log.user.mentee.team.color %>-100 text-<%= log.user.mentee.team.color %>-800">
-                              <%= log.user.mentee.team.name %>
-                            </span>
+                            <%= team_color_badge(log.user.mentee.team) %>
                           <% else %>
                             <span class="text-sm text-gray-500">—</span>
                           <% end %>

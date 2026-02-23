@@ -36,7 +36,7 @@ class UserRoleAssociationsTest < ActiveSupport::TestCase
   end
 
   test "can create mentee profile for user" do
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     mentee = Mentee.create!(user: @user, team: team)
     assert_equal mentee, @user.mentee
   end
@@ -100,7 +100,7 @@ class UserRoleAssociationsTest < ActiveSupport::TestCase
   end
 
   test "destroying user destroys associated mentee profile" do
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     Mentee.create!(user: @user, team: team)
 
     assert_difference "Mentee.count", -1 do

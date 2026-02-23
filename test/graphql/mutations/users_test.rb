@@ -4,7 +4,7 @@ require "test_helper"
 
 class UsersMutationsTest < ActiveSupport::TestCase
   def setup
-    @team = Team.create!(name: "Test Team", color: :blue)
+    @team = Team.create!(name: "Test Team", color: "#3B82F6")
 
     @admin = create_user(email: "admin@example.com")
     @staff = create_staff_user(email: "staff@example.com")

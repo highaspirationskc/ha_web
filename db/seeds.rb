@@ -5,23 +5,42 @@
 puts "Seeding database..."
 
 # Create Teams
-blue_team = Team.find_or_create_by!(name: "Blue Team") do |team|
-  team.color = :blue
+team_definitions = [
+  { name: "Blue Team", color: "#3B82F6" },
+  { name: "Green Team", color: "#22C55E" },
+  { name: "Yellow Team", color: "#F59E0B" },
+  { name: "Red Team", color: "#E11D48" },
+  { name: "Orange Team", color: "#F97316" },
+  { name: "Emerald Team", color: "#10B981" },
+  { name: "Teal Team", color: "#14B8A6" },
+  { name: "Cyan Team", color: "#06B6D4" },
+  { name: "Sky Team", color: "#0EA5E9" },
+  { name: "Indigo Team", color: "#6366F1" },
+  { name: "Violet Team", color: "#8B5CF6" },
+  { name: "Purple Team", color: "#A855F7" },
+  { name: "Fuchsia Team", color: "#D946EF" },
+  { name: "Pink Team", color: "#EC4899" },
+  { name: "Rose Team", color: "#F43F5E" },
+  { name: "Lime Team", color: "#84CC16" },
+  { name: "Slate Team", color: "#64748B" },
+  { name: "Navy Team", color: "#1E3A8A" },
+  { name: "Forest Team", color: "#166534" },
+  { name: "Amber Team", color: "#92400E" }
+]
+
+all_teams = team_definitions.map do |defn|
+  Team.find_or_create_by!(name: defn[:name]) do |team|
+    team.color = defn[:color]
+  end
 end
 
-green_team = Team.find_or_create_by!(name: "Green Team") do |team|
-  team.color = :green
-end
+puts "Created #{all_teams.size} teams"
 
-yellow_team = Team.find_or_create_by!(name: "Yellow Team") do |team|
-  team.color = :yellow
-end
-
-red_team = Team.find_or_create_by!(name: "Red Team") do |team|
-  team.color = :red
-end
-
-puts "Created 4 teams"
+# Named references for backward compatibility
+blue_team = all_teams[0]
+green_team = all_teams[1]
+yellow_team = all_teams[2]
+red_team = all_teams[3]
 
 # Helper method to create user with role profile
 def create_user_with_role(email:, password: "Password1!", first_name:, last_name:, active: true, &block)
@@ -59,12 +78,9 @@ green_guardian = green_guardian_user.guardian
 puts "Created 2 guardians"
 
 # Create mentors and mentees for each team
-teams_data = [
-  { team: blue_team, color: "Blue" },
-  { team: green_team, color: "Green" },
-  { team: yellow_team, color: "Yellow" },
-  { team: red_team, color: "Red" }
-]
+teams_data = all_teams.map do |team|
+  { team: team, label: team.name.sub(" Team", "") }
+end
 
 all_mentors = []
 all_mentees = []
@@ -72,13 +88,14 @@ all_mentee_users = []
 
 teams_data.each do |team_data|
   team = team_data[:team]
-  color = team_data[:color]
+  label = team_data[:label]
+  prefix = label.downcase.gsub(/\s+/, "-")
 
   # Create 2 mentors per team
   2.times do |i|
     mentor_user = create_user_with_role(
-      email: "#{color.downcase}.mentor#{i + 1}@example.com",
-      first_name: color,
+      email: "#{prefix}.mentor#{i + 1}@example.com",
+      first_name: label,
       last_name: "Mentor #{i + 1}"
     ) do |user|
       Mentor.find_or_create_by!(user: user)
@@ -89,8 +106,8 @@ teams_data.each do |team_data|
   # Create 7 mentees per team
   7.times do |i|
     mentee_user = create_user_with_role(
-      email: "#{color.downcase}.mentee#{i + 1}@example.com",
-      first_name: color,
+      email: "#{prefix}.mentee#{i + 1}@example.com",
+      first_name: label,
       last_name: "Mentee #{i + 1}"
     ) do |user|
       mentee = Mentee.find_or_create_by!(user: user)

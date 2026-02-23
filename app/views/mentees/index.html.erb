@@ -64,9 +64,7 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <% if mentee.team %>
-                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee.team.color %>-100 text-<%= mentee.team.color %>-800">
-                        <%= mentee.team.name %>
-                      </span>
+                      <%= team_color_badge(mentee.team) %>
                     <% else %>
                       <span class="text-sm text-gray-500">—</span>
                     <% end %>

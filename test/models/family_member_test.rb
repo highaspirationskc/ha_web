@@ -6,7 +6,7 @@ class FamilyMemberTest < ActiveSupport::TestCase
     @mentee_user = User.create!(email: "mentee@example.com", password: "Password123!")
 
     @guardian = Guardian.create!(user: @guardian_user)
-    @team = Team.create!(name: "Test Team", color: "blue")
+    @team = Team.create!(name: "Test Team", color: "#3B82F6")
     @mentee = Mentee.create!(user: @mentee_user, team: @team)
 
     @family_member = FamilyMember.new(

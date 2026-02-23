@@ -6,7 +6,7 @@ class CommunityServiceRecordTest < ActiveSupport::TestCase
       email: "mentee@example.com",
       password: "Password123!"
     )
-    @team = Team.create!(name: "Test Team", color: "blue")
+    @team = Team.create!(name: "Test Team", color: "#3B82F6")
     @mentee = Mentee.create!(user: @user, team: @team)
 
     @record = CommunityServiceRecord.new(

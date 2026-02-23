@@ -44,7 +44,7 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     teams = result.dig("data", "teams")
 
     assert_not_nil teams
-    assert_equal 4, teams.length
+    assert_equal 20, teams.length
     assert_includes teams.map { |t| t["name"] }, "Blue Team"
   end
 

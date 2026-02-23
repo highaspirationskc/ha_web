@@ -2,21 +2,19 @@ class Team < ApplicationRecord
   has_many :mentees, dependent: :nullify
   belongs_to :icon, class_name: "Medium", optional: true
 
-  enum :color, { blue: "blue", green: "green", yellow: "yellow", red: "red" }
+  COLORS = %w[
+    #E11D48 #F97316 #F59E0B #84CC16 #22C55E #10B981 #14B8A6 #06B6D4
+    #0EA5E9 #3B82F6 #6366F1 #8B5CF6 #A855F7 #D946EF #EC4899 #F43F5E
+    #F87171 #FB7185 #0F172A #64748B #7C2D12 #166534 #1E3A8A #0F766E #92400E
+  ].freeze
 
   validates :name, presence: true, uniqueness: true
-  validates :color, presence: true
-  validate :color_must_be_available, on: :create
+  validates :color, presence: true, format: { with: /\A#[0-9A-Fa-f]{6}\z/, message: "must be a valid hex color" }
 
   after_destroy :cleanup_icon_medium
 
-  def self.available_colors
-    taken = pluck(:color)
-    colors.keys - taken
-  end
-
-  def self.colors_available?
-    available_colors.any?
+  def color_hex
+    color
   end
 
   # Calculate total points for all mentees on this team for a given date range
@@ -45,15 +43,6 @@ class Team < ApplicationRecord
   end
 
   private
-
-  def color_must_be_available
-    return if color.blank?
-
-    taken_colors = Team.where.not(id: id).pluck(:color)
-    if taken_colors.include?(color)
-      errors.add(:color, "has already been taken")
-    end
-  end
 
   def current_season_date_range
     current_season = OlympicSeason.current_season

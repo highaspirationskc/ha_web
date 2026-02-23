@@ -8,7 +8,28 @@ class TeamsController < AuthenticatedController
 
   # GET /admin/teams or /admin/teams.json
   def index
-    @teams = Team.all
+    season_date_range = current_season_date_range
+
+    # Build ranked teams with points and mentee counts
+    ranked = Team.left_joins(:mentees)
+                 .select("teams.*, COUNT(mentees.id) AS mentees_count")
+                 .group("teams.id")
+                 .map { |t| { team: t, points: t.total_points(season_date_range) } }
+                 .sort_by { |t| [-t[:points], t[:team].name] }
+
+    @team_ranks = {}
+    current_rank = 1
+    previous_points = nil
+    ranked.each do |t|
+      if previous_points && t[:points] < previous_points
+        current_rank += 1
+      end
+      previous_points = t[:points]
+      @team_ranks[t[:team].id] = current_rank
+    end
+
+    # Paginate the pre-sorted list
+    @teams = Kaminari.paginate_array(ranked.map { |t| t[:team] }).page(params[:page])
   end
 
   # GET /admin/teams/1 or /admin/teams/1.json
@@ -114,14 +135,8 @@ class TeamsController < AuthenticatedController
     end
 
     def authorize_create
-      unless current_user.can?(:create, :teams)
-        redirect_to teams_path, alert: "You don't have permission to create teams"
-        return
-      end
-
-      unless Team.colors_available?
-        redirect_to teams_path, alert: "All team colors are in use. Delete a team to create a new one."
-      end
+      return if current_user.can?(:create, :teams)
+      redirect_to teams_path, alert: "You don't have permission to create teams"
     end
 
     def authorize_edit

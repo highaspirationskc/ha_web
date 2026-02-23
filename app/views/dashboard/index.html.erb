@@ -11,7 +11,10 @@
 
     <% if @current_season %>
       <div class="mt-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Team Leaderboard</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Team Leaderboard</h2>
+          <%= link_to "View All", teams_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" %>
+        </div>
         <div class="flex flex-col">
           <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -66,12 +69,9 @@
                             </div>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap">
-                            <%= link_to standing[:team].name, team_path(standing[:team]), class: "text-sm font-medium text-gray-900 hover:text-indigo-600" %>
-                            <div class="text-sm text-gray-500">
-                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= standing[:team].color %>-100 text-<%= standing[:team].color %>-800">
-                                <%= standing[:team].color.titleize %>
-                              </span>
-                            </div>
+                            <%= link_to team_path(standing[:team]), class: "hover:opacity-80" do %>
+                              <%= team_color_badge(standing[:team]) %>
+                            <% end %>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <%= standing[:member_count] %> <%= "member".pluralize(standing[:member_count]) %>
@@ -127,9 +127,7 @@
                             <% end %>
                             <div class="text-sm text-gray-500">
                               <% if mentee_data[:user].mentee&.team %>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].mentee&.team.color %>-100 text-<%= mentee_data[:user].mentee&.team.color %>-800">
-                                  <%= mentee_data[:user].mentee&.team.name %>
-                                </span>
+                                <%= team_color_badge(mentee_data[:user].mentee.team) %>
                               <% end %>
                             </div>
                           </div>
@@ -175,9 +173,7 @@
                             <% end %>
                             <div class="text-sm text-gray-500">
                               <% if mentee_data[:user].mentee&.team %>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= mentee_data[:user].mentee&.team.color %>-100 text-<%= mentee_data[:user].mentee&.team.color %>-800">
-                                  <%= mentee_data[:user].mentee&.team.name %>
-                                </span>
+                                <%= team_color_badge(mentee_data[:user].mentee.team) %>
                               <% end %>
                             </div>
                           </div>
