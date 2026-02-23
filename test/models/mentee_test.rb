@@ -6,7 +6,7 @@ class MenteeTest < ActiveSupport::TestCase
       email: "mentee@example.com",
       password: "Password123!"
     )
-    @team = Team.create!(name: "Test Team", color: "blue")
+    @team = Team.create!(name: "Test Team", color: "#3B82F6")
     @mentee = Mentee.new(user: @user, team: @team)
   end
 
@@ -85,7 +85,7 @@ class MenteeTest < ActiveSupport::TestCase
 
   # Team relationship
   test "can be assigned to a team" do
-    new_team = Team.create!(name: "New Team", color: "red")
+    new_team = Team.create!(name: "New Team", color: "#E11D48")
     @mentee.team = new_team
     @mentee.save!
 

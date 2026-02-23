@@ -34,7 +34,7 @@ class MentorTest < ActiveSupport::TestCase
   test "can have multiple mentees" do
     @mentor.save!
 
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
 
     mentee_user1 = User.create!(email: "mentee1@example.com", password: "Password123!")
     mentee_user2 = User.create!(email: "mentee2@example.com", password: "Password123!")
@@ -49,7 +49,7 @@ class MentorTest < ActiveSupport::TestCase
 
   test "destroying mentor nullifies mentee associations" do
     @mentor.save!
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     mentee_user = User.create!(email: "mentee@example.com", password: "Password123!")
     mentee = Mentee.create!(user: mentee_user, mentor: @mentor, team: team)
 

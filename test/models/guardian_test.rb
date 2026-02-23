@@ -38,7 +38,7 @@ class GuardianTest < ActiveSupport::TestCase
   test "can have multiple children" do
     @guardian.save!
 
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
 
     mentee_user1 = User.create!(email: "mentee1@example.com", password: "Password123!")
     mentee_user2 = User.create!(email: "mentee2@example.com", password: "Password123!")
@@ -57,7 +57,7 @@ class GuardianTest < ActiveSupport::TestCase
   test "children with different relationship types" do
     @guardian.save!
 
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
 
     child_user = User.create!(email: "child@example.com", password: "Password123!")
     grandchild_user = User.create!(email: "grandchild@example.com", password: "Password123!")
@@ -74,7 +74,7 @@ class GuardianTest < ActiveSupport::TestCase
 
   test "destroying guardian destroys family_member associations" do
     @guardian.save!
-    team = Team.create!(name: "Test Team", color: "blue")
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     mentee_user = User.create!(email: "mentee@example.com", password: "Password123!")
     mentee = Mentee.create!(user: mentee_user, team: team)
 

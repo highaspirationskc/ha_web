@@ -235,7 +235,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "should create mentee user with team and mentor" do
     login_as(@user)
-    team = Team.create!(name: "Test Team", color: :blue)
+    team = Team.create!(name: "Test Team", color: "#3B82F6")
     mentor = @inactive_user.mentor # Already has mentor from setup
 
     assert_difference ["User.count", "Mentee.count"], 1 do
@@ -546,7 +546,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "should change role to mentee with team and mentor" do
     login_as(@user)
-    team = Team.create!(name: "New Team", color: :green)
+    team = Team.create!(name: "New Team", color: "#22C55E")
     mentor = @inactive_user.mentor
 
     patch user_path(@volunteer_user), params: {

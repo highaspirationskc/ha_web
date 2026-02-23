@@ -8,7 +8,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     @staff = create_staff_user(email: "staff@example.com")
     @mentor = create_mentor_user(email: "mentor@example.com")
 
-    @team = Team.create!(name: "Existing Team", color: :blue)
+    @team = Team.create!(name: "Existing Team", color: "#3B82F6")
   end
 
   # CreateTeam tests
@@ -30,7 +30,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "New Team",
-        color: "red"
+        color: "#E11D48"
       }
     }, context: { current_user: @admin })
 
@@ -39,7 +39,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
 
     assert_not_nil team
     assert_equal "New Team", team["name"]
-    assert_equal "red", team["color"]
+    assert_equal "#E11D48", team["color"]
     assert_empty errors
   end
 
@@ -59,7 +59,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "Staff Team",
-        color: "green"
+        color: "#22C55E"
       }
     }, context: { current_user: @staff })
 
@@ -87,7 +87,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "Mentor Team",
-        color: "yellow"
+        color: "#F59E0B"
       }
     }, context: { current_user: @mentor })
 
@@ -123,7 +123,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "Icon Team",
-        color: "yellow",
+        color: "#F59E0B",
         iconId: medium.id.to_s
       }
     }, context: { current_user: @admin })
@@ -151,7 +151,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "Existing Team",
-        color: "red"
+        color: "#E11D48"
       }
     }, context: { current_user: @admin })
 
@@ -177,7 +177,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
     result = execute_graphql(mutation, variables: {
       input: {
         name: "New Team",
-        color: "red"
+        color: "#E11D48"
       }
     }, context: {})
 
@@ -205,7 +205,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
       input: {
         id: @team.id.to_s,
         name: "Updated Team Name",
-        color: "green"
+        color: "#22C55E"
       }
     }, context: { current_user: @admin })
 
@@ -214,7 +214,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
 
     assert_not_nil team
     assert_equal "Updated Team Name", team["name"]
-    assert_equal "green", team["color"]
+    assert_equal "#22C55E", team["color"]
     assert_empty errors
   end
 
@@ -247,7 +247,7 @@ class TeamsMutationsTest < ActiveSupport::TestCase
   # DeleteTeam tests
 
   test "admin can delete team" do
-    team_to_delete = Team.create!(name: "Delete Me", color: :red)
+    team_to_delete = Team.create!(name: "Delete Me", color: "#E11D48")
 
     mutation = <<~GQL
       mutation($id: ID!) {

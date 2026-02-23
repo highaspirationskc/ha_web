@@ -2,7 +2,7 @@ require "test_helper"
 
 class TeamTest < ActiveSupport::TestCase
   def setup
-    @team = Team.new(name: "Test Team", color: "blue")
+    @team = Team.new(name: "Test Team", color: "#3B82F6")
   end
 
   # Validations
@@ -24,42 +24,62 @@ class TeamTest < ActiveSupport::TestCase
 
   test "name must be unique" do
     @team.save!
-    duplicate = Team.new(name: "Test Team", color: "red")
+    duplicate = Team.new(name: "Test Team", color: "#E11D48")
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:name], "has already been taken"
   end
 
-  # Color enum with string values
-  test "has color enum" do
-    assert_respond_to @team, :color
-    assert_respond_to @team, :blue?
-    assert_respond_to @team, :green?
-    assert_respond_to @team, :yellow?
-    assert_respond_to @team, :red?
+  # Hex color validation
+  test "accepts valid hex color" do
+    @team.color = "#FF5733"
+    assert @team.valid?
   end
 
-  test "can set color to blue" do
+  test "accepts lowercase hex color" do
+    @team.color = "#ff5733"
+    assert @team.valid?
+  end
+
+  test "rejects color without hash" do
+    @team.color = "3B82F6"
+    assert_not @team.valid?
+    assert_includes @team.errors[:color], "must be a valid hex color"
+  end
+
+  test "rejects color with wrong length" do
+    @team.color = "#FFF"
+    assert_not @team.valid?
+    assert_includes @team.errors[:color], "must be a valid hex color"
+  end
+
+  test "rejects non-hex characters" do
+    @team.color = "#ZZZZZZ"
+    assert_not @team.valid?
+    assert_includes @team.errors[:color], "must be a valid hex color"
+  end
+
+  test "rejects plain color names" do
     @team.color = "blue"
-    @team.save!
-    assert @team.blue?
+    assert_not @team.valid?
+    assert_includes @team.errors[:color], "must be a valid hex color"
   end
 
-  test "can set color to green" do
-    @team.color = "green"
-    @team.save!
-    assert @team.green?
+  # COLORS constant
+  test "has COLORS constant with 25 colors" do
+    assert_equal 25, Team::COLORS.length
+    assert Team::COLORS.all? { |c| c.match?(/\A#[0-9A-Fa-f]{6}\z/) }
   end
 
-  test "can set color to yellow" do
-    @team.color = "yellow"
-    @team.save!
-    assert @team.yellow?
+  # color_hex helper
+  test "color_hex returns the color value" do
+    assert_equal "#3B82F6", @team.color_hex
   end
 
-  test "can set color to red" do
-    @team.color = "red"
+  # Multiple teams can share the same color
+  test "allows duplicate colors" do
     @team.save!
-    assert @team.red?
+    second_team = Team.new(name: "Second Team", color: "#3B82F6")
+    assert second_team.valid?
   end
 
   # Associations - now with Mentee instead of User
@@ -194,7 +214,7 @@ class TeamTest < ActiveSupport::TestCase
 
   test "total_community_service_hours excludes records from other teams" do
     @team.save!
-    other_team = Team.create!(name: "Other Team", color: "red")
+    other_team = Team.create!(name: "Other Team", color: "#E11D48")
 
     today = Date.current
     OlympicSeason.create!(
