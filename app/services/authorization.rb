@@ -9,7 +9,7 @@ class Authorization
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
+      navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
@@ -20,7 +20,7 @@ class Authorization
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :users, :events, :inbox, :community_service, :settings, :saturday_scoops]
+      navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     mentor: {
       users: [:show],
@@ -96,7 +96,7 @@ class Authorization
     PERMISSIONS.dig(@role, :navigation) || []
   end
 
-  SETTINGS_ITEMS = [:event_types, :teams, :olympic_seasons, :media].freeze
+  SETTINGS_ITEMS = [:event_types, :olympic_seasons, :media].freeze
 
   def can_access?(nav_item)
     # Settings sub-items are accessible if user has :settings in their navigation
