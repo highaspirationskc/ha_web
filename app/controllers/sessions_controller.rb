@@ -2,7 +2,10 @@ class SessionsController < ApplicationController
   layout "sessions"
 
   def new
-    # Render login form
+    if Rails.env.development?
+      params[:email] ||= "admin@example.com"
+      params[:password] ||= "Password1!"
+    end
   end
 
   def create
