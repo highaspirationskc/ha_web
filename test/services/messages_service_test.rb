@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "webmock/minitest"
 
 class MessagesServiceTest < ActiveSupport::TestCase
   def setup
@@ -855,5 +856,55 @@ class MessagesServiceTest < ActiveSupport::TestCase
 
     group_ids = result[:groups].map { |g| g[:id] }
     assert_includes group_ids, "group:team:#{team.id}"
+  end
+
+  test "compose delivers push notification to recipients" do
+    UserDevice.create!(user: @mentee_user, fcm_token: "mentee_token", platform: "ios")
+    stub_firebase_credentials
+    stub_google_auth
+    stub_fcm_success
+
+    previous_adapter = ActiveJob::Base.queue_adapter
+    ActiveJob::Base.queue_adapter = :inline
+
+    service = MessagesService.new(@admin)
+    service.compose(
+      subject: "Test Push",
+      body: "Hello mentee",
+      recipient_ids: [@mentee_user.id.to_s]
+    )
+
+    assert_requested :post, %r{fcm\.googleapis\.com}, at_least_times: 1
+  ensure
+    ActiveJob::Base.queue_adapter = previous_adapter
+  end
+
+  private
+
+  def stub_firebase_credentials
+    credentials = {
+      project_id: "test-project",
+      private_key: OpenSSL::PKey::RSA.new(2048).to_pem,
+      client_email: "test@test-project.iam.gserviceaccount.com"
+    }
+    Rails.application.credentials.stubs(:firebase).returns(credentials)
+  end
+
+  def stub_google_auth
+    stub_request(:post, %r{googleapis\.com/oauth2/v4/token})
+      .to_return(
+        status: 200,
+        body: { access_token: "mock_access_token", expires_in: 3600 }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+  end
+
+  def stub_fcm_success
+    stub_request(:post, %r{fcm\.googleapis\.com})
+      .to_return(
+        status: 200,
+        body: { name: "projects/test-project/messages/123" }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
   end
 end

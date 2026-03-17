@@ -267,10 +267,12 @@ class MessagesService
         reply_mode: original_reply_mode
       )
 
-      if cc_message.save
-        cc_message.recipients << guardian
-        cc_message.broadcast_to_recipients
+      Message.transaction do
+        if cc_message.save
+          cc_message.recipients << guardian
+        end
       end
+      cc_message.broadcast_to_recipients if cc_message.persisted?
     end
   end
 
@@ -286,11 +288,13 @@ class MessagesService
         support: support
       )
 
-      if msg.save
-        msg.recipients << recipient
-        msg.broadcast_to_recipients
-        messages_created << msg
+      Message.transaction do
+        if msg.save
+          msg.recipients << recipient
+          messages_created << msg
+        end
       end
+      msg.broadcast_to_recipients if msg.persisted?
     end
 
     if messages_created.any?
@@ -309,8 +313,16 @@ class MessagesService
       support: support
     )
 
-    if message.save
-      recipients.each { |r| message.recipients << r }
+    saved = Message.transaction do
+      if message.save
+        recipients.each { |r| message.recipients << r }
+        true
+      else
+        false
+      end
+    end
+
+    if saved
       message.broadcast_to_recipients
       Result.new(success?: true, message: message)
     else

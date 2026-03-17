@@ -69,7 +69,7 @@ class CommunityServiceRecordsController < AuthenticatedController
     if @record.update(update_params)
       # Send denial message if record was denied and a reason was provided
       if @record.approved == false && params[:denial_reason].present?
-        send_denial_message(@record, params[:denial_reason])
+        CommunityServiceDenialMessage.new(@record, author: current_user, reason: params[:denial_reason]).deliver
       end
 
       redirect_path = params[:redirect_to].presence || community_service_records_path
@@ -146,34 +146,6 @@ class CommunityServiceRecordsController < AuthenticatedController
       # Mentees can edit their own records (but not approved status)
       params.require(:community_service_record).permit(:event, :description, :event_date, :hours)
     end
-  end
-
-  def send_denial_message(record, reason)
-    mentee_user = record.mentee.user
-    subject = "Community Service Record Denied: #{record.event}"
-    body = <<~BODY
-      Your community service record has been denied.
-
-      **Activity:** #{record.event}
-      **Date:** #{record.event_date.strftime("%B %d, %Y")}
-      **Hours:** #{record.hours}
-
-      **Reason for denial:**
-      #{reason}
-
-      If you have questions, please reply to this message.
-    BODY
-
-    msg = Message.create!(
-      author: current_user,
-      subject: subject,
-      message: body
-    )
-
-    MessageRecipient.create!(
-      message: msg,
-      recipient: mentee_user
-    )
   end
 
   def authorize_create

@@ -55,16 +55,9 @@ class DashboardController < AuthenticatedController
       @top_service_hours_mentees = []
     end
 
-    # Load SEAS evaluations for mentee users
-    if current_user.mentee.present?
-      @seas_evaluations = current_user.mentee.seas_evaluations.recent
-    end
-
-    # Load pending SEAS reviews for staff/admin
-    if Authorization.new(current_user).can?(:review, :seas_evaluations)
-      @pending_seas_reviews = SeasEvaluation.where(status: %w[submitted in_review])
-        .includes(mentee: :user)
-        .order(created_at: :asc)
-    end
+    # Load SEAS evaluations based on user role
+    @seas_evaluations = Authorization.accessible_seas_evaluations(current_user)
+      .includes(mentee: :user)
+      .recent
   end
 end

@@ -78,7 +78,7 @@ class SeasEvaluationsController < ApplicationController
     end
 
     @evaluation.update!(status: "submitted", completed_at: Time.current)
-    SeasNotificationService.evaluation_submitted(@evaluation)
+    SeasEvaluationReviewMessage.new(@evaluation).deliver
     redirect_to seas_evaluation_path(@evaluation.token)
   end
 

@@ -16,7 +16,8 @@ class SeasAnniversaryJob < ApplicationJob
         evaluation = SeasEvaluation.create!(mentee: mentee, evaluation_year: evaluation_year)
         SeasMailer.evaluation_invitation(mentee.user, evaluation).deliver_later
         evaluation.update_column(:email_sent_at, Time.current)
-        SeasNotificationService.evaluation_sent(evaluation)
+        SeasEvaluationMessage.new(evaluation).deliver
+        evaluation.update_column(:in_app_sent_at, Time.current)
       end
   end
 

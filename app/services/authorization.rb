@@ -164,6 +164,26 @@ class Authorization
     end
   end
 
+  # Get SEAS evaluations accessible to this user
+  def accessible_seas_evaluations
+    return SeasEvaluation.none unless @user
+
+    case @role
+    when :admin, :staff
+      SeasEvaluation.where(status: %w[submitted in_review])
+    when :mentor
+      mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
+      SeasEvaluation.where(mentee_id: mentee_ids)
+    when :guardian
+      mentee_ids = @user.guardian&.children&.pluck(:id) || []
+      SeasEvaluation.where(mentee_id: mentee_ids)
+    when :mentee
+      @user.mentee&.seas_evaluations || SeasEvaluation.none
+    else
+      SeasEvaluation.none
+    end
+  end
+
   # Get grade cards accessible to this user
   def accessible_grade_cards
     return GradeCard.none unless @user
@@ -235,6 +255,10 @@ class Authorization
 
     def messageable_users(user)
       new(user).messageable_users
+    end
+
+    def accessible_seas_evaluations(user)
+      new(user).accessible_seas_evaluations
     end
 
     def accessible_grade_cards(user)

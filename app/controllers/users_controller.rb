@@ -286,7 +286,8 @@ class UsersController < AuthenticatedController
     evaluation = SeasEvaluation.create!(mentee: @user.mentee, evaluation_year: Date.current.year)
     SeasMailer.evaluation_invitation(@user, evaluation).deliver_later
     evaluation.update_column(:email_sent_at, Time.current)
-    SeasNotificationService.evaluation_sent(evaluation)
+    SeasEvaluationMessage.new(evaluation).deliver
+    evaluation.update_column(:in_app_sent_at, Time.current)
     redirect_to user_path(@user), notice: "SEAS evaluation sent to #{@user.email}"
   rescue ActiveRecord::RecordNotUnique
     redirect_to user_path(@user), alert: "A SEAS evaluation has already been sent for this year"
