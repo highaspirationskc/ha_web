@@ -25,7 +25,11 @@
                   <% end %>
                 </td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                  <%= message.author.first_name %> <%= message.author.last_name %>
+                  <% if message.author %>
+                    <%= message.author.first_name %> <%= message.author.last_name %>
+                  <% else %>
+                    High Aspirations
+                  <% end %>
                 </td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                   <%= time_ago_in_words(message.created_at) %> ago

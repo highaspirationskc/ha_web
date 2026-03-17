@@ -1,0 +1,53 @@
+<div class="bg-white shadow sm:rounded-lg overflow-hidden">
+  <div class="px-6 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 text-center mb-2">SEAS Self Evaluation</h1>
+    <p class="text-center text-gray-600 mb-8">
+      Hi <%= @mentee.user.first_name %>! This evaluation helps you reflect on your growth across four areas.
+    </p>
+
+    <div class="space-y-4 mb-8">
+      <div class="flex items-start space-x-3">
+        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">S</span>
+        <div>
+          <p class="font-medium text-gray-900">Social</p>
+          <p class="text-sm text-gray-500">How you interact and engage with others</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-3">
+        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-pink-100 text-pink-700 text-sm font-bold">E</span>
+        <div>
+          <p class="font-medium text-gray-900">Emotional</p>
+          <p class="text-sm text-gray-500">How you manage and express your emotions</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-3">
+        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-700 text-sm font-bold">A</span>
+        <div>
+          <p class="font-medium text-gray-900">Academic</p>
+          <p class="text-sm text-gray-500">How you approach learning and school</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-3">
+        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold">S</span>
+        <div>
+          <p class="font-medium text-gray-900">Spiritual</p>
+          <p class="text-sm text-gray-500">How you reflect on values and make positive choices</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-50 rounded-lg p-4 mb-8">
+      <h3 class="text-sm font-semibold text-gray-900 mb-2">Score Guide</h3>
+      <div class="space-y-1 text-sm text-gray-600">
+        <p><span class="font-medium text-gray-900">0</span> &mdash; Not doing this at all</p>
+        <p><span class="font-medium text-gray-900">1</span> &mdash; Doing this inconsistently</p>
+        <p><span class="font-medium text-gray-900">2</span> &mdash; Doing this as expected</p>
+        <p><span class="font-medium text-gray-900">3</span> &mdash; Doing this consistently and helping others</p>
+      </div>
+    </div>
+
+    <%= link_to seas_evaluation_path(@evaluation.token, step: 1), class: "w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" do %>
+      Begin Evaluation
+    <% end %>
+  </div>
+</div>

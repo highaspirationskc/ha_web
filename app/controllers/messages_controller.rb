@@ -40,17 +40,17 @@ class MessagesController < AuthenticatedController
     # For reply form - determine recipients based on thread root's reply_mode
     if thread_root.reply_to_all?
       # Reply to all thread participants (excluding current user)
-      @reply_recipients = (@thread_messages.map(&:author) + @thread_messages.flat_map(&:recipients))
+      @reply_recipients = (@thread_messages.filter_map(&:author) + @thread_messages.flat_map(&:recipients))
                           .uniq
                           .reject { |u| u == current_user }
     elsif current_user.can?(:reply_any, :messages)
       # Staff/admin can reply to anyone in the thread
-      @reply_recipients = (@thread_messages.map(&:author) + @thread_messages.flat_map(&:recipients))
+      @reply_recipients = (@thread_messages.filter_map(&:author) + @thread_messages.flat_map(&:recipients))
                           .uniq
                           .reject { |u| u == current_user }
     else
       # Reply only to the thread root author (unless it's the current user)
-      @reply_recipients = thread_root.author == current_user ? [] : [thread_root.author]
+      @reply_recipients = thread_root.author.nil? || thread_root.author == current_user ? [] : [thread_root.author]
     end
   end
 

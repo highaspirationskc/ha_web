@@ -1,0 +1,5 @@
+<div class="flex items-center space-x-2">
+  <% (1..total).each do |step| %>
+    <div class="h-2.5 w-2.5 rounded-full <%= step == current ? 'bg-indigo-600' : step < current ? 'bg-indigo-300' : 'bg-gray-300' %>"></div>
+  <% end %>
+</div>

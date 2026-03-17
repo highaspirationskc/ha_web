@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_23_052407) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_043257) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -110,6 +110,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_052407) do
 
   create_table "mentees", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.date "enrollment_date"
     t.integer "mentor_id"
     t.integer "team_id"
     t.datetime "updated_at", null: false
@@ -140,7 +141,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_052407) do
   end
 
   create_table "messages", force: :cascade do |t|
-    t.integer "author_id", null: false
+    t.integer "author_id"
     t.datetime "created_at", null: false
     t.text "message", null: false
     t.integer "parent_id"
@@ -178,6 +179,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_052407) do
     t.index ["image_id"], name: "index_saturday_scoops_on_image_id"
     t.index ["published", "publish_on"], name: "index_saturday_scoops_on_published_and_publish_on"
     t.index ["video_id"], name: "index_saturday_scoops_on_video_id"
+  end
+
+  create_table "seas_domains", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_seas_domains_on_position", unique: true
+  end
+
+  create_table "seas_evaluations", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.integer "current_domain_position"
+    t.datetime "email_sent_at"
+    t.integer "evaluation_year"
+    t.datetime "in_app_sent_at"
+    t.integer "mentee_id", null: false
+    t.datetime "review_started_at"
+    t.datetime "reviewed_at"
+    t.integer "reviewer_id"
+    t.datetime "sent_at"
+    t.string "status", default: "pending", null: false
+    t.string "token", null: false
+    t.datetime "token_expires_at"
+    t.datetime "updated_at", null: false
+    t.index ["mentee_id", "evaluation_year"], name: "index_seas_evaluations_on_mentee_and_year", unique: true
+    t.index ["mentee_id"], name: "index_seas_evaluations_on_mentee_id"
+    t.index ["token"], name: "index_seas_evaluations_on_token", unique: true
+  end
+
+  create_table "seas_questions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", null: false
+    t.integer "seas_domain_id", null: false
+    t.string "text", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seas_domain_id", "position"], name: "index_seas_questions_on_seas_domain_id_and_position", unique: true
+    t.index ["seas_domain_id"], name: "index_seas_questions_on_seas_domain_id"
+  end
+
+  create_table "seas_responses", force: :cascade do |t|
+    t.integer "adjusted_score"
+    t.datetime "created_at", null: false
+    t.text "feedback"
+    t.string "review_action"
+    t.integer "score", null: false
+    t.integer "seas_evaluation_id", null: false
+    t.integer "seas_question_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seas_evaluation_id", "seas_question_id"], name: "index_seas_responses_on_evaluation_and_question", unique: true
+    t.index ["seas_evaluation_id"], name: "index_seas_responses_on_seas_evaluation_id"
+    t.index ["seas_question_id"], name: "index_seas_responses_on_seas_question_id"
   end
 
   create_table "staff", force: :cascade do |t|
@@ -270,6 +324,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_23_052407) do
   add_foreign_key "saturday_scoops", "media", column: "image_id"
   add_foreign_key "saturday_scoops", "media", column: "video_id"
   add_foreign_key "saturday_scoops", "users", column: "created_by_id"
+  add_foreign_key "seas_evaluations", "mentees"
+  add_foreign_key "seas_evaluations", "users", column: "reviewer_id"
+  add_foreign_key "seas_questions", "seas_domains"
+  add_foreign_key "seas_responses", "seas_evaluations"
+  add_foreign_key "seas_responses", "seas_questions"
   add_foreign_key "staff", "users"
   add_foreign_key "teams", "media", column: "icon_id"
   add_foreign_key "tokens", "users"

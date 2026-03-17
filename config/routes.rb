@@ -8,6 +8,11 @@ Rails.application.routes.draw do
   get "confirm/:token", to: "confirmations#show", as: :confirmation
   post "confirm/:token", to: "confirmations#confirm"
 
+  # SEAS Evaluations (public, token-based)
+  get "seas/:token", to: "seas_evaluations#show", as: :seas_evaluation
+  post "seas/:token/sections", to: "seas_evaluations#save_section", as: :seas_evaluation_sections
+  post "seas/:token/complete", to: "seas_evaluations#complete", as: :seas_evaluation_complete
+
   # Authentication
   get "login", to: "sessions#new"
   post "login", to: "sessions#create"
@@ -21,6 +26,17 @@ Rails.application.routes.draw do
   # Season switching (staff only)
   resource :season, only: [:update] do
     delete :reset, on: :collection
+  end
+
+  # SEAS Reviews (authenticated)
+  resources :seas_evaluations, only: [], controller: "seas_reviews" do
+    member do
+      get :review
+      post :claim_review
+      patch :save_review
+      post :complete_review
+      post :discard_review
+    end
   end
 
   resources :users do
@@ -37,6 +53,7 @@ Rails.application.routes.draw do
       delete :remove_event_log
       post :add_grade_card
       delete :remove_grade_card
+      post :send_seas_evaluation
     end
   end
 

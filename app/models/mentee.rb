@@ -7,6 +7,7 @@ class Mentee < ApplicationRecord
   has_many :guardians, through: :family_members
   has_many :community_service_records, dependent: :destroy
   has_many :grade_cards, dependent: :destroy
+  has_many :seas_evaluations, dependent: :destroy
 
   # Calculate total points for a given date range
   # If no date_range is provided, calculates for the current Olympic season

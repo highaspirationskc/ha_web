@@ -17,3 +17,7 @@ production:
     class: TokenCleanupJob
     queue: default
     schedule: every day at 3am
+  seas_anniversary_check:
+    class: SeasAnniversaryJob
+    queue: default
+    schedule: every day at 8am

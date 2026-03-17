@@ -1,6 +1,6 @@
 class UsersController < AuthenticatedController
   before_action :require_users_navigation_or_related_access
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card, :send_seas_evaluation]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show, :reset_password]
   before_action :authorize_edit, only: [:edit, :update]
@@ -36,6 +36,7 @@ class UsersController < AuthenticatedController
     load_event_log_data
     load_community_service_data
     load_grade_card_data
+    load_seas_evaluation_data
   end
 
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
@@ -271,6 +272,24 @@ class UsersController < AuthenticatedController
     else
       redirect_to user_path(@user), alert: "Could not remove attendance"
     end
+  end
+
+  def send_seas_evaluation
+    unless @user.mentee.present?
+      return redirect_to user_path(@user), alert: "Can only send SEAS evaluations to mentees"
+    end
+
+    unless current_user.can?(:send, :seas_evaluations)
+      return redirect_to user_path(@user), alert: "You don't have permission to send SEAS evaluations"
+    end
+
+    evaluation = SeasEvaluation.create!(mentee: @user.mentee, evaluation_year: Date.current.year)
+    SeasMailer.evaluation_invitation(@user, evaluation).deliver_later
+    evaluation.update_column(:email_sent_at, Time.current)
+    SeasNotificationService.evaluation_sent(evaluation)
+    redirect_to user_path(@user), notice: "SEAS evaluation sent to #{@user.email}"
+  rescue ActiveRecord::RecordNotUnique
+    redirect_to user_path(@user), alert: "A SEAS evaluation has already been sent for this year"
   end
 
   def add_grade_card
@@ -727,6 +746,12 @@ class UsersController < AuthenticatedController
     # Check permissions
     @can_upload_grade_cards = current_user.can?(:create, :grade_cards, @user.mentee)
     @can_delete_grade_cards = current_user.can?(:delete, :grade_cards)
+  end
+
+  def load_seas_evaluation_data
+    return unless @user.mentee.present?
+
+    @seas_evaluations = @user.mentee.seas_evaluations.includes(:reviewer, :seas_responses).recent
   end
 
   def respond_with_error(message)

@@ -34,7 +34,7 @@ class DashboardController < AuthenticatedController
         }
       end.select { |m| m[:points] > 0 }
         .sort_by { |m| [-m[:points], -m[:latest_activity].to_time.to_i] }
-        .take(5)
+        .take(3)
 
       # Get top mentees by community service hours for the season
       @top_service_hours_mentees = mentees.map do |mentee|
@@ -49,10 +49,22 @@ class DashboardController < AuthenticatedController
         }
       end.select { |m| m[:hours] > 0 }
         .sort_by { |m| [-m[:hours], -m[:latest_activity].to_time.to_i] }
-        .take(5)
+        .take(3)
     else
       @top_season_mentees = []
       @top_service_hours_mentees = []
+    end
+
+    # Load SEAS evaluations for mentee users
+    if current_user.mentee.present?
+      @seas_evaluations = current_user.mentee.seas_evaluations.recent
+    end
+
+    # Load pending SEAS reviews for staff/admin
+    if Authorization.new(current_user).can?(:review, :seas_evaluations)
+      @pending_seas_reviews = SeasEvaluation.where(status: %w[submitted in_review])
+        .includes(mentee: :user)
+        .order(created_at: :asc)
     end
   end
 end

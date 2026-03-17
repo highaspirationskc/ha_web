@@ -1,0 +1,96 @@
+<% score_labels = { 0 => "Not doing this at all", 1 => "Doing this inconsistently", 2 => "Doing this as expected", 3 => "Doing this consistently and helping others" } %>
+
+<div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8" data-controller="seas-review">
+  <div class="px-4 py-6 sm:px-0">
+    <!-- Breadcrumbs -->
+    <%= render "shared/breadcrumbs", items: [
+      { label: "Users", path: users_path },
+      { label: @mentee_user.email, path: user_path(@mentee_user) },
+      { label: "SEAS Review" }
+    ] %>
+
+    <!-- Header -->
+    <div class="mt-4 mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">SEAS Review</h1>
+      <p class="text-gray-500"><%= @mentee_user.first_name %> <%= @mentee_user.last_name %></p>
+
+      <div class="mt-4 flex items-center justify-between">
+        <div>
+          <% if @evaluation.status == "in_review" %>
+            <p class="text-sm font-semibold text-blue-800">In-review</p>
+          <% elsif @evaluation.status == "reviewed" %>
+            <p class="text-sm font-semibold text-green-800">Reviewed</p>
+          <% elsif @evaluation.status == "submitted" %>
+            <p class="text-sm font-semibold text-amber-800">Awaiting review</p>
+          <% end %>
+          <p class="text-sm text-gray-500" data-seas-review-target="progressText">
+            <span data-seas-review-target="reviewedCount"><%= @reviewed_count %></span> of <%= @total_count %> reviewed
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <% if @evaluation.status == "submitted" %>
+            <%= button_to "Begin Review", claim_review_seas_evaluation_path(@evaluation), method: :post, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+          <% end %>
+          <% if @evaluation.status == "in_review" && @evaluation.reviewer == current_user %>
+            <div data-controller="modal">
+              <button type="button" data-action="click->modal#open" class="text-sm font-medium text-red-600 hover:text-red-800">
+                Discard Review
+              </button>
+              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                <div data-modal-target="backdrop" data-action="click->modal#closeOnBackdrop" class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                <div class="fixed inset-0 z-10 overflow-y-auto">
+                  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md">
+                      <div class="bg-white px-4 pb-4 pt-5 sm:p-6">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">Discard Review?</h3>
+                        <p class="text-sm text-gray-500 mb-4">This will clear all your review progress and release this evaluation back to the queue.</p>
+                        <div class="flex justify-end space-x-3">
+                          <button type="button" data-action="click->modal#close" class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
+                          <%= button_to "Discard", discard_review_seas_evaluation_path(@evaluation), method: :post, class: "inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500" %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <hr class="mt-4">
+    </div>
+
+    <% if @evaluation.status == "submitted" %>
+      <!-- Unclaimed state banner -->
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center mb-6">
+        <p class="text-amber-800">This evaluation is awaiting review. Click "Begin Review" to claim it.</p>
+      </div>
+    <% end %>
+
+    <!-- Sections -->
+    <% @domains.each do |domain| %>
+      <div class="mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4"><%= domain.name %></h2>
+
+        <div class="divide-y divide-gray-200">
+          <% domain.seas_questions.each do |question| %>
+            <% response = @responses_by_question[question.id] %>
+            <% next unless response %>
+            <%= render "question_block", question: question, response: response, score_labels: score_labels, read_only: @read_only %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Complete Review button -->
+    <% if @evaluation.status == "in_review" && @evaluation.reviewer == current_user %>
+      <div class="flex justify-end">
+        <%= button_to "Complete Review", complete_review_seas_evaluation_path(@evaluation), method: :post,
+            class: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+            data: { seas_review_target: "completeButton" } %>
+      </div>
+    <% end %>
+  </div>
+</div>

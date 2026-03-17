@@ -9,6 +9,7 @@ class Authorization
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
+      seas_evaluations: [:review, :send],
       navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
@@ -20,6 +21,7 @@ class Authorization
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
+      seas_evaluations: [:review, :send],
       navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     mentor: {
@@ -31,6 +33,7 @@ class Authorization
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
       grade_cards: [:index, :show, :create],
+      seas_evaluations: [:review],
       navigation: [:dashboard, :users, :events, :inbox, :community_service]
     },
     guardian: {

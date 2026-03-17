@@ -356,4 +356,61 @@ end
 
 puts "Created 2 family member relationships"
 
+# Create SEAS Sections and Questions
+seas_data = {
+  "Social" => {
+    position: 1,
+    questions: [
+      "Employment/job seeking activity",
+      "Participation during sessions",
+      "Respectful communication with mentors and leaders"
+    ]
+  },
+  "Emotional" => {
+    position: 2,
+    questions: [
+      "Managing emotions in difficult situations",
+      "Expressing feelings in healthy ways",
+      "Showing empathy toward others"
+    ]
+  },
+  "Academic" => {
+    position: 3,
+    questions: [
+      "Completing homework and assignments on time",
+      "Setting and working toward academic goals",
+      "Asking for help when needed"
+    ]
+  },
+  "Spiritual" => {
+    position: 4,
+    questions: [
+      "Reflecting on personal values and beliefs",
+      "Making positive choices under pressure",
+      "Being a positive influence on others"
+    ]
+  }
+}
+
+seas_data.each do |domain_name, data|
+  section = SeasDomain.find_or_create_by!(name: domain_name) do |s|
+    s.position = data[:position]
+  end
+
+  data[:questions].each_with_index do |text, index|
+    SeasQuestion.find_or_create_by!(seas_domain: section, text: text) do |q|
+      q.position = index + 1
+    end
+  end
+end
+
+puts "Created #{SeasDomain.count} SEAS domains with #{SeasQuestion.count} questions"
+
+# Backfill enrollment_date on mentees from their user's created_at
+Mentee.where(enrollment_date: nil).find_each do |mentee|
+  mentee.update!(enrollment_date: mentee.user.created_at.to_date)
+end
+
+puts "Backfilled enrollment_date for #{Mentee.count} mentees"
+
 puts "Seeding completed!"
