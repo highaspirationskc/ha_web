@@ -15,13 +15,12 @@ class MessageTest < ActiveSupport::TestCase
     assert message.valid?
   end
 
-  test "requires author" do
+  test "allows nil author for system messages" do
     message = Message.new(
       subject: "Test Subject",
       message: "Test message body"
     )
-    assert_not message.valid?
-    assert_includes message.errors[:author], "must exist"
+    assert message.valid?
   end
 
   test "requires subject" do

@@ -4,28 +4,43 @@ require "test_helper"
 
 class GraphQL::QueriesTest < ActiveSupport::TestCase
   def setup
-    # Create authenticated user
-    @user = create_user(email: "test@example.com")
+    @user = create_user(email: "gql_test@example.com")
     @token = AuthService.generate_token(@user)
 
-    # Load seed data
-    Rails.application.load_seed
-  end
+    @team = Team.create!(name: "Blue Team", color: "#3B82F6")
+    Team.create!(name: "Red Team", color: "#E11D48")
 
-  def teardown
-    # Clean up after tests
-    EventLog.destroy_all
-    Event.destroy_all
-    EventType.destroy_all
-    OlympicSeason.destroy_all
-    FamilyMember.destroy_all
-    Mentor.destroy_all
-    Mentee.destroy_all
-    Guardian.destroy_all
-    Staff.destroy_all
-    Volunteer.destroy_all
-    User.destroy_all
-    Team.destroy_all
+    @winter = OlympicSeason.create!(name: "Winter", start_month: 12, start_day: 1, end_month: 2, end_day: 28)
+    @spring = OlympicSeason.create!(name: "Spring", start_month: 3, start_day: 1, end_month: 5, end_day: 31)
+    @summer = OlympicSeason.create!(name: "Summer", start_month: 6, start_day: 1, end_month: 8, end_day: 31)
+    @fall = OlympicSeason.create!(name: "Fall", start_month: 9, start_day: 1, end_month: 11, end_day: 30)
+
+    @workshop = EventType.create!(name: "Workshop", point_value: 1, category: :org)
+    @mentoring = EventType.create!(name: "Mentoring Session", point_value: 1, category: :user)
+
+    @past_event = Event.create!(
+      name: "Past Workshop",
+      event_date: 2.weeks.ago,
+      event_type: @workshop,
+      created_by: @user
+    )
+    @future_event = Event.create!(
+      name: "Summer Workshop",
+      event_date: Date.new(2026, 7, 4),
+      event_type: @mentoring,
+      created_by: @user
+    )
+
+    mentee_user = User.create!(email: "gql_mentee@example.com", password: "Password123!")
+    mentee_user.activate!
+    @mentee = Mentee.create!(user: mentee_user, team: @team)
+
+    EventLog.create!(event: @past_event, user: mentee_user, log_type: :arrived, logged_at: 2.weeks.ago)
+
+    guardian_user = User.create!(email: "gql_guardian@example.com", password: "Password123!")
+    guardian_user.activate!
+    guardian = Guardian.create!(user: guardian_user)
+    FamilyMember.create!(guardian: guardian, mentee: @mentee, relationship_type: :parent)
   end
 
   # Teams queries
@@ -44,13 +59,11 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     teams = result.dig("data", "teams")
 
     assert_not_nil teams
-    assert_equal 20, teams.length
+    assert_equal 2, teams.length
     assert_includes teams.map { |t| t["name"] }, "Blue Team"
   end
 
   test "team query returns specific team" do
-    team = Team.first
-
     query = <<~GQL
       query($id: ID!) {
         team(id: $id) {
@@ -61,11 +74,11 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
       }
     GQL
 
-    result = execute_graphql(query, variables: { id: team.id }, context: { current_user: @user })
+    result = execute_graphql(query, variables: { id: @team.id }, context: { current_user: @user })
     team_data = result.dig("data", "team")
 
     assert_not_nil team_data
-    assert_equal team.name, team_data["name"]
+    assert_equal @team.name, team_data["name"]
   end
 
   # Events queries
@@ -106,7 +119,6 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     events = result.dig("data", "events")
 
     assert_not_nil events
-    # All events should be on or after June 1, 2025
     events.each do |event|
       event_date = Date.parse(event["eventDate"])
       assert event_date >= Date.new(2025, 6, 1)
@@ -130,7 +142,7 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     event_types = result.dig("data", "eventTypes")
 
     assert_not_nil event_types
-    assert_equal 5, event_types.length
+    assert_equal 2, event_types.length
   end
 
   # Olympic Seasons queries
@@ -170,7 +182,6 @@ class GraphQL::QueriesTest < ActiveSupport::TestCase
     season = result.dig("data", "olympicSeason")
 
     assert_not_nil season
-    # Should return whatever the current season is based on today's date
     expected_season = OlympicSeasonService.current_season
     assert_equal expected_season.name, season["name"]
   end

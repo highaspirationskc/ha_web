@@ -1,0 +1,55 @@
+<% score_labels = { 0 => "Not doing this at all", 1 => "Doing this inconsistently", 2 => "Doing this as expected", 3 => "Doing this consistently and helping others" } %>
+
+<!-- Back link and progress -->
+<div class="flex items-center justify-between mb-6">
+  <% prev_step = @current_step > 1 ? @current_step - 1 : 0 %>
+  <%= link_to seas_evaluation_path(@evaluation.token, step: prev_step), class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700" do %>
+    <svg class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+    </svg>
+    Back
+  <% end %>
+
+  <%= render "progress_dots", current: @current_step, total: @total_domains %>
+</div>
+
+<div class="mb-6">
+  <h2 class="text-xl font-bold text-gray-900"><%= @domain.name %></h2>
+</div>
+
+<%= form_with url: seas_evaluation_sections_path(@evaluation.token), method: :post, data: { seas_form_target: "form" } do |f| %>
+  <%= hidden_field_tag :domain_position, @domain.position %>
+
+  <div class="divide-y divide-gray-200">
+    <% @domain.seas_questions.each do |question| %>
+      <% existing = @existing_responses[question.id] %>
+      <div class="py-5">
+        <p class="text-sm font-semibold text-gray-900 mb-3"><%= question.text %></p>
+
+        <div class="space-y-2">
+          <% (0..3).each do |score| %>
+            <% checked = existing&.score == score %>
+            <label class="flex items-center space-x-2 cursor-pointer rounded py-1 px-2 -mx-2
+                          <%= checked ? 'bg-indigo-50' : '' %>"
+                   data-action="click->seas-form#selectScore">
+              <input type="radio"
+                     name="responses[<%= question.id %>]"
+                     value="<%= score %>"
+                     class="text-indigo-600 focus:ring-indigo-500"
+                     data-seas-form-target="radio"
+                     <%= "checked" if checked %>>
+              <span class="text-sm <%= checked ? 'text-gray-900 font-medium' : 'text-gray-500' %>">
+                <%= score %> <%= score_labels[score] %>
+              </span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6">
+    <%= f.submit "Save & Continue", class: "w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+        data: { seas_form_target: "submitButton" } %>
+  </div>
+<% end %>

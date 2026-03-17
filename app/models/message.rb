@@ -1,7 +1,7 @@
 class Message < ApplicationRecord
   include Turbo::Broadcastable
 
-  belongs_to :author, class_name: "User"
+  belongs_to :author, class_name: "User", optional: true
   belongs_to :parent, class_name: "Message", optional: true
 
   has_many :replies, class_name: "Message", foreign_key: :parent_id, dependent: :destroy
@@ -97,7 +97,7 @@ class Message < ApplicationRecord
 
     participants = Set.new
     messages.each do |msg|
-      participants << msg.author
+      participants << msg.author if msg.author
       msg.recipients.each { |r| participants << r }
     end
     participants.to_a

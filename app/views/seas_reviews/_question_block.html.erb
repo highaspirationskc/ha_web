@@ -1,0 +1,100 @@
+<div class="px-6 py-5" data-seas-review-target="questionBlock" data-response-id="<%= response.id %>">
+  <div class="flex items-start justify-between mb-3">
+    <p class="text-sm font-semibold text-gray-900"><%= question.text %></p>
+    <% if response.reviewed? %>
+      <span class="ml-3 shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" data-seas-review-target="reviewedBadge" data-response-id="<%= response.id %>">
+        Reviewed
+      </span>
+    <% end %>
+  </div>
+
+  <!-- Score options displayed as radio-style indicators -->
+  <div class="space-y-2 mb-4">
+    <% (0..3).each do |score| %>
+      <div class="flex items-center space-x-2 <%= response.score == score ? 'bg-amber-100 -mx-2 px-2 py-1 rounded' : '' %>">
+        <div class="h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 <%= response.score == score ? 'border-indigo-600' : 'border-gray-300' %>">
+          <% if response.score == score %>
+            <div class="h-2 w-2 rounded-full bg-indigo-600"></div>
+          <% end %>
+        </div>
+        <span class="text-sm <%= response.score == score ? 'text-gray-900 font-medium' : 'text-gray-500' %>">
+          <%= score %> <%= score_labels[score] %>
+        </span>
+        <% if response.score == score %>
+          <span class="text-sm font-medium text-amber-600">Mentee answer</span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if read_only %>
+    <% if response.reviewed? %>
+      <div class="bg-gray-50 rounded-lg p-4">
+        <div class="flex items-center space-x-2 mb-1">
+          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            <%= response.review_action.capitalize %>
+          </span>
+          <% if response.review_action == "adjusted" %>
+            <span class="text-sm text-gray-700">
+              Adjusted to: <strong><%= response.adjusted_score %></strong> &mdash; <%= score_labels[response.adjusted_score] %>
+            </span>
+          <% end %>
+        </div>
+        <% if response.feedback.present? %>
+          <p class="text-sm text-gray-600 mt-1"><%= response.feedback %></p>
+        <% end %>
+      </div>
+    <% end %>
+  <% else %>
+    <!-- Review controls in shaded box -->
+    <div class="bg-gray-100 rounded-lg p-4 space-y-3">
+      <p class="text-sm font-medium text-gray-700">Confirm or adjust this score</p>
+
+      <!-- Confirm / Adjust radio -->
+      <div class="space-y-2">
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="review_action_<%= response.id %>" value="confirmed"
+                 class="text-indigo-600 focus:ring-indigo-500"
+                 data-action="change->seas-review#setReviewAction"
+                 data-response-id="<%= response.id %>"
+                 <%= "checked" if response.review_action == "confirmed" %>>
+          <span class="ml-2 text-sm text-gray-700">Confirm Score</span>
+        </label>
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="review_action_<%= response.id %>" value="adjusted"
+                 class="text-indigo-600 focus:ring-indigo-500"
+                 data-action="change->seas-review#setReviewAction"
+                 data-response-id="<%= response.id %>"
+                 <%= "checked" if response.review_action == "adjusted" %>>
+          <span class="ml-2 text-sm text-gray-700">Adjust Score</span>
+        </label>
+      </div>
+
+      <!-- Adjusted score selector (hidden unless "adjust" selected) -->
+      <div class="<%= response.review_action == "adjusted" ? "" : "hidden" %>" data-seas-review-target="adjustPanel" data-response-id="<%= response.id %>">
+        <div class="flex items-center space-x-3">
+          <span class="text-sm text-gray-500">Adjusted score:</span>
+          <% (0..3).each do |score| %>
+            <label class="inline-flex items-center cursor-pointer">
+              <input type="radio" name="adjusted_score_<%= response.id %>" value="<%= score %>"
+                     class="text-indigo-600 focus:ring-indigo-500"
+                     data-action="change->seas-review#setAdjustedScore"
+                     data-response-id="<%= response.id %>"
+                     <%= "checked" if response.adjusted_score == score %>>
+              <span class="ml-1 text-sm text-gray-700"><%= score %></span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Feedback textarea -->
+      <div>
+        <textarea name="feedback_<%= response.id %>" rows="2" placeholder="Feedback"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  data-action="blur->seas-review#saveFeedback"
+                  data-response-id="<%= response.id %>"
+                  data-seas-review-target="feedback"><%= response.feedback %></textarea>
+      </div>
+    </div>
+  <% end %>
+</div>

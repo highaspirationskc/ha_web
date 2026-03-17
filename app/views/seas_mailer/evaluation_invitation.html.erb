@@ -1,0 +1,25 @@
+<h1>Time for your SEAS Self Evaluation!</h1>
+
+<p>Hi <%= @user.first_name.presence || @user.email %>,</p>
+
+<p>It's time to reflect on your growth! Your SEAS Self Evaluation is ready for you to complete. This evaluation covers four areas:</p>
+
+<ul>
+  <li><strong>Social</strong> - How you interact and engage with others</li>
+  <li><strong>Emotional</strong> - How you manage and express your emotions</li>
+  <li><strong>Academic</strong> - How you approach learning and school</li>
+  <li><strong>Spiritual</strong> - How you reflect on values and make positive choices</li>
+</ul>
+
+<p>Click the link below to get started:</p>
+
+<p>
+  <%= link_to "Start My SEAS Evaluation", @seas_url %>
+</p>
+
+<p>This link will expire in 30 days.</p>
+
+<p>
+  Thanks,<br>
+  The High Aspirations Team
+</p>

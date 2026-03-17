@@ -21,7 +21,7 @@ class SendPushNotificationJob < ApplicationJob
   private
 
   def build_title(message)
-    "#{message.author.first_name || 'Someone'} sent you a message"
+    message.author ? "#{message.author.first_name} sent you a message" : "New message from High Aspirations"
   end
 
   def build_body(message)
