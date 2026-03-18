@@ -84,6 +84,8 @@ class SeasReviewsController < AuthenticatedController
 
   def set_evaluation
     @evaluation = SeasEvaluation.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to dashboard_path, alert: "That SEAS evaluation could not be found."
   end
 
   def authorize_review
