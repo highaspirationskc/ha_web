@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_16_043257) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_025854) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -183,6 +183,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_043257) do
 
   create_table "seas_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "description"
     t.string "name", null: false
     t.integer "position", null: false
     t.datetime "updated_at", null: false
@@ -197,6 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_043257) do
     t.integer "evaluation_year"
     t.datetime "in_app_sent_at"
     t.integer "mentee_id", null: false
+    t.text "questionnaire_snapshot"
     t.datetime "review_started_at"
     t.datetime "reviewed_at"
     t.integer "reviewer_id"
@@ -232,6 +234,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_043257) do
     t.index ["seas_evaluation_id", "seas_question_id"], name: "index_seas_responses_on_evaluation_and_question", unique: true
     t.index ["seas_evaluation_id"], name: "index_seas_responses_on_seas_evaluation_id"
     t.index ["seas_question_id"], name: "index_seas_responses_on_seas_question_id"
+  end
+
+  create_table "seas_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "key"
+    t.datetime "updated_at", null: false
+    t.string "value"
+    t.index ["key"], name: "index_seas_settings_on_key", unique: true
   end
 
   create_table "staff", force: :cascade do |t|

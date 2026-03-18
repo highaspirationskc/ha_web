@@ -14,17 +14,17 @@
 </div>
 
 <div class="mb-6">
-  <h2 class="text-xl font-bold text-gray-900"><%= @domain.name %></h2>
+  <h2 class="text-xl font-bold text-gray-900"><%= @domain["name"] %></h2>
 </div>
 
 <%= form_with url: seas_evaluation_sections_path(@evaluation.token), method: :post, data: { seas_form_target: "form" } do |f| %>
-  <%= hidden_field_tag :domain_position, @domain.position %>
+  <%= hidden_field_tag :domain_position, @domain["position"] %>
 
   <div class="divide-y divide-gray-200">
-    <% @domain.seas_questions.each do |question| %>
-      <% existing = @existing_responses[question.id] %>
+    <% @domain["questions"].sort_by { |q| q["position"] }.each do |question| %>
+      <% existing = @existing_responses[question["id"]] %>
       <div class="py-5">
-        <p class="text-sm font-semibold text-gray-900 mb-3"><%= question.text %></p>
+        <p class="text-sm font-semibold text-gray-900 mb-3"><%= question["text"] %></p>
 
         <div class="space-y-2">
           <% (0..3).each do |score| %>
@@ -33,7 +33,7 @@
                           <%= checked ? 'bg-indigo-50' : '' %>"
                    data-action="click->seas-form#selectScore">
               <input type="radio"
-                     name="responses[<%= question.id %>]"
+                     name="responses[<%= question["id"] %>]"
                      value="<%= score %>"
                      class="text-indigo-600 focus:ring-indigo-500"
                      data-seas-form-target="radio"

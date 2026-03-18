@@ -36,6 +36,7 @@ Rails.application.routes.draw do
       patch :save_review
       post :complete_review
       post :discard_review
+      delete :destroy, as: :delete
     end
   end
 
@@ -67,6 +68,12 @@ Rails.application.routes.draw do
     end
   end
   resources :event_types
+  resources :seas_domains do
+    collection do
+      patch :update_settings
+    end
+    resources :seas_questions, except: [:index, :show]
+  end
   resources :event_registrations
   resources :event_logs
   resources :teams do

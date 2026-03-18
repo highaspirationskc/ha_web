@@ -162,7 +162,7 @@
                         </li>
                       <% end %>
                       <% if current_user.can_access?(:settings) %>
-                        <% settings_active = request.path.start_with?('/event_types') || request.path.start_with?('/olympic_seasons') || request.path.start_with?('/media') %>
+                        <% settings_active = request.path.start_with?('/event_types') || request.path.start_with?('/olympic_seasons') || request.path.start_with?('/media') || request.path.start_with?('/seas_domains') %>
                         <li data-controller="collapsible-nav" data-collapsible-nav-open-value="<%= settings_active %>">
                           <button type="button" data-action="click->collapsible-nav#toggle" class="group flex w-full items-center gap-x-3 rounded-md p-2 text-left text-sm/6 font-semibold <%= settings_active ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600' %>">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="h-6 w-6 shrink-0 <%= settings_active ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600' %>">
@@ -188,6 +188,11 @@
                             <li>
                               <%= link_to media_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path.start_with?('/media') ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
                                 Media
+                              <% end %>
+                            </li>
+                            <li>
+                              <%= link_to seas_domains_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path.start_with?('/seas_domains') ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
+                                SEAS
                               <% end %>
                             </li>
                           </ul>
@@ -328,7 +333,7 @@
                       </li>
                     <% end %>
                     <% if current_user.can_access?(:settings) %>
-                      <% settings_active = request.path.start_with?('/event_types') || request.path.start_with?('/olympic_seasons') || request.path.start_with?('/media') %>
+                      <% settings_active = request.path.start_with?('/event_types') || request.path.start_with?('/olympic_seasons') || request.path.start_with?('/media') || request.path.start_with?('/seas_domains') %>
                       <li data-controller="collapsible-nav" data-collapsible-nav-open-value="<%= settings_active %>">
                         <button type="button" data-action="click->collapsible-nav#toggle" class="group flex w-full items-center gap-x-3 rounded-md p-2 text-left text-sm/6 font-semibold <%= settings_active ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600' %>">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="h-6 w-6 shrink-0 <%= settings_active ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600' %>">
@@ -354,6 +359,11 @@
                           <li>
                             <%= link_to media_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path.start_with?('/media') ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
                               Media
+                            <% end %>
+                          </li>
+                          <li>
+                            <%= link_to seas_domains_path, class: "group flex gap-x-3 rounded-md py-2 pl-11 pr-2 text-sm/6 font-semibold #{request.path.start_with?('/seas_domains') ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}" do %>
+                              SEAS Domains
                             <% end %>
                           </li>
                         </ul>

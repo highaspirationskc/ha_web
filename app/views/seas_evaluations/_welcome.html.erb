@@ -1,53 +1,57 @@
+<%
+  domain_names = @domains&.sort_by { |d| d["position"] }&.map { |d| d["name"] } || []
+  total_questions = @domains&.sum { |d| d["questions"].size } || 0
+  domain_count = domain_names.size
+  questions_per_domain = domain_count > 0 ? total_questions / domain_count : 0
+
+  if domain_names.size > 1
+    domain_list = domain_names[0..-2].map { |n| "<strong>#{ERB::Util.html_escape(n)}</strong>" }.join(", ") +
+                  ", and <strong>#{ERB::Util.html_escape(domain_names.last)}</strong>"
+  elsif domain_names.size == 1
+    domain_list = "<strong>#{ERB::Util.html_escape(domain_names.first)}</strong>"
+  else
+    domain_list = ""
+  end
+
+  count_word = { 1 => "one", 2 => "two", 3 => "three", 4 => "four", 5 => "five", 6 => "six" }[domain_count] || domain_count.to_s
+%>
+
 <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+  <% if @welcome_image.present? %>
+    <%= image_tag @welcome_image.url, alt: "SEAS Evaluation", class: "w-full h-48 sm:h-64 object-cover" %>
+  <% end %>
   <div class="px-6 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 text-center mb-2">SEAS Self Evaluation</h1>
-    <p class="text-center text-gray-600 mb-8">
-      Hi <%= @mentee.user.first_name %>! This evaluation helps you reflect on your growth across four areas.
-    </p>
+    <h1 class="text-2xl font-bold text-gray-900 mb-1">Hey, <%= @mentee.user.first_name %></h1>
+    <p class="text-gray-500 mb-6">It's time for your SEAS Evaluation!</p>
 
-    <div class="space-y-4 mb-8">
-      <div class="flex items-start space-x-3">
-        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">S</span>
-        <div>
-          <p class="font-medium text-gray-900">Social</p>
-          <p class="text-sm text-gray-500">How you interact and engage with others</p>
-        </div>
-      </div>
-      <div class="flex items-start space-x-3">
-        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-pink-100 text-pink-700 text-sm font-bold">E</span>
-        <div>
-          <p class="font-medium text-gray-900">Emotional</p>
-          <p class="text-sm text-gray-500">How you manage and express your emotions</p>
-        </div>
-      </div>
-      <div class="flex items-start space-x-3">
-        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-700 text-sm font-bold">A</span>
-        <div>
-          <p class="font-medium text-gray-900">Academic</p>
-          <p class="text-sm text-gray-500">How you approach learning and school</p>
-        </div>
-      </div>
-      <div class="flex items-start space-x-3">
-        <span class="flex-shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold">S</span>
-        <div>
-          <p class="font-medium text-gray-900">Spiritual</p>
-          <p class="text-sm text-gray-500">How you reflect on values and make positive choices</p>
-        </div>
-      </div>
+    <div class="text-gray-700 space-y-4">
+      <% if domain_names.any? %>
+        <p>
+          <strong>SEAS</strong> is a way to check in on how you're doing across <%= count_word %> parts of
+          your life: <%= domain_list.html_safe %>.
+        </p>
+        <p>
+          You'll answer <%= total_questions %> total questions (<%= questions_per_domain %> per domain). Each one is scored
+          0&ndash;3 based on how true it is for you right now.
+        </p>
+      <% end %>
+
+      <p>Score guide:</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li>0 Not doing this at all</li>
+        <li>1 Doing this inconsistently</li>
+        <li>2 Doing this as expected</li>
+        <li>3 Doing this consistently and helping others</li>
+      </ul>
+
+      <p>If you're stuck between two scores, pick the lower score.</p>
     </div>
-
-    <div class="bg-gray-50 rounded-lg p-4 mb-8">
-      <h3 class="text-sm font-semibold text-gray-900 mb-2">Score Guide</h3>
-      <div class="space-y-1 text-sm text-gray-600">
-        <p><span class="font-medium text-gray-900">0</span> &mdash; Not doing this at all</p>
-        <p><span class="font-medium text-gray-900">1</span> &mdash; Doing this inconsistently</p>
-        <p><span class="font-medium text-gray-900">2</span> &mdash; Doing this as expected</p>
-        <p><span class="font-medium text-gray-900">3</span> &mdash; Doing this consistently and helping others</p>
-      </div>
-    </div>
-
-    <%= link_to seas_evaluation_path(@evaluation.token, step: 1), class: "w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" do %>
-      Begin Evaluation
-    <% end %>
   </div>
+</div>
+
+<div class="mt-8">
+  <p class="font-semibold text-gray-900 mb-3">Ready to get started?</p>
+  <%= link_to seas_evaluation_path(@evaluation.token, step: 1), class: "inline-flex justify-center items-center px-12 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" do %>
+    Begin
+  <% end %>
 </div>

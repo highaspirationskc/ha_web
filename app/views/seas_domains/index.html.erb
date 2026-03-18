@@ -1,0 +1,117 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">SEAS</h1>
+
+    <% if notice.present? %>
+      <div class="rounded-md bg-green-50 p-4 mb-6">
+        <p class="text-sm font-medium text-green-800" id="notice"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <!-- Settings -->
+    <div class="bg-white shadow sm:rounded-lg mb-8">
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Settings</h3>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+        <%= form_with url: update_settings_seas_domains_path, method: :patch do |form| %>
+          <div data-controller="image-picker" data-image-picker-category-value="general" data-image-picker-media-type-value="image">
+            <label class="block text-sm font-medium text-gray-700">Welcome Image</label>
+            <p class="text-sm text-gray-500 mt-1">Shown at the top of the evaluation welcome screen.</p>
+            <input type="hidden" name="welcome_image_id" value="<%= @welcome_image&.id %>" data-image-picker-target="input">
+
+            <div class="mt-3">
+              <div data-image-picker-target="placeholder" class="<%= @welcome_image.present? ? 'hidden' : '' %> flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50">
+                <button type="button" data-action="click->image-picker#openModal" class="text-sm text-gray-600 hover:text-indigo-600">
+                  <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                  </svg>
+                  <span class="mt-2 block">Choose an image</span>
+                </button>
+              </div>
+
+              <div data-image-picker-target="preview" class="<%= @welcome_image.blank? ? 'hidden' : '' %> relative">
+                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <%= image_tag @welcome_image&.thumbnail_url || "", alt: "Welcome image", class: "h-20 w-20 object-cover rounded", data: { image_picker_target: "previewImage" } %>
+                  <div class="flex-1">
+                    <p data-image-picker-target="previewName" class="text-sm font-medium text-gray-900"><%= @welcome_image&.filename %></p>
+                    <div class="mt-2 flex gap-2">
+                      <button type="button" data-action="click->image-picker#openModal" class="text-xs text-indigo-600 hover:text-indigo-500">Change</button>
+                      <button type="button" data-action="click->image-picker#clear" class="text-xs text-red-600 hover:text-red-500">Remove</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Modal -->
+            <div data-image-picker-target="modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+              <div data-image-picker-target="backdrop" data-action="click->image-picker#closeOnBackdrop" class="fixed inset-0 bg-black/50 transition-opacity">
+                <div class="flex min-h-full items-center justify-center p-4">
+                  <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg" data-action="click->image-picker#stopPropagation">
+                    <div class="bg-white">
+                      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Select Image</h3>
+                        <button type="button" data-action="click->image-picker#closeModal" class="text-gray-400 hover:text-gray-500">
+                          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div data-image-picker-target="modalContent" class="max-h-96 overflow-y-auto">
+                        <p class="p-4 text-center text-gray-500">Loading...</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <%= form.submit "Save Settings", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Domains -->
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-medium text-gray-900">Domains</h3>
+      <%= link_to "New Domain", new_seas_domain_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700" %>
+    </div>
+
+    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questions</th>
+            <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% if @seas_domains.any? %>
+            <% @seas_domains.each do |domain| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= domain.position %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= domain.name %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= domain.seas_questions.size %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <%= link_to "View", seas_domain_path(domain), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                  <%= link_to "Edit", edit_seas_domain_path(domain), class: "text-indigo-600 hover:text-indigo-900 mr-4" %>
+                  <%= button_to "Delete", seas_domain_path(domain), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure? This will delete all questions in this domain." }, form: { class: "inline" } %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No SEAS domains found.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

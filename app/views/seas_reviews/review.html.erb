@@ -70,13 +70,16 @@
     <% end %>
 
     <!-- Sections -->
-    <% @domains.each do |domain| %>
+    <% domains_list = @snapshot ? @domains : @domains.to_a %>
+    <% domains_list.each do |domain| %>
       <div class="mb-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-4"><%= domain.name %></h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-4"><%= domain.is_a?(Hash) ? domain["name"] : domain.name %></h2>
 
         <div class="divide-y divide-gray-200">
-          <% domain.seas_questions.each do |question| %>
-            <% response = @responses_by_question[question.id] %>
+          <% questions = domain.is_a?(Hash) ? domain["questions"].sort_by { |q| q["position"] } : domain.seas_questions %>
+          <% questions.each do |question| %>
+            <% question_id = question.is_a?(Hash) ? question["id"] : question.id %>
+            <% response = @responses_by_question[question_id] %>
             <% next unless response %>
             <%= render "question_block", question: question, response: response, score_labels: score_labels, read_only: @read_only %>
           <% end %>

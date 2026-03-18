@@ -1,0 +1,11 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+  <div class="px-4 py-6 sm:px-0">
+    <%= render "shared/breadcrumbs", items: [
+      { label: "SEAS Domains", path: seas_domains_path },
+      { label: @seas_domain.name, path: seas_domain_path(@seas_domain) },
+      { label: "New Question" }
+    ] %>
+
+    <%= render "form", seas_question: @seas_question %>
+  </div>
+</div>

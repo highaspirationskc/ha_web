@@ -144,6 +144,82 @@ class SeasEvaluationTest < ActiveSupport::TestCase
   end
 
   # ============================================
+  # Questionnaire Snapshot
+  # ============================================
+
+  test "snapshot is created on evaluation creation" do
+    domain = SeasDomain.create!(name: "Snapshot Domain", position: 50)
+    SeasQuestion.create!(seas_domain: domain, text: "Snapshot Q1", position: 1)
+
+    evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2024)
+    assert_not_nil evaluation.questionnaire_snapshot
+
+    snapshot = JSON.parse(evaluation.questionnaire_snapshot)
+    assert_not_nil snapshot["version_timestamp"]
+    assert snapshot["domains"].is_a?(Array)
+  end
+
+  test "snapshot contains correct domains and questions" do
+    domain = SeasDomain.create!(name: "Snap Domain", position: 51)
+    q1 = SeasQuestion.create!(seas_domain: domain, text: "Snap Q1", position: 1)
+    q2 = SeasQuestion.create!(seas_domain: domain, text: "Snap Q2", position: 2)
+
+    evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2023)
+    snapshot = JSON.parse(evaluation.questionnaire_snapshot)
+
+    snap_domain = snapshot["domains"].find { |d| d["id"] == domain.id }
+    assert_not_nil snap_domain
+    assert_equal "Snap Domain", snap_domain["name"]
+
+    question_texts = snap_domain["questions"].map { |q| q["text"] }
+    assert_includes question_texts, "Snap Q1"
+    assert_includes question_texts, "Snap Q2"
+  end
+
+  test "snapshot includes version_timestamp" do
+    domain = SeasDomain.create!(name: "Timestamp Domain", position: 52)
+    SeasQuestion.create!(seas_domain: domain, text: "TS Q1", position: 1)
+
+    evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2022)
+    snapshot = JSON.parse(evaluation.questionnaire_snapshot)
+    assert_not_nil snapshot["version_timestamp"]
+    assert Time.parse(snapshot["version_timestamp"]).is_a?(Time)
+  end
+
+  test "update_snapshot_with_scores embeds scores" do
+    domain = SeasDomain.create!(name: "Score Domain", position: 53)
+    q = SeasQuestion.create!(seas_domain: domain, text: "Score Q1", position: 1)
+
+    evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2021)
+    SeasResponse.create!(seas_evaluation: evaluation, seas_question: q, score: 2)
+
+    evaluation.update_snapshot_with_scores!
+    snapshot = JSON.parse(evaluation.questionnaire_snapshot)
+
+    snap_domain = snapshot["domains"].find { |d| d["id"] == domain.id }
+    snap_question = snap_domain["questions"].find { |qu| qu["id"] == q.id }
+    assert_equal 2, snap_question["score"]
+  end
+
+  test "update_snapshot_with_review_data embeds review data" do
+    domain = SeasDomain.create!(name: "Review Domain", position: 54)
+    q = SeasQuestion.create!(seas_domain: domain, text: "Review Q1", position: 1)
+
+    evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2020)
+    response = SeasResponse.create!(seas_evaluation: evaluation, seas_question: q, score: 2)
+    response.update!(review_action: "adjusted", adjusted_score: 3, feedback: "Great job")
+
+    evaluation.update_snapshot_with_review_data!
+    snapshot = JSON.parse(evaluation.questionnaire_snapshot)
+
+    snap_domain = snapshot["domains"].find { |d| d["id"] == domain.id }
+    snap_question = snap_domain["questions"].find { |qu| qu["id"] == q.id }
+    assert_equal "adjusted", snap_question["review_action"]
+    assert_equal 3, snap_question["adjusted_score"]
+    assert_equal "Great job", snap_question["feedback"]
+  end
+
+  # ============================================
   # Associations
   # ============================================
 

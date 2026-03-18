@@ -1,9 +1,15 @@
 class SeasReviewsController < AuthenticatedController
   before_action :set_evaluation
-  before_action :authorize_review
+  before_action :authorize_review, except: [:destroy]
+  before_action :authorize_delete, only: [:destroy]
 
   def review
-    @domains = SeasDomain.includes(:seas_questions).order(:position)
+    @snapshot = @evaluation.parsed_snapshot
+    if @snapshot
+      @domains = @snapshot["domains"]
+    else
+      @domains = SeasDomain.includes(:seas_questions).order(:position)
+    end
     @responses_by_question = @evaluation.seas_responses.includes(:seas_question).index_by(&:seas_question_id)
     @reviewed_count = @evaluation.seas_responses.count(&:reviewed?)
     @total_count = @evaluation.seas_responses.count
@@ -53,7 +59,14 @@ class SeasReviewsController < AuthenticatedController
     end
 
     @evaluation.update!(status: "reviewed", reviewed_at: Time.current)
+    @evaluation.update_snapshot_with_review_data!
     redirect_to user_path(@evaluation.mentee.user), notice: "SEAS review completed successfully."
+  end
+
+  def destroy
+    user = @evaluation.mentee.user
+    @evaluation.destroy!
+    redirect_to user_path(user), notice: "SEAS evaluation was successfully deleted.", status: :see_other
   end
 
   def discard_review
@@ -76,6 +89,12 @@ class SeasReviewsController < AuthenticatedController
   def authorize_review
     unless current_user.can?(:review, :seas_evaluations)
       redirect_to dashboard_path, alert: "You don't have permission to review evaluations."
+    end
+  end
+
+  def authorize_delete
+    unless current_user.can?(:delete, :seas_evaluations)
+      redirect_to dashboard_path, alert: "You don't have permission to delete evaluations."
     end
   end
 

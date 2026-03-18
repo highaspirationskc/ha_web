@@ -9,9 +9,8 @@ class SeasEvaluationsControllerTest < ActionDispatch::IntegrationTest
     @mentee_user.activate!
     @mentee_user.reload
     @mentee = @mentee_user.mentee
-    @evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2026)
 
-    # Create sections and questions for form completion
+    # Create sections and questions BEFORE evaluation so snapshot captures them
     @domain1 = SeasDomain.create!(name: "Test Social", position: 1)
     @q1 = SeasQuestion.create!(seas_domain: @domain1, text: "Q1", position: 1)
     @q2 = SeasQuestion.create!(seas_domain: @domain1, text: "Q2", position: 2)
@@ -19,6 +18,8 @@ class SeasEvaluationsControllerTest < ActionDispatch::IntegrationTest
     @domain2 = SeasDomain.create!(name: "Test Emotional", position: 2)
     @q3 = SeasQuestion.create!(seas_domain: @domain2, text: "Q3", position: 1)
     @q4 = SeasQuestion.create!(seas_domain: @domain2, text: "Q4", position: 2)
+
+    @evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2026)
   end
 
   # ============================================
@@ -46,6 +47,11 @@ class SeasEvaluationsControllerTest < ActionDispatch::IntegrationTest
     @evaluation.update_column(:status, "submitted")
     get seas_evaluation_path(@evaluation.token)
     assert_response :success
+  end
+
+  test "show redirects to step 0 when domain not found for step" do
+    get seas_evaluation_path(@evaluation.token, step: 999)
+    assert_redirected_to seas_evaluation_path(@evaluation.token, step: 0)
   end
 
   # ============================================

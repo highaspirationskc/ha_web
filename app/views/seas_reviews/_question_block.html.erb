@@ -1,6 +1,6 @@
 <div class="px-6 py-5" data-seas-review-target="questionBlock" data-response-id="<%= response.id %>">
   <div class="flex items-start justify-between mb-3">
-    <p class="text-sm font-semibold text-gray-900"><%= question.text %></p>
+    <p class="text-sm font-semibold text-gray-900"><%= question.is_a?(Hash) ? question["text"] : question.text %></p>
     <% if response.reviewed? %>
       <span class="ml-3 shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" data-seas-review-target="reviewedBadge" data-response-id="<%= response.id %>">
         Reviewed

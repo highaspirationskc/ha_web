@@ -8,12 +8,14 @@ class SeasReviewsControllerTest < ActionDispatch::IntegrationTest
     @mentee_user.activate!
     @mentee_user.reload
     @mentee = @mentee_user.mentee
+
+    # Create sections, questions BEFORE evaluation so snapshot captures them
+    @domain = SeasDomain.create!(name: "Review Section", position: 1)
+    @question = SeasQuestion.create!(seas_domain: @domain, text: "Test Q", position: 1)
+
     @evaluation = SeasEvaluation.create!(mentee: @mentee, evaluation_year: 2026)
     @evaluation.update_column(:status, "submitted")
 
-    # Create sections, questions, and responses
-    @domain = SeasDomain.create!(name: "Review Section", position: 1)
-    @question = SeasQuestion.create!(seas_domain: @domain, text: "Test Q", position: 1)
     @seas_response = SeasResponse.create!(
       seas_evaluation: @evaluation,
       seas_question: @question,
@@ -188,5 +190,37 @@ class SeasReviewsControllerTest < ActionDispatch::IntegrationTest
     @evaluation.reload
     assert_equal "in_review", @evaluation.status
     assert_equal @staff_user, @evaluation.reviewer
+  end
+
+  # ============================================
+  # destroy
+  # ============================================
+
+  test "destroy deletes evaluation for admin" do
+    admin = create_user(email: "seas_destroy_admin@example.com")
+    reset!
+    login_as(admin)
+
+    assert_difference "SeasEvaluation.count", -1 do
+      delete delete_seas_evaluation_path(@evaluation)
+    end
+    assert_redirected_to user_path(@mentee_user)
+  end
+
+  test "destroy cascades to responses" do
+    admin = create_user(email: "seas_destroy_cascade_admin@example.com")
+    reset!
+    login_as(admin)
+
+    assert_difference "SeasResponse.count", -1 do
+      delete delete_seas_evaluation_path(@evaluation)
+    end
+  end
+
+  test "destroy rejected for non-admin staff" do
+    assert_no_difference "SeasEvaluation.count" do
+      delete delete_seas_evaluation_path(@evaluation)
+    end
+    assert_redirected_to dashboard_path
   end
 end
