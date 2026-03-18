@@ -75,11 +75,22 @@ class SeasEvaluationsController < ApplicationController
   end
 
   def save_section
-    domain = SeasDomain.find_by!(position: params[:domain_position])
-    questions = domain.seas_questions
+    position = params[:domain_position].to_i
+    snapshot = @evaluation.parsed_snapshot
 
-    unless params[:responses].present? && params[:responses].keys.size == questions.count
-      redirect_to seas_evaluation_path(@evaluation.token, step: domain.position),
+    if snapshot
+      sorted_domains = snapshot["domains"].sort_by { |d| d["position"] }
+      domain_data = sorted_domains.find { |d| d["position"] == position }
+      question_count = domain_data["questions"].size
+      next_position = sorted_domains.find { |d| d["position"] > position }&.dig("position")
+    else
+      domain = SeasDomain.find_by!(position: position)
+      question_count = domain.seas_questions.count
+      next_position = SeasDomain.where("position > ?", position).order(:position).first&.position
+    end
+
+    unless params[:responses].present? && params[:responses].keys.size == question_count
+      redirect_to seas_evaluation_path(@evaluation.token, step: position),
         alert: "Please answer all questions before continuing."
       return
     end
@@ -92,12 +103,10 @@ class SeasEvaluationsController < ApplicationController
     end
 
     @evaluation.update!(status: "in_progress") if @evaluation.status == "pending"
+    @evaluation.update!(current_domain_position: next_position)
 
-    next_domain = SeasDomain.where("position > ?", domain.position).order(:position).first
-    @evaluation.update!(current_domain_position: next_domain&.position)
-
-    if next_domain
-      redirect_to seas_evaluation_path(@evaluation.token, step: next_domain.position)
+    if next_position
+      redirect_to seas_evaluation_path(@evaluation.token, step: next_position)
     else
       redirect_to seas_evaluation_path(@evaluation.token, step: "review")
     end

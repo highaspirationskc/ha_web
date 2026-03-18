@@ -146,4 +146,110 @@ class SeasEvaluationsControllerTest < ActionDispatch::IntegrationTest
     @evaluation.reload
     assert_not_equal "submitted", @evaluation.status
   end
+
+  # ============================================
+  # snapshot isolation (questions edited after evaluation created)
+  # ============================================
+
+  test "show renders original question text from snapshot after question is edited" do
+    # Answer domain1 so we can view domain2
+    post seas_evaluation_sections_path(@evaluation.token), params: {
+      domain_position: @domain1.position,
+      responses: { @q1.id => "2", @q2.id => "3" }
+    }
+
+    # Admin edits the question text after evaluation was created
+    @q3.update!(text: "Updated Q3 text")
+
+    # Mentee views domain2 — should see original text from snapshot
+    get seas_evaluation_path(@evaluation.token, step: @domain2.position)
+    assert_response :success
+    assert_select "p", text: "Q3"
+    assert_select "p", text: "Updated Q3 text", count: 0
+  end
+
+  test "save_section uses snapshot question count not live DB" do
+    # Admin adds a new question to domain1 after evaluation was created
+    SeasQuestion.create!(seas_domain: @domain1, text: "Q_new", position: 3)
+
+    # Mentee submits answers for original 2 questions — should still work
+    post seas_evaluation_sections_path(@evaluation.token), params: {
+      domain_position: @domain1.position,
+      responses: { @q1.id => "2", @q2.id => "3" }
+    }
+    assert_redirected_to seas_evaluation_path(@evaluation.token, step: @domain2.position)
+  end
+
+  test "save_section rejects if snapshot questions not all answered" do
+    # Snapshot has 2 questions for domain1, only answer 1
+    post seas_evaluation_sections_path(@evaluation.token), params: {
+      domain_position: @domain1.position,
+      responses: { @q1.id => "2" }
+    }
+    assert_redirected_to seas_evaluation_path(@evaluation.token, step: @domain1.position)
+    assert_equal "Please answer all questions before continuing.", flash[:alert]
+  end
+
+  test "complete uses snapshot total question count not live DB" do
+    # Answer all original questions
+    [@q1, @q2, @q3, @q4].each do |q|
+      SeasResponse.create!(seas_evaluation: @evaluation, seas_question: q, score: 2)
+    end
+
+    # Admin adds a new question after evaluation was created
+    SeasQuestion.create!(seas_domain: @domain1, text: "Q_extra", position: 3)
+
+    # Complete should succeed — snapshot says 4 questions, we answered 4
+    assert_difference "Message.count", 1 do
+      post seas_evaluation_complete_path(@evaluation.token)
+    end
+
+    @evaluation.reload
+    assert_equal "submitted", @evaluation.status
+  end
+
+  test "pre-submit review screen shows original question text from snapshot" do
+    # Answer all but keep in_progress so we can view pre_complete
+    [@q1, @q2, @q3, @q4].each do |q|
+      SeasResponse.create!(seas_evaluation: @evaluation, seas_question: q, score: 2)
+    end
+    @evaluation.update!(status: "in_progress")
+
+    # Edit question after evaluation was created
+    @q1.update!(text: "Totally new Q1")
+
+    # View review — should show original text from snapshot
+    get seas_evaluation_path(@evaluation.token, step: "review")
+    assert_response :success
+    assert_select "span", text: "Q1"
+    assert_select "span", text: "Totally new Q1", count: 0
+  end
+
+  test "results page shows original question text from snapshot" do
+    [@q1, @q2, @q3, @q4].each do |q|
+      SeasResponse.create!(seas_evaluation: @evaluation, seas_question: q, score: 2)
+    end
+    @evaluation.update!(status: "submitted", completed_at: Time.current)
+    @evaluation.update_snapshot_with_scores!
+
+    # Edit question after submission
+    @q1.update!(text: "Changed Q1")
+
+    get seas_evaluation_path(@evaluation.token)
+    assert_response :success
+    assert_select "p", text: "Q1"
+    assert_select "p", text: "Changed Q1", count: 0
+  end
+
+  test "save_section navigates using snapshot domains after domain deleted" do
+    # Admin deletes domain2 after evaluation was created
+    @domain2.destroy
+
+    # Mentee answers domain1 — should still redirect to domain2 position from snapshot
+    post seas_evaluation_sections_path(@evaluation.token), params: {
+      domain_position: @domain1.position,
+      responses: { @q1.id => "2", @q2.id => "3" }
+    }
+    assert_redirected_to seas_evaluation_path(@evaluation.token, step: 2)
+  end
 end
