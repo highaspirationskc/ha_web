@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_025854) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_24_120000) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -87,6 +87,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_025854) do
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_guardians_on_user_id", unique: true
+  end
+
+  create_table "incentives", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.integer "created_by_id", null: false
+    t.text "description"
+    t.integer "image_id"
+    t.string "incentive_type", default: "individual", null: false
+    t.string "name", null: false
+    t.integer "point_cost", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_incentives_on_active"
+    t.index ["created_by_id"], name: "index_incentives_on_created_by_id"
+    t.index ["image_id"], name: "index_incentives_on_image_id"
+    t.index ["incentive_type"], name: "index_incentives_on_incentive_type"
   end
 
   create_table "media", force: :cascade do |t|
@@ -322,6 +338,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_025854) do
   add_foreign_key "grade_cards", "media"
   add_foreign_key "grade_cards", "mentees"
   add_foreign_key "guardians", "users"
+  add_foreign_key "incentives", "media", column: "image_id"
+  add_foreign_key "incentives", "users", column: "created_by_id"
   add_foreign_key "media", "users", column: "uploaded_by_id"
   add_foreign_key "mentees", "mentors"
   add_foreign_key "mentees", "teams"

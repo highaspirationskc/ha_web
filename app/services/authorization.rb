@@ -4,25 +4,27 @@ class Authorization
       users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
+      incentives: [:index, :show, :create, :edit, :delete],
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
       seas_evaluations: [:review, :send, :delete],
-      navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
+      navigation: [:dashboard, :users, :teams, :incentives, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
+      incentives: [:index, :show, :create, :edit, :delete],
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
       saturday_scoops: [:index, :show, :create, :edit, :delete, :publish],
       grade_cards: [:index, :show, :create, :delete],
       seas_evaluations: [:review, :send],
-      navigation: [:dashboard, :users, :teams, :events, :inbox, :community_service, :settings, :saturday_scoops]
+      navigation: [:dashboard, :users, :teams, :incentives, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     mentor: {
       users: [:show],
