@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       delete :remove_member
     end
   end
+  resources :incentives
   resources :olympic_seasons
   resources :family_members
   resources :community_service_records, path: "community_service"
