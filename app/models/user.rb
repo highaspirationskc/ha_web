@@ -24,6 +24,9 @@ class User < ApplicationRecord
   # Media associations
   has_many :uploaded_media, class_name: "Medium", foreign_key: :uploaded_by_id, dependent: :destroy
 
+  # Redemption associations
+  has_many :approved_redemptions, class_name: "Redemption", foreign_key: :approved_by_id, dependent: :nullify
+
   # Email validations
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false },

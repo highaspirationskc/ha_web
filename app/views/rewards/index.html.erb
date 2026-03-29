@@ -1,0 +1,165 @@
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" data-controller="rewards">
+  <div class="px-4 py-6 sm:px-0">
+    <%# Header with points display %>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Rewards</h1>
+        <p class="mt-1 text-sm text-gray-500">Browse and redeem incentives with your points</p>
+      </div>
+      <div class="flex items-center text-lg font-semibold text-gray-900">
+        <svg class="h-6 w-6 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor">★</text>
+        </svg>
+        <span class="points-display">Points: <%= @total_points %></span>
+      </div>
+    </div>
+    <%# Flash messages %>
+    <% if notice.present? %>
+      <div class="mb-4 rounded-md bg-green-50 p-4">
+        <p class="text-sm font-medium text-green-800"><%= notice %></p>
+      </div>
+    <% end %>
+    <% if alert.present? %>
+      <div class="mb-4 rounded-md bg-red-50 p-4">
+        <p class="text-sm font-medium text-red-800"><%= alert %></p>
+      </div>
+    <% end %>
+    <%# Tab navigation %>
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <button type="button"
+                data-rewards-target="button"
+                data-action="click->rewards#switch"
+          data-tab="individual"
+          class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          Individual Incentives
+        </button>
+        <button type="button"
+                data-rewards-target="button"
+                data-action="click->rewards#switch"
+          data-tab="team"
+          class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          Team Incentives
+        </button>
+        <button type="button"
+                data-rewards-target="button"
+                data-action="click->rewards#switch"
+          data-tab="my-redemptions"
+          class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          My Redemptions
+          <% pending_count = @redemptions.pending.count %>
+          <% if pending_count > 0 %>
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              <%= pending_count %>
+            </span>
+          <% end %>
+        </button>
+      </nav>
+    </div>
+    <%# Individual Incentives Tab %>
+    <div data-rewards-target="content" data-tab="individual" class="tab-content hidden">
+      <% if @individual_incentives.empty? %>
+        <div class="text-center py-12">
+          <p class="text-gray-500">No individual incentives available at this time.</p>
+        </div>
+      <% else %>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <% @individual_incentives.each do |incentive| %>
+            <%= render 'incentive_card', incentive: incentive %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <%# Team Incentives Tab %>
+    <div data-rewards-target="content" data-tab="team" class="tab-content hidden">
+      <% if @team_incentives.empty? %>
+        <div class="text-center py-12">
+          <p class="text-gray-500">No team incentives available at this time.</p>
+        </div>
+      <% else %>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <% @team_incentives.each do |incentive| %>
+            <%= render 'incentive_card', incentive: incentive %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <%# My Redemptions Tab %>
+    <div data-rewards-target="content" data-tab="my-redemptions" class="tab-content hidden">
+      <% if @redemptions.empty? %>
+        <div class="text-center py-12">
+          <p class="text-gray-500 text-lg">No redemptions yet</p>
+          <p class="text-sm text-gray-400 mt-2">Browse incentives and redeem them to see them here!</p>
+        </div>
+      <% else %>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Incentive</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Requested</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% @redemptions.each do |redemption| %>
+                <tr class="redemption-item">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-10 w-10">
+                        <% if redemption.incentive.image.present? %>
+                          <img class="h-10 w-10 rounded object-cover" src="<%= redemption.incentive.image.thumbnail_url %>" alt="">
+                        <% else %>
+                          <div class="h-10 w-10 rounded bg-gray-200 flex items-center justify-center">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                            </svg>
+                          </div>
+                        <% end %>
+                      </div>
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></div>
+                        <div class="text-sm text-gray-500"><%= redemption.points_spent %> pts</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <%= redemption.created_at.strftime("%B %d, %Y") %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <% case redemption.status %>
+                    <% when "pending" %>
+                      <span class="status-pending inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Pending
+                      </span>
+                    <% when "approved" %>
+                      <span class="status-approved inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Approved
+                      </span>
+                      <% if redemption.approved_by %>
+                        <div class="text-xs text-gray-500 mt-1"><%= redemption.approved_by.email %></div>
+                      <% end %>
+                    <% when "denied" %>
+                      <span class="status-denied inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Denied
+                      </span>
+                    <% when "deleted" %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Deleted (Refunded)
+                      </span>
+                    <% when "deleted_no_refund" %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Deleted
+                      </span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

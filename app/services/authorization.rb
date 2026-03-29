@@ -4,7 +4,7 @@ class Authorization
       users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
-      incentives: [:index, :show, :create, :edit, :delete],
+      incentives: [:index, :show, :create, :edit, :delete, :manage_redemptions],
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
@@ -17,7 +17,7 @@ class Authorization
       users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
-      incentives: [:index, :show, :create, :edit, :delete],
+      incentives: [:index, :show, :create, :edit, :delete, :manage_redemptions],
       community_service_records: [:index, :show, :create, :edit, :delete],
       messages: [:index, :show, :create, :reply_any, :support_inbox],
       media: [:index, :show, :create, :delete, :manage_all],
@@ -53,7 +53,7 @@ class Authorization
       messages: [:index, :show, :create],
       media: [:index, :show, :create, :delete],
       grade_cards: [:index, :show, :create, :delete],
-      navigation: [:dashboard, :events, :inbox, :community_service, :grade_cards]
+      navigation: [:dashboard, :events, :inbox, :community_service, :grade_cards, :rewards]
     },
     volunteer: {
       users: [],
@@ -112,9 +112,7 @@ class Authorization
     end
   end
 
-  def role
-    @role
-  end
+  attr_reader :role
 
   # Check if user can message a specific recipient
   # If in_thread_with is provided, allows replying to anyone in that thread
@@ -139,8 +137,8 @@ class Authorization
 
       # Get guardians of mentees
       guardian_user_ids = FamilyMember.joins(:mentee, guardian: :user)
-                                       .where(mentee_id: mentee_ids)
-                                       .pluck("users.id")
+        .where(mentee_id: mentee_ids)
+        .pluck("users.id")
 
       (mentee_user_ids + guardian_user_ids).include?(recipient.id)
     when :mentee
@@ -156,9 +154,9 @@ class Authorization
 
       # Get mentors of mentees
       mentor_user_ids = Mentee.where(id: mentee_ids)
-                              .where.not(mentor_id: nil)
-                              .joins(mentor: :user)
-                              .pluck("users.id")
+        .where.not(mentor_id: nil)
+        .joins(mentor: :user)
+        .pluck("users.id")
 
       (mentee_user_ids + mentor_user_ids).include?(recipient.id)
     else
@@ -217,8 +215,8 @@ class Authorization
       mentee_ids = @user.mentor&.mentees&.pluck(:id) || []
       mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
       guardian_user_ids = FamilyMember.joins(:mentee, guardian: :user)
-                                       .where(mentee_id: mentee_ids)
-                                       .pluck("users.id")
+        .where(mentee_id: mentee_ids)
+        .pluck("users.id")
       User.where(id: mentee_user_ids + guardian_user_ids)
     when :mentee
       mentor_user_id = @user.mentee&.mentor&.user&.id
@@ -228,9 +226,9 @@ class Authorization
       mentee_ids = @user.guardian&.family_members&.pluck(:mentee_id) || []
       mentee_user_ids = Mentee.where(id: mentee_ids).joins(:user).pluck("users.id")
       mentor_user_ids = Mentee.where(id: mentee_ids)
-                              .where.not(mentor_id: nil)
-                              .joins(mentor: :user)
-                              .pluck("users.id")
+        .where.not(mentor_id: nil)
+        .joins(mentor: :user)
+        .pluck("users.id")
       User.where(id: mentee_user_ids + mentor_user_ids)
     else
       User.none
