@@ -2,6 +2,8 @@ class Incentive < ApplicationRecord
   belongs_to :image, class_name: "Medium", optional: true
   belongs_to :created_by, class_name: "User"
 
+  has_many :redemptions, dependent: :restrict_with_error
+
   validates :name, presence: true
   validates :point_cost, presence: true, numericality: { greater_than: 0 }
   validates :incentive_type, presence: true, inclusion: { in: %w[individual team] }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_020109) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -178,6 +178,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_120000) do
     t.integer "start_day", null: false
     t.integer "start_month", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "redemptions", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.integer "approved_by_id"
+    t.datetime "created_at", null: false
+    t.integer "incentive_id", null: false
+    t.integer "mentee_id", null: false
+    t.text "notes"
+    t.integer "points_spent", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_id"], name: "index_redemptions_on_approved_by_id"
+    t.index ["incentive_id"], name: "index_redemptions_on_incentive_id"
+    t.index ["mentee_id", "status"], name: "index_redemptions_on_mentee_id_and_status"
+    t.index ["mentee_id"], name: "index_redemptions_on_mentee_id"
+    t.index ["status"], name: "index_redemptions_on_status"
   end
 
   create_table "saturday_scoops", force: :cascade do |t|
@@ -349,6 +366,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_120000) do
   add_foreign_key "message_recipients", "users", column: "recipient_id"
   add_foreign_key "messages", "messages", column: "parent_id"
   add_foreign_key "messages", "users", column: "author_id"
+  add_foreign_key "redemptions", "incentives"
+  add_foreign_key "redemptions", "mentees"
+  add_foreign_key "redemptions", "users", column: "approved_by_id"
   add_foreign_key "saturday_scoops", "media", column: "image_id"
   add_foreign_key "saturday_scoops", "media", column: "video_id"
   add_foreign_key "saturday_scoops", "users", column: "created_by_id"

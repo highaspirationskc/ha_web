@@ -37,13 +37,13 @@ end
 puts "Created #{all_teams.size} teams"
 
 # Named references for backward compatibility
-blue_team = all_teams[0]
-green_team = all_teams[1]
-yellow_team = all_teams[2]
-red_team = all_teams[3]
+all_teams[0]
+all_teams[1]
+all_teams[2]
+all_teams[3]
 
 # Helper method to create user with role profile
-def create_user_with_role(email:, password: "Password1!", first_name:, last_name:, active: true, &block)
+def create_user_with_role(email:, first_name:, last_name:, password: "Password1!", active: true, &block)
   user = User.find_or_create_by!(email: email) do |u|
     u.password = password
     u.first_name = first_name
@@ -121,8 +121,8 @@ end
 # Keep references to first blue and green mentees for backward compatibility with event logs
 blue_mentee_user = User.find_by(email: "blue.mentee1@example.com")
 green_mentee_user = User.find_by(email: "green.mentee1@example.com")
-blue_mentor_user = User.find_by(email: "blue.mentor1@example.com")
-green_mentor_user = User.find_by(email: "green.mentor1@example.com")
+User.find_by(email: "blue.mentor1@example.com")
+User.find_by(email: "green.mentor1@example.com")
 
 puts "Created test users: 2 guardians, #{all_mentors.count} mentors, #{all_mentees.count} mentees (password: Password1!)"
 
@@ -183,10 +183,14 @@ study_session_type = EventType.find_or_create_by!(name: "Study Session") do |typ
   type.category = :user
 end
 
-# Update existing event types to have point_value of 1
-EventType.update_all(point_value: 1)
+# Update existing event types to have reasonable point values
+EventType.find_by(name: "Workshop")&.update!(point_value: 10)
+EventType.find_by(name: "Mentoring Session")&.update!(point_value: 5)
+EventType.find_by(name: "Competition")&.update!(point_value: 15)
+EventType.find_by(name: "Community Service")&.update!(point_value: 20)
+EventType.find_by(name: "Study Session")&.update!(point_value: 5)
 
-puts "Created 5 event types (all with point_value: 1)"
+puts "Updated 5 event types with point values: Workshop (10), Mentoring (5), Competition (15), Community Service (20), Study Session (5)"
 
 # Create Events dynamically - one event every Saturday for each season
 today = Date.current
@@ -288,12 +292,14 @@ def create_event_participation(event, user, today, reg_days_before: 5)
   # Create registration log
   reg_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :registered) do |log|
     log.logged_at = event.event_date - reg_days_before.days
+    log.points_awarded = 0  # No points for registration
   end
 
   # Only create arrival log if event has already happened
   if event.event_date < today
     arrival_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :arrived) do |log|
       log.logged_at = event.event_date
+      log.points_awarded = event.event_type.point_value  # Award points based on event type
     end
     { registration: reg_log, arrival: arrival_log, points: event.event_type.point_value }
   else
@@ -411,6 +417,126 @@ Mentee.where(enrollment_date: nil).find_each do |mentee|
   mentee.update!(enrollment_date: mentee.user.created_at.to_date)
 end
 
-puts "Backfilled enrollment_date for #{Mentee.count} mentees"
+# Backfill points_awarded for existing event logs based on event type
+EventLog.where(log_type: :arrived).find_each do |log|
+  next unless log.event&.event_type
+  correct_points = log.event.event_type.point_value
+  log.update!(points_awarded: correct_points) if log.points_awarded != correct_points
+end
+
+puts "Backfilled points_awarded for #{EventLog.where(log_type: :arrived).count} arrival logs"
+
+# Create Incentives for Redemption System
+puts "Creating incentives..."
+
+incentives_data = [
+  { name: "Jack Stack Gift Card", description: "$25 BBQ gift card", point_cost: 25, incentive_type: "individual" },
+  { name: "Movie Pass", description: "AMC movie ticket", point_cost: 15, incentive_type: "individual" },
+  { name: "Pizza Voucher", description: "$20 Pizza Hut gift card", point_cost: 20, incentive_type: "individual" },
+  { name: "Book Voucher", description: "$15 Barnes & Noble gift card", point_cost: 15, incentive_type: "individual" },
+  { name: "Sports Equipment", description: "Basketball or soccer ball", point_cost: 30, incentive_type: "individual" },
+  { name: "School Supplies Kit", description: "Backpack with supplies", point_cost: 35, incentive_type: "individual" },
+  { name: "Gaming Card", description: "$20 GameStop gift card", point_cost: 20, incentive_type: "individual" },
+  { name: "Music Subscription", description: "3-month Spotify subscription", point_cost: 25, incentive_type: "individual" },
+  # Team incentives
+  { name: "Team Pizza Party", description: "Pizza party for the entire team", point_cost: 100, incentive_type: "team" },
+  { name: "Team Bowling", description: "Bowling outing for the team", point_cost: 80, incentive_type: "team" },
+  { name: "Team Movie Day", description: "Private movie screening for the team", point_cost: 120, incentive_type: "team" },
+  { name: "Team BBQ", description: "Team cookout at the park", point_cost: 150, incentive_type: "team" }
+]
+
+incentives = incentives_data.map do |data|
+  Incentive.find_or_create_by!(name: data[:name]) do |i|
+    i.description = data[:description]
+    i.point_cost = data[:point_cost]
+    i.incentive_type = data[:incentive_type]
+    i.created_by = admin_user
+  end
+end
+
+individual_count = incentives.count { |i| i.incentive_type == "individual" }
+team_count = incentives.count { |i| i.incentive_type == "team" }
+puts "Created #{incentives.length} incentives (#{individual_count} individual, #{team_count} team)"
+
+# Create sample redemptions for testing
+puts "Creating sample redemptions..."
+
+# Pick a few mentees to have redemptions
+sample_mentees = all_mentees.sample(10)
+redemption_count = 0
+
+sample_mentees.each do |mentee|
+  # Get mentee's total points
+  total_points = mentee.total_points
+  next if total_points < 15 # Skip if mentee doesn't have enough points
+
+  # Create 1-3 redemptions per mentee
+  num_redemptions = rand(1..3)
+
+  num_redemptions.times do
+    # Pick an incentive they can afford
+    affordable_incentives = incentives.select { |i| i.point_cost <= total_points }
+    next if affordable_incentives.empty?
+
+    incentive = affordable_incentives.sample
+
+    # Randomly assign status with weighted probabilities
+    status = case rand(100)
+    when 0..40 then "approved"     # 40% approved
+    when 41..60 then "pending"      # 20% pending
+    when 61..80 then "denied"       # 20% denied
+    when 81..90 then "deleted"      # 10% deleted (with refund)
+    else "deleted_no_refund"         # 10% deleted_no_refund
+    end
+
+    # Create redemption with appropriate attributes based on status
+    redemption_attrs = {
+      mentee: mentee,
+      incentive: incentive,
+      points_spent: incentive.point_cost,
+      status: status,
+      created_at: rand(1..30).days.ago
+    }
+
+    # Add approved_by and approved_at for approved/denied/deleted statuses
+    if %w[approved denied deleted deleted_no_refund].include?(status)
+      redemption_attrs[:approved_by] = [admin_user, staff_user].sample
+      redemption_attrs[:approved_at] = redemption_attrs[:created_at] + rand(1..3).days
+    end
+
+    # Add notes for denied or deleted redemptions
+    if status == "denied"
+      redemption_attrs[:notes] = ["Insufficient documentation", "Already received this month", "Event not verified"].sample
+    elsif status.in?(%w[deleted deleted_no_refund])
+      redemption_attrs[:notes] = ["Duplicate redemption", "Staff error", "Student request", "Out of stock"].sample
+    end
+
+    Redemption.find_or_create_by!(mentee: mentee, incentive: incentive, created_at: redemption_attrs[:created_at]) do |r|
+      r.assign_attributes(redemption_attrs)
+    end
+
+    redemption_count += 1
+
+    # Deduct points from available total so they can't redeem more than they have
+    total_points -= incentive.point_cost if status.in?(%w[pending approved deleted_no_refund])
+  end
+end
+
+puts "Created #{redemption_count} sample redemptions"
+
+# Create summary
+puts "\n" + "=" * 60
+puts "Redemption Test Data Summary"
+puts "=" * 60
+puts "Incentives available: #{Incentive.count}"
+puts "  - Individual: #{Incentive.where(incentive_type: "individual").count}"
+puts "  - Team: #{Incentive.where(incentive_type: "team").count}"
+puts "Total redemptions: #{Redemption.count}"
+puts "  - Pending: #{Redemption.pending.count}"
+puts "  - Approved: #{Redemption.approved.count}"
+puts "  - Denied: #{Redemption.denied.count}"
+puts "  - Deleted (refunded): #{Redemption.where(status: "deleted").count}"
+puts "  - Deleted (no refund): #{Redemption.where(status: "deleted_no_refund").count}"
+puts "=" * 60
 
 puts "Seeding completed!"

@@ -11,6 +11,7 @@ module Types
     field :community_service_records, [Types::CommunityServiceRecordType], null: false
     field :total_community_service_hours, Float, null: false, description: "Total approved community service hours for current Olympic season"
     field :grade_cards, [Types::GradeCardType], null: false
+    field :redemptions, [Types::RedemptionType], null: false
     field :created_at, GraphQL::Types::ISO8601DateTime, null: false
     field :updated_at, GraphQL::Types::ISO8601DateTime, null: false
   end

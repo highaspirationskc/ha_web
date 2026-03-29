@@ -60,6 +60,9 @@ module Types
     field :update_community_service_record, mutation: Mutations::CommunityServiceRecords::UpdateCommunityServiceRecord
     field :delete_community_service_record, mutation: Mutations::CommunityServiceRecords::DeleteCommunityServiceRecord
 
+    # Redemption mutations
+    field :create_redemption, mutation: Mutations::Redemptions::CreateRedemption
+
     # Grade Card mutations
     field :create_grade_card, mutation: Mutations::GradeCards::CreateGradeCard
     field :delete_grade_card, mutation: Mutations::GradeCards::DeleteGradeCard

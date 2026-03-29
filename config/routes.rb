@@ -55,6 +55,9 @@ Rails.application.routes.draw do
       post :add_grade_card
       delete :remove_grade_card
       post :send_seas_evaluation
+      post :redeem_incentive
+      post :deny_redemption
+      delete :delete_redemption
     end
   end
 
@@ -83,6 +86,8 @@ Rails.application.routes.draw do
     end
   end
   resources :incentives
+  resources :rewards, only: [:index]
+  resources :redemptions, only: [:create]
   resources :olympic_seasons
   resources :family_members
   resources :community_service_records, path: "community_service"
@@ -122,7 +127,7 @@ Rails.application.routes.draw do
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+  get "up" => "rails/health#show", :as => :rails_health_check
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest

@@ -1,6 +1,6 @@
 class UsersController < AuthenticatedController
   before_action :require_users_navigation_or_related_access
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card, :send_seas_evaluation]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card, :send_seas_evaluation, :redeem_incentive, :deny_redemption, :delete_redemption]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show, :reset_password]
   before_action :authorize_edit, only: [:edit, :update]
@@ -11,6 +11,7 @@ class UsersController < AuthenticatedController
   before_action :authorize_mentee_management, only: [:add_mentee, :remove_mentee]
   before_action :authorize_event_log_management, only: [:add_event_log, :remove_event_log]
   before_action :authorize_grade_card_view, only: [:add_grade_card, :remove_grade_card]
+  before_action :authorize_redemption_management, only: [:redeem_incentive, :deny_redemption, :delete_redemption]
 
   def index
     @users = users_for_current_user
@@ -37,6 +38,7 @@ class UsersController < AuthenticatedController
     load_community_service_data
     load_grade_card_data
     load_seas_evaluation_data
+    load_redemption_data
   end
 
   VALID_ROLES = %w[staff mentor mentee guardian volunteer].freeze
@@ -211,7 +213,7 @@ class UsersController < AuthenticatedController
       redirect_to user_path(@user), notice: "Guardian created successfully. A confirmation email has been sent to #{guardian_user.email}."
     end
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to user_path(@user), alert: "Could not create guardian: #{e.record.errors.full_messages.join(', ')}"
+    redirect_to user_path(@user), alert: "Could not create guardian: #{e.record.errors.full_messages.join(", ")}"
   end
 
   def add_mentee
@@ -257,7 +259,7 @@ class UsersController < AuthenticatedController
     )
 
     if event_log.save
-      points_msg = event_log.points_awarded > 0 ? " (#{event_log.points_awarded} points)" : ""
+      points_msg = (event_log.points_awarded > 0) ? " (#{event_log.points_awarded} points)" : ""
       redirect_to user_path(@user), notice: "Attendance added successfully#{points_msg}"
     else
       redirect_to user_path(@user), alert: event_log.errors.full_messages.join(", ")
@@ -352,6 +354,66 @@ class UsersController < AuthenticatedController
     redirect_to user_path(@user), notice: "Grade card removed successfully"
   end
 
+  def redeem_incentive
+    return redirect_to user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+
+    redemption = @user.mentee.redemptions.find_by(id: params[:redemption_id])
+    return redirect_to user_path(@user), alert: "Redemption not found" unless redemption
+    return redirect_to user_path(@user), alert: "Redemption is not pending" unless redemption.pending?
+    return redirect_to user_path(@user), alert: "Mentee has insufficient points" unless @user.mentee.can_afford?(redemption.points_spent)
+
+    redemption.update!(
+      status: "approved",
+      approved_by: current_user,
+      approved_at: Time.current
+    )
+
+    if params[:send_message] == "1" && params[:message_text].present?
+      RedemptionApprovalMessage.new(redemption, author: current_user, message_text: params[:message_text]).deliver
+    end
+
+    redirect_to user_path(@user), notice: "Incentive redeemed successfully"
+  end
+
+  def deny_redemption
+    return redirect_to user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+
+    redemption = @user.mentee.redemptions.find_by(id: params[:redemption_id])
+    return redirect_to user_path(@user), alert: "Redemption not found" unless redemption
+    return redirect_to user_path(@user), alert: "Redemption is not pending" unless redemption.pending?
+
+    redemption.update!(
+      status: "denied",
+      approved_by: current_user,
+      notes: params[:notes]
+    )
+
+    if params[:notes].present?
+      RedemptionDenialMessage.new(redemption, author: current_user, reason: params[:notes]).deliver
+    end
+
+    redirect_to user_path(@user), notice: "Incentive redemption denied"
+  end
+
+  def delete_redemption
+    return redirect_to user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+
+    redemption = @user.mentee.redemptions.find_by(id: params[:redemption_id])
+    return redirect_to user_path(@user), alert: "Redemption not found" unless redemption
+
+    new_status = (params[:refund_points] == "1") ? "deleted" : "deleted_no_refund"
+    redemption.update!(
+      status: new_status,
+      notes: params[:reason]
+    )
+
+    if params[:send_message] == "1" && params[:message_text].present?
+      RedemptionDeleteMessage.new(redemption, author: current_user, message_text: params[:message_text], refunded: params[:refund_points] == "1").deliver
+    end
+
+    redirect_to user_path(@user), notice: "Incentive redemption deleted#{" and points refunded" if params[:refund_points] == "1"}"
+  end
+
   private
 
   def set_user
@@ -441,6 +503,12 @@ class UsersController < AuthenticatedController
     return if can_manage_user?(@user)
 
     redirect_to users_path, alert: "You don't have permission to manage grade cards for this user"
+  end
+
+  def authorize_redemption_management
+    return if current_user.can?(:manage_redemptions, :incentives)
+
+    redirect_to users_path, alert: "You don't have permission to manage redemptions"
   end
 
   # Permission check methods
@@ -753,6 +821,17 @@ class UsersController < AuthenticatedController
     return unless @user.mentee.present?
 
     @seas_evaluations = @user.mentee.seas_evaluations.includes(:reviewer, :seas_responses).recent
+  end
+
+  def load_redemption_data
+    return unless @user.mentee.present?
+
+    @redemptions = @user.mentee.redemptions
+      .visible
+      .includes(incentive: :image)
+      .order(created_at: :desc)
+
+    @can_manage_redemptions = current_user.can?(:manage_redemptions, :incentives)
   end
 
   def respond_with_error(message)

@@ -8,6 +8,15 @@ class Mentee < ApplicationRecord
   has_many :community_service_records, dependent: :destroy
   has_many :grade_cards, dependent: :destroy
   has_many :seas_evaluations, dependent: :destroy
+  has_many :redemptions, dependent: :destroy
+
+  # Check if mentee can afford a redemption of specified points
+  # Uses row-level locking to prevent race conditions
+  def can_afford?(points)
+    with_lock do
+      total_points >= points
+    end
+  end
 
   # Calculate total points for a given date range
   # If no date_range is provided, calculates for the current Olympic season
@@ -15,9 +24,15 @@ class Mentee < ApplicationRecord
     date_range ||= current_season_date_range
     return 0 unless date_range
 
-    user.event_logs.joins(:event)
-        .where(events: { event_date: date_range })
-        .sum(:points_awarded)
+    earned = user.event_logs.joins(:event)
+      .where(events: { event_date: date_range })
+      .sum(:points_awarded)
+
+    spent = redemptions.active
+      .where(created_at: date_range)
+      .sum(:points_spent)
+
+    earned - spent
   end
 
   # Calculate total approved community service hours for a given date range

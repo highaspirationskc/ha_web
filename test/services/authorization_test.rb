@@ -179,13 +179,47 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_not_includes nav, :users
   end
 
-  # User#can? helper
+  test "mentee can access rewards navigation" do
+    nav = Authorization.navigation_for(@mentee_user)
+    assert_includes nav, :rewards
+    assert Authorization.can_access?(@mentee_user, :rewards)
+  end
+
+  test "staff cannot access rewards navigation" do
+    nav = Authorization.navigation_for(@staff_user)
+    assert_not_includes nav, :rewards
+    assert_not Authorization.can_access?(@staff_user, :rewards)
+  end
+
+  test "admin cannot access rewards navigation" do
+    nav = Authorization.navigation_for(@user)
+    assert_not_includes nav, :rewards
+    assert_not Authorization.can_access?(@user, :rewards)
+  end
+
+  test "mentor cannot access rewards navigation" do
+    nav = Authorization.navigation_for(@mentor_user)
+    assert_not_includes nav, :rewards
+    assert_not Authorization.can_access?(@mentor_user, :rewards)
+  end
+
+  test "guardian cannot access rewards navigation" do
+    nav = Authorization.navigation_for(@guardian_user)
+    assert_not_includes nav, :rewards
+    assert_not Authorization.can_access?(@guardian_user, :rewards)
+  end
+
+  test "volunteer cannot access rewards navigation" do
+    nav = Authorization.navigation_for(@volunteer_user)
+    assert_not_includes nav, :rewards
+    assert_not Authorization.can_access?(@volunteer_user, :rewards)
+  end
+
   test "user can? delegates to Authorization" do
     assert @user.can?(:delete, :users, @other_user)
     assert_not @staff_user.can?(:delete, :users, @other_user)
   end
 
-  # User#allowed_navigation helper
   test "user allowed_navigation delegates to Authorization" do
     assert_includes @user.allowed_navigation, :dashboard
     assert_includes @mentee_user.allowed_navigation, :dashboard

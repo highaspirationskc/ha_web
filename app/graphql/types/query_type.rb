@@ -216,6 +216,22 @@ module Types
       GradeCardsService.new(context[:current_user]).find(id)
     end
 
+    # Rewards
+    field :rewards, Types::RewardsType, null: false, description: "Get available rewards and user's redemptions"
+    def rewards
+      require_authentication!
+      user = context[:current_user]
+      raise GraphQL::ExecutionError, "Only mentees can view rewards" unless user.mentee
+
+      mentee = user.mentee
+      {
+        individual_incentives: Incentive.active.individual.order(:name),
+        team_incentives: Incentive.active.team.order(:name),
+        redeemed: mentee.redemptions.visible.includes(incentive: :image).order(created_at: :desc),
+        total_points: mentee.total_points
+      }
+    end
+
     # Saturday Scoops (public - no auth required)
     field :saturday_scoops, [Types::SaturdayScoopType], null: false, description: "List published Saturday Scoops"
     def saturday_scoops
