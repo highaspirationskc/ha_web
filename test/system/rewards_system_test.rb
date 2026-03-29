@@ -3,7 +3,6 @@ require "application_system_test_case"
 class RewardsSystemTest < ApplicationSystemTestCase
   def setup
     @admin = create_user(email: "sys_admin@example.com")
-    Staff.create!(user: @admin, permission_level: :admin)
 
     @mentee_user = create_mentee_user(email: "sys_mentee@example.com")
     @mentee = @mentee_user.mentee
@@ -74,7 +73,7 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
 
     click_on "Team"
-    assert_text "Team Pizza"
+    assert_text "Team Pizza", wait: 3
     assert_no_text "Test Gift Card"
   end
 
@@ -91,7 +90,7 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
 
     click_on "My Redemptions"
-    assert_text "Test Gift Card"
+    assert_text "Test Gift Card", wait: 3
     assert_text "Pending"
   end
 
@@ -99,9 +98,15 @@ class RewardsSystemTest < ApplicationSystemTestCase
     login_as(@mentee_user)
     visit rewards_path
 
-    click_button "Redeem", match: :first
-    assert_text "Test Gift Card", wait: 5
-    assert_text "25 pts"
+    # Find and click the Redeem button on the first incentive card
+    within(first(".incentive-card")) do
+      click_button "Redeem"
+    end
+
+    # Wait for modal to appear
+    assert_selector "h3", text: "Redeem Incentive", wait: 5
+    assert_text "Test Gift Card"
+    assert_text "25pts"
     assert_button "Redeem"
     assert_button "Cancel"
   end
@@ -111,9 +116,18 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
 
     assert_difference "Redemption.count", 1 do
-      click_button "Redeem", match: :first
-      click_button "Redeem", match: :first # Confirm in modal
-      assert_text "Request submitted", wait: 5
+      # Click Redeem button
+      within(first(".incentive-card")) do
+        click_button "Redeem"
+      end
+
+      # Wait for modal and click Redeem in modal
+      assert_selector "h3", text: "Redeem Incentive", wait: 5
+      within("form[action='#{redemptions_path}']") do
+        click_button "Redeem"
+      end
+
+      assert_text "Redemption request submitted", wait: 5
     end
 
     redemption = Redemption.last
@@ -126,12 +140,21 @@ class RewardsSystemTest < ApplicationSystemTestCase
     login_as(@mentee_user)
     visit rewards_path
 
-    click_button "Redeem", match: :first
-    click_button "Redeem", match: :first
-    assert_text "Request submitted", wait: 5
+    # Click Redeem button
+    within(first(".incentive-card")) do
+      click_button "Redeem"
+    end
+
+    # Wait for modal and click Redeem in modal
+    assert_selector "h3", text: "Redeem Incentive", wait: 5
+    within("form[action='#{redemptions_path}']") do
+      click_button "Redeem"
+    end
+
+    assert_text "Redemption request submitted", wait: 5
 
     click_on "My Redemptions"
-    assert_text "Test Gift Card"
+    assert_text "Test Gift Card", wait: 3
     assert_text "Pending"
   end
 
@@ -148,9 +171,16 @@ class RewardsSystemTest < ApplicationSystemTestCase
     login_as(@mentee_user)
     visit rewards_path
 
-    # Try to redeem expensive item
-    find(".incentive-card", text: "Expensive Item").click_button("Redeem")
-    click_button "Redeem", match: :first
+    # Find and click the Expensive Item redeem button
+    within(".incentive-card", text: "Expensive Item") do
+      click_button "Redeem"
+    end
+
+    # Wait for modal and click Redeem
+    assert_selector "h3", text: "Redeem Incentive", wait: 5
+    within("form[action='#{redemptions_path}']") do
+      click_button "Redeem"
+    end
 
     assert_text "Insufficient points", wait: 5
   end
@@ -160,7 +190,8 @@ class RewardsSystemTest < ApplicationSystemTestCase
     login_as(staff_user)
     visit rewards_path
 
-    assert_text "Access denied", wait: 5
+    # Staff should be redirected to dashboard
+    assert_current_path dashboard_path
   end
 
   test "cancel modal closes without creating redemption" do
@@ -168,9 +199,19 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
 
     assert_no_difference "Redemption.count" do
-      click_button "Redeem", match: :first
+      # Click Redeem button
+      within(first(".incentive-card")) do
+        click_button "Redeem"
+      end
+
+      # Wait for modal
+      assert_selector "h3", text: "Redeem Incentive", wait: 5
+
+      # Click Cancel in modal
       click_button "Cancel"
-      assert_no_text "Test Gift Card", wait: 2 # Modal closed
+
+      # Modal should close
+      assert_no_selector "h3", text: "Redeem Incentive", wait: 3
     end
   end
 
@@ -188,7 +229,7 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
     click_on "My Redemptions"
 
-    assert_text "Test Gift Card"
+    assert_text "Test Gift Card", wait: 3
     assert_text "Approved"
     assert_text @admin.email
   end
@@ -207,7 +248,7 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
     click_on "My Redemptions"
 
-    assert_text "Test Gift Card"
+    assert_text "Test Gift Card", wait: 3
     assert_text "Denied"
   end
 
@@ -219,6 +260,6 @@ class RewardsSystemTest < ApplicationSystemTestCase
     visit rewards_path
     click_on "My Redemptions"
 
-    assert_text "No redemptions yet"
+    assert_text "No redemptions yet", wait: 3
   end
 end

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["tab", "content", "button"]
+  static targets = ["tab", "content", "button", "modal"]
   static values = { active: String }
 
   connect() {
@@ -41,5 +41,29 @@ export default class extends Controller {
         content.classList.add('hidden')
       }
     })
+  }
+
+  openRedemptionModal(event) {
+    const incentiveId = event.currentTarget.dataset.incentiveId
+    const modal = document.getElementById(`redemption-modal-${incentiveId}`)
+    if (modal) {
+      modal.classList.remove('hidden')
+    }
+  }
+
+  closeRedemptionModal(event) {
+    // Close the closest modal ancestor
+    const modal = event.currentTarget.closest('[data-rewards-target="modal"]')
+    if (modal) {
+      modal.classList.add('hidden')
+    }
+  }
+
+  submitRedemption(event) {
+    // Let the form submit normally, but close the modal after submit
+    const modal = event.currentTarget.closest('[data-rewards-target="modal"]')
+    if (modal) {
+      modal.classList.add('hidden')
+    }
   }
 }
