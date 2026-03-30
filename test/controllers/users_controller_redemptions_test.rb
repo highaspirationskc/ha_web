@@ -263,6 +263,9 @@ class UsersControllerRedemptionsTest < ActionDispatch::IntegrationTest
     }
 
     @mentee.reload
+    # With pointable scope, the original deduction is excluded when status becomes "deleted",
+    # and a refund PointLog is created. The net effect is points are restored.
+    # Expected: initial_points (which already includes the -25 deduction) + 25 (refund) = 100
     assert_equal initial_points + @approved_redemption.points_spent, @mentee.total_points
   end
 

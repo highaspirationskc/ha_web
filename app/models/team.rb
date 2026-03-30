@@ -18,15 +18,15 @@ class Team < ApplicationRecord
   end
 
   # Calculate total points for all mentees on this team for a given date range
-  # If no date_range is provided, calculates for the current Olympic season
+  # Sums each mentee's individual total_points which uses the pointable scope
+  # This ensures consistency with individual mentee calculations and properly
+  # accounts for redemptions (excluding denied/deleted with refund)
+  # Note: Acceptable N+1 since teams max at 10 mentees
   def total_points(date_range = nil)
     date_range ||= current_season_date_range
     return 0 unless date_range
 
-    EventLog.joins(user: :mentee, event: {})
-            .where(mentees: { team_id: id })
-            .where(events: { event_date: date_range })
-            .sum(:points_awarded)
+    mentees.sum { |mentee| mentee.total_points(date_range) }
   end
 
   # Calculate total approved community service hours for all mentees on this team

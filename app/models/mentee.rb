@@ -20,12 +20,13 @@ class Mentee < ApplicationRecord
   end
 
   # Calculate total points for a given date range
+  # Uses pointable scope to exclude denied/deleted redemption logs
   # If no date_range is provided, calculates for the current Olympic season
   def total_points(date_range = nil)
     date_range ||= current_season_date_range
     return 0 unless date_range
 
-    point_logs.where(created_at: date_range).sum(:points)
+    point_logs.pointable.where(created_at: date_range).sum(:points)
   end
 
   # Calculate total approved community service hours for a given date range
