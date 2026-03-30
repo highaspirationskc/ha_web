@@ -58,6 +58,8 @@ Rails.application.routes.draw do
       post :redeem_incentive
       post :deny_redemption
       delete :delete_redemption
+      get :point_history
+      post :adjust_points
     end
   end
 

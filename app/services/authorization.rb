@@ -1,7 +1,7 @@
 class Authorization
   PERMISSIONS = {
     admin: {
-      users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs],
+      users: [:index, :show, :create, :edit, :delete, :change_status, :manage_family_members, :manage_mentees, :manage_event_logs, :manage_points],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       incentives: [:index, :show, :create, :edit, :delete, :manage_redemptions],
@@ -14,7 +14,7 @@ class Authorization
       navigation: [:dashboard, :users, :teams, :incentives, :events, :inbox, :community_service, :settings, :saturday_scoops]
     },
     staff: {
-      users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs],
+      users: [:index, :show, :create, :edit, :manage_family_members, :manage_mentees, :manage_event_logs, :manage_points],
       events: [:index, :show, :create, :edit, :delete],
       teams: [:index, :show, :create, :edit, :delete, :manage_members],
       incentives: [:index, :show, :create, :edit, :delete, :manage_redemptions],

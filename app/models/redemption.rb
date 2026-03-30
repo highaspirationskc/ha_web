@@ -4,6 +4,7 @@ class Redemption < ApplicationRecord
   belongs_to :mentee
   belongs_to :incentive
   belongs_to :approved_by, class_name: "User", optional: true
+  has_many :point_logs, as: :source, dependent: :destroy
 
   validates :points_spent, presence: true, numericality: { greater_than: 0 }
   validates :status, presence: true, inclusion: { in: STATUSES }
@@ -16,8 +17,46 @@ class Redemption < ApplicationRecord
   scope :active, -> { where(status: %w[pending approved deleted_no_refund]) }
   scope :visible, -> { where(status: %w[pending approved]) }
 
+  # Create point log when redemption is created (pending or approved)
+  after_create :create_deduction_point_log, if: :should_deduct_points?
+
+  # Create refund point log when redemption is deleted
+  after_update :create_refund_point_log, if: :saved_change_to_deleted?
+
   def pending? = status == "pending"
   def approved? = status == "approved"
   def denied? = status == "denied"
   def deleted? = status == "deleted"
+
+  private
+
+  def should_deduct_points?
+    pending? || approved? || status == "deleted_no_refund"
+  end
+
+  def create_deduction_point_log
+    PointLog.create!(
+      mentee: mentee,
+      points: -points_spent,
+      reason: "Redeemed: #{incentive.name}",
+      awarded_by: approved_by, # May be nil for pending redemptions
+      log_type: "redemption",
+      source: self
+    )
+  end
+
+  def saved_change_to_deleted?
+    saved_change_to_status? && status == "deleted"
+  end
+
+  def create_refund_point_log
+    PointLog.create!(
+      mentee: mentee,
+      points: points_spent,
+      reason: "Refund for deleted redemption: #{incentive.name}",
+      awarded_by: approved_by, # May be nil
+      log_type: "adjustment",
+      source: self
+    )
+  end
 end

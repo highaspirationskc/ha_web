@@ -73,6 +73,10 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert Authorization.can?(@user, :manage_mentees, :users)
   end
 
+  test "admin can manage points" do
+    assert Authorization.can?(@user, :manage_points, :users)
+  end
+
   # Staff permissions
   test "staff cannot delete users" do
     assert_not Authorization.can?(@staff_user, :delete, :users, @other_user)
@@ -98,6 +102,10 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert Authorization.can?(@staff_user, :manage_mentees, :users)
   end
 
+  test "staff can manage points" do
+    assert Authorization.can?(@staff_user, :manage_points, :users)
+  end
+
   # Mentor permissions
   test "mentor can view users" do
     assert Authorization.can?(@mentor_user, :show, :users)
@@ -117,6 +125,10 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "mentor cannot manage mentees" do
     assert_not Authorization.can?(@mentor_user, :manage_mentees, :users)
+  end
+
+  test "mentor cannot manage points" do
+    assert_not Authorization.can?(@mentor_user, :manage_points, :users)
   end
 
   # Guardian permissions
@@ -328,6 +340,10 @@ class AuthorizationTest < ActiveSupport::TestCase
 
   test "mentee cannot manage mentees" do
     assert_not Authorization.can?(@mentee_user, :manage_mentees, :users)
+  end
+
+  test "mentee cannot manage points" do
+    assert_not Authorization.can?(@mentee_user, :manage_points, :users)
   end
 
   # Volunteer comprehensive permissions

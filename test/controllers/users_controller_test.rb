@@ -600,4 +600,207 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @staff_user.confirmation_token
     assert_not_nil @staff_user.confirmation_sent_at
   end
+
+  # Point History Tests
+  test "point history requires authentication" do
+    mentee_user = User.create!(email: "mentee_test@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    get point_history_user_path(mentee_user)
+    assert_redirected_to root_path
+  end
+
+  test "point history requires user to be a mentee" do
+    login_as(@user)
+
+    get point_history_user_path(@staff_user)
+    assert_redirected_to user_path(@staff_user)
+    assert_equal "User is not a mentee", flash[:alert]
+  end
+
+  test "point history requires manage_points permission" do
+    mentor_user = User.create!(email: "mentor_test@example.com", password: "Password123!")
+    Mentor.create!(user: mentor_user)
+    mentor_user.activate!
+
+    mentee_user = User.create!(email: "mentee_ph@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    login_as(mentor_user)
+
+    get point_history_user_path(mentee_user)
+    assert_redirected_to user_path(mentee_user)
+    assert_equal "You don't have permission to manage points", flash[:alert]
+  end
+
+  test "point history displays successfully for admin" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_ph2@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+
+    # Create some point logs
+    PointLog.create!(mentee: mentee, points: 10, reason: "Test", awarded_by: @user, log_type: "attendance")
+    PointLog.create!(mentee: mentee, points: -5, reason: "Test", awarded_by: @user, log_type: "redemption")
+
+    get point_history_user_path(mentee_user)
+    assert_response :success
+    assert_select "h3", "Points History"
+  end
+
+  test "point history displays successfully for staff" do
+    login_as(@staff_user)
+
+    mentee_user = User.create!(email: "mentee_ph3@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+
+    PointLog.create!(mentee: mentee, points: 15, reason: "Test", awarded_by: @staff_user, log_type: "adjustment")
+
+    get point_history_user_path(mentee_user)
+    assert_response :success
+  end
+
+  # Adjust Points Tests
+  test "adjust points requires authentication" do
+    mentee_user = User.create!(email: "mentee_adj@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    post adjust_points_user_path(mentee_user), params: { points: 10, reason: "Test" }
+    assert_redirected_to root_path
+  end
+
+  test "adjust points requires user to be a mentee" do
+    login_as(@user)
+
+    post adjust_points_user_path(@staff_user), params: { points: 10, reason: "Test" }
+    assert_redirected_to user_path(@staff_user)
+    assert_equal "User is not a mentee", flash[:alert]
+  end
+
+  test "adjust points requires manage_points permission" do
+    mentor_user = User.create!(email: "mentor_adj@example.com", password: "Password123!")
+    Mentor.create!(user: mentor_user)
+    mentor_user.activate!
+
+    mentee_user = User.create!(email: "mentee_adj2@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    login_as(mentor_user)
+
+    post adjust_points_user_path(mentee_user), params: { points: 10, reason: "Test" }
+    assert_redirected_to user_path(mentee_user)
+    assert_equal "You don't have permission to manage points", flash[:alert]
+  end
+
+  test "adjust points requires non-zero adjustment" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj3@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    post adjust_points_user_path(mentee_user), params: { points: 0, reason: "Test" }
+    assert_redirected_to user_path(mentee_user)
+    assert_equal "Points adjustment must not be zero", flash[:alert]
+  end
+
+  test "adjust points requires reason" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj4@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    post adjust_points_user_path(mentee_user), params: { points: 10, reason: "" }
+    assert_redirected_to user_path(mentee_user)
+    assert_equal "Reason is required", flash[:alert]
+  end
+
+  test "adjust points cannot reduce below zero" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj5@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+
+    # Mentee has 0 points
+    post adjust_points_user_path(mentee_user), params: { points: -10, reason: "Test" }
+    assert_redirected_to user_path(mentee_user)
+    assert_match(/Cannot reduce points below zero/, flash[:alert])
+  end
+
+  test "adjust points successfully adds points" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj6@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+
+    # Create a season for point calculations
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    assert_difference "PointLog.count", 1 do
+      post adjust_points_user_path(mentee_user), params: { points: 10, reason: "Good behavior" }
+    end
+
+    assert_redirected_to user_path(mentee_user)
+    assert_match(/Points adjusted successfully/, flash[:notice])
+
+    mentee.reload
+    assert_equal 10, mentee.total_points
+  end
+
+  test "adjust points successfully deducts points" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj7@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: mentee_user)
+
+    # Create a season for point calculations
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    # Give mentee some points first
+    PointLog.create!(mentee: mentee, points: 20, reason: "Initial", awarded_by: @user, log_type: "adjustment")
+
+    assert_difference "PointLog.count", 1 do
+      post adjust_points_user_path(mentee_user), params: { points: -5, reason: "Correction" }
+    end
+
+    assert_redirected_to user_path(mentee_user)
+    assert_match(/Points adjusted successfully/, flash[:notice])
+
+    mentee.reload
+    assert_equal 15, mentee.total_points
+  end
+
+  test "adjust points sends message when requested" do
+    login_as(@user)
+
+    mentee_user = User.create!(email: "mentee_adj8@example.com", password: "Password123!")
+    Mentee.create!(user: mentee_user)
+    mentee_user.activate!
+
+    assert_difference "PointLog.count", 1 do
+      assert_difference "Message.count", 1 do
+        post adjust_points_user_path(mentee_user), params: {
+          points: 10,
+          reason: "Good job!",
+          send_message: "1",
+          message_text: "Keep up the great work!"
+        }
+      end
+    end
+
+    assert_redirected_to user_path(mentee_user)
+  end
 end

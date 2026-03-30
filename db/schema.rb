@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_020109) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_29_215807) do
   create_table "community_service_records", force: :cascade do |t|
     t.boolean "approved", default: true, null: false
     t.datetime "created_at", null: false
@@ -178,6 +178,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_020109) do
     t.integer "start_day", null: false
     t.integer "start_month", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "point_logs", force: :cascade do |t|
+    t.integer "awarded_by_id"
+    t.datetime "created_at", null: false
+    t.string "log_type", default: "adjustment", null: false
+    t.integer "mentee_id", null: false
+    t.integer "points", null: false
+    t.string "reason", null: false
+    t.integer "source_id"
+    t.string "source_type"
+    t.datetime "updated_at", null: false
+    t.index ["awarded_by_id"], name: "index_point_logs_on_awarded_by_id"
+    t.index ["log_type"], name: "index_point_logs_on_log_type"
+    t.index ["mentee_id", "created_at"], name: "index_point_logs_on_mentee_id_and_created_at", order: { created_at: :desc }
+    t.index ["mentee_id"], name: "index_point_logs_on_mentee_id"
+    t.index ["source_type", "source_id"], name: "index_point_logs_on_source"
   end
 
   create_table "redemptions", force: :cascade do |t|
@@ -366,6 +383,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_020109) do
   add_foreign_key "message_recipients", "users", column: "recipient_id"
   add_foreign_key "messages", "messages", column: "parent_id"
   add_foreign_key "messages", "users", column: "author_id"
+  add_foreign_key "point_logs", "mentees"
+  add_foreign_key "point_logs", "users", column: "awarded_by_id"
   add_foreign_key "redemptions", "incentives"
   add_foreign_key "redemptions", "mentees"
   add_foreign_key "redemptions", "users", column: "approved_by_id"

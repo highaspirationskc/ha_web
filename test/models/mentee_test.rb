@@ -33,6 +33,10 @@ class MenteeTest < ActiveSupport::TestCase
     assert_respond_to @mentee, :guardians
   end
 
+  test "has many point_logs" do
+    assert_respond_to @mentee, :point_logs
+  end
+
   # Validations
   test "is valid with a user" do
     assert @mentee.valid?
@@ -93,7 +97,7 @@ class MenteeTest < ActiveSupport::TestCase
   end
 
   # Total points
-  test "total_points returns 0 when no event logs exist" do
+  test "total_points returns 0 when no point logs exist" do
     @mentee.save!
     assert_equal 0, @mentee.total_points
   end
@@ -105,7 +109,7 @@ class MenteeTest < ActiveSupport::TestCase
     assert_equal 0, @mentee.total_points
   end
 
-  test "total_points sums points from event logs within current season" do
+  test "total_points sums points from point logs within current season" do
     @mentee.save!
 
     # Create a current season (month/day based)
@@ -118,22 +122,16 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
-    event = Event.create!(
-      name: "Test Event",
-      event_date: Time.current,
-      event_type: event_type,
-      created_by: @user
-    )
+    admin_user = create_user(email: "admin@test.com")
 
-    # Create event logs for this mentee's user
-    EventLog.create!(user: @user, event: event, points_awarded: 10)
-    EventLog.create!(user: @user, event: event, points_awarded: 5)
+    # Create point logs for this mentee within season
+    PointLog.create!(mentee: @mentee, points: 10, reason: "Event 1", awarded_by: admin_user, log_type: "attendance")
+    PointLog.create!(mentee: @mentee, points: 5, reason: "Event 2", awarded_by: admin_user, log_type: "attendance")
 
     assert_equal 15, @mentee.total_points
   end
 
-  test "total_points excludes points from events outside current season" do
+  test "total_points excludes points from point logs outside current season" do
     @mentee.save!
 
     # Create a current season (month/day based)
@@ -146,26 +144,13 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
+    admin_user = create_user(email: "admin@test.com")
 
-    # Event within season
-    current_event = Event.create!(
-      name: "Current Event",
-      event_date: Time.current,
-      event_type: event_type,
-      created_by: @user
-    )
+    # Point log within season
+    PointLog.create!(mentee: @mentee, points: 10, reason: "Current", awarded_by: admin_user, log_type: "attendance")
 
-    # Event outside season
-    old_event = Event.create!(
-      name: "Old Event",
-      event_date: 3.months.ago,
-      event_type: event_type,
-      created_by: @user
-    )
-
-    EventLog.create!(user: @user, event: current_event, points_awarded: 10)
-    EventLog.create!(user: @user, event: old_event, points_awarded: 100)
+    # Point log outside season
+    PointLog.create!(mentee: @mentee, points: 100, reason: "Old", awarded_by: admin_user, log_type: "attendance", created_at: 3.months.ago)
 
     assert_equal 10, @mentee.total_points
   end
@@ -173,24 +158,10 @@ class MenteeTest < ActiveSupport::TestCase
   test "total_points accepts custom date range" do
     @mentee.save!
 
-    event_type = EventType.create!(name: "Test Event Type", category: "org", point_value: 10)
+    admin_user = create_user(email: "admin@test.com")
 
-    event1 = Event.create!(
-      name: "Event 1",
-      event_date: 2.days.ago,
-      event_type: event_type,
-      created_by: @user
-    )
-
-    event2 = Event.create!(
-      name: "Event 2",
-      event_date: 10.days.ago,
-      event_type: event_type,
-      created_by: @user
-    )
-
-    EventLog.create!(user: @user, event: event1, points_awarded: 5)
-    EventLog.create!(user: @user, event: event2, points_awarded: 20)
+    PointLog.create!(mentee: @mentee, points: 5, reason: "Recent", awarded_by: admin_user, log_type: "attendance", created_at: 2.days.ago)
+    PointLog.create!(mentee: @mentee, points: 20, reason: "Older", awarded_by: admin_user, log_type: "attendance", created_at: 10.days.ago)
 
     # Only include last week
     week_range = 1.week.ago..Time.current
@@ -211,12 +182,11 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
 
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 20, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 20, status: "pending")
+    # Spend 20 points on pending redemption
+    PointLog.create!(mentee: @mentee, points: -20, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
 
     assert_equal 30, @mentee.total_points
   end
@@ -234,86 +204,16 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
 
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 20, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 20, status: "approved", approved_by: admin)
-
-    assert_equal 30, @mentee.total_points
-  end
-
-  test "total_points restores points for denied redemptions" do
-    @mentee.save!
-    admin = create_user(email: "pts_admin@example.com")
-
-    today = Date.current
-    OlympicSeason.create!(
-      name: "Test Season",
-      start_month: (today - 1.month).month,
-      start_day: (today - 1.month).day,
-      end_month: (today + 1.month).month,
-      end_day: (today + 1.month).day
-    )
-
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
-
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 20, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 20, status: "denied")
-
-    assert_equal 50, @mentee.total_points
-  end
-
-  test "total_points restores points for deleted (refunded) redemptions" do
-    @mentee.save!
-    admin = create_user(email: "pts_admin@example.com")
-
-    today = Date.current
-    OlympicSeason.create!(
-      name: "Test Season",
-      start_month: (today - 1.month).month,
-      start_day: (today - 1.month).day,
-      end_month: (today + 1.month).month,
-      end_day: (today + 1.month).day
-    )
-
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
-
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 20, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 20, status: "deleted")
-
-    assert_equal 50, @mentee.total_points
-  end
-
-  test "total_points keeps points deducted for deleted_no_refund redemptions" do
-    @mentee.save!
-    admin = create_user(email: "pts_admin@example.com")
-
-    today = Date.current
-    OlympicSeason.create!(
-      name: "Test Season",
-      start_month: (today - 1.month).month,
-      start_day: (today - 1.month).day,
-      end_month: (today + 1.month).month,
-      end_day: (today + 1.month).day
-    )
-
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
-
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 20, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 20, status: "deleted_no_refund")
+    # Spend 20 points on approved redemption
+    PointLog.create!(mentee: @mentee, points: -20, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
 
     assert_equal 30, @mentee.total_points
   end
 
-  test "total_points deducts multiple active redemptions" do
+  test "total_points does not deduct for denied redemptions when refunded" do
     @mentee.save!
     admin = create_user(email: "pts_admin@example.com")
 
@@ -326,14 +226,82 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
 
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 10, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 10, status: "pending")
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 10, status: "approved")
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 10, status: "denied")
+    # Redemption was denied and points refunded
+    PointLog.create!(mentee: @mentee, points: -20, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
+    PointLog.create!(mentee: @mentee, points: 20, reason: "Refund for denied redemption", awarded_by: admin, log_type: "adjustment")
+
+    assert_equal 50, @mentee.total_points
+  end
+
+  test "total_points handles deleted redemptions with refund" do
+    @mentee.save!
+    admin = create_user(email: "pts_admin@example.com")
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
+
+    # Spend and then refund
+    PointLog.create!(mentee: @mentee, points: -20, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
+    PointLog.create!(mentee: @mentee, points: 20, reason: "Refund for deleted redemption", awarded_by: admin, log_type: "adjustment")
+
+    assert_equal 50, @mentee.total_points
+  end
+
+  test "total_points handles deleted redemptions without refund" do
+    @mentee.save!
+    admin = create_user(email: "pts_admin@example.com")
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
+
+    # Spend without refund
+    PointLog.create!(mentee: @mentee, points: -20, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
+
+    assert_equal 30, @mentee.total_points
+  end
+
+  test "total_points handles multiple redemptions and adjustments" do
+    @mentee.save!
+    admin = create_user(email: "pts_admin@example.com")
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    # Earn 50 points
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
+
+    # Multiple redemptions
+    PointLog.create!(mentee: @mentee, points: -10, reason: "Gift Card 1", awarded_by: admin, log_type: "redemption")
+    PointLog.create!(mentee: @mentee, points: -10, reason: "Gift Card 2", awarded_by: admin, log_type: "redemption")
+    PointLog.create!(mentee: @mentee, points: -10, reason: "Gift Card 3 - Denied", awarded_by: admin, log_type: "redemption")
+    PointLog.create!(mentee: @mentee, points: 10, reason: "Refund for denied", awarded_by: admin, log_type: "adjustment")
 
     assert_equal 30, @mentee.total_points
   end
@@ -423,7 +391,7 @@ class MenteeTest < ActiveSupport::TestCase
   # can_afford? tests
   test "can_afford? returns true when mentee has sufficient points" do
     @mentee.save!
-    create_user(email: "afford_admin@example.com")
+    admin = create_user(email: "afford_admin@example.com")
 
     today = Date.current
     OlympicSeason.create!(
@@ -434,9 +402,7 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
 
     assert @mentee.can_afford?(30)
   end
@@ -454,19 +420,15 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
-
-    incentive = Incentive.create!(name: "Gift Card", point_cost: 30, created_by: admin)
-    Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 30, status: "approved", approved_by: admin)
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
+    PointLog.create!(mentee: @mentee, points: -30, reason: "Gift Card", awarded_by: admin, log_type: "redemption")
 
     assert_not @mentee.can_afford?(25)
   end
 
   test "can_afford? returns true when mentee has exactly enough points" do
     @mentee.save!
-    create_user(email: "afford_admin3@example.com")
+    admin = create_user(email: "afford_admin3@example.com")
 
     today = Date.current
     OlympicSeason.create!(
@@ -477,9 +439,7 @@ class MenteeTest < ActiveSupport::TestCase
       end_day: (today + 1.month).day
     )
 
-    event_type = EventType.create!(name: "Point Event", category: "org", point_value: 50)
-    event = Event.create!(name: "Big Event", event_date: Time.current, event_type: event_type, created_by: @user)
-    EventLog.create!(user: @user, event: event, points_awarded: 50)
+    PointLog.create!(mentee: @mentee, points: 50, reason: "Event", awarded_by: admin, log_type: "attendance")
 
     assert @mentee.can_afford?(50)
   end

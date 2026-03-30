@@ -1,6 +1,6 @@
 class UsersController < AuthenticatedController
   before_action :require_users_navigation_or_related_access
-  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card, :send_seas_evaluation, :redeem_incentive, :deny_redemption, :delete_redemption]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :activate, :deactivate, :add_family_member, :remove_family_member, :create_guardian, :add_mentee, :remove_mentee, :reset_password, :add_event_log, :remove_event_log, :add_grade_card, :remove_grade_card, :send_seas_evaluation, :redeem_incentive, :deny_redemption, :delete_redemption, :point_history, :adjust_points]
   before_action :authorize_index, only: [:index]
   before_action :authorize_show, only: [:show, :reset_password]
   before_action :authorize_edit, only: [:edit, :update]
@@ -412,6 +412,54 @@ class UsersController < AuthenticatedController
     end
 
     redirect_to user_path(@user), notice: "Incentive redemption deleted#{" and points refunded" if params[:refund_points] == "1"}"
+  end
+
+  def point_history
+    return redirect_to user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+    return redirect_to user_path(@user), alert: "You don't have permission to manage points" unless current_user.can?(:manage_points, :users)
+
+    @point_logs = @user.mentee.point_logs.page(params[:page])
+  end
+
+  def adjust_points
+    return redirect_to user_path(@user), alert: "User is not a mentee" unless @user.mentee.present?
+    return redirect_to user_path(@user), alert: "You don't have permission to manage points" unless current_user.can?(:manage_points, :users)
+
+    points = params[:points].to_i
+    reason = params[:reason].to_s.strip
+
+    # Validation
+    if points == 0
+      return redirect_to user_path(@user), alert: "Points adjustment must not be zero"
+    end
+
+    if reason.blank?
+      return redirect_to user_path(@user), alert: "Reason is required"
+    end
+
+    # Calculate what the new total would be
+    new_total = @user.mentee.total_points + points
+
+    # Check that points won't go below 0
+    if new_total < 0
+      return redirect_to user_path(@user), alert: "Cannot reduce points below zero. Current: #{@user.mentee.total_points}, Adjustment: #{points}"
+    end
+
+    # Create the point log
+    point_log = PointLog.create!(
+      mentee: @user.mentee,
+      points: points,
+      reason: reason,
+      awarded_by: current_user,
+      log_type: "adjustment"
+    )
+
+    # Send message if requested
+    if params[:send_message] == "1" && params[:message_text].present?
+      PointAdjustmentMessage.new(point_log, author: current_user, message_text: params[:message_text]).deliver
+    end
+
+    redirect_to user_path(@user), notice: "Points adjusted successfully. #{"+" if points > 0}#{points} points (#{new_total} total)"
   end
 
   private

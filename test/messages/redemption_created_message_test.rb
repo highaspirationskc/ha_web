@@ -104,7 +104,7 @@ class RedemptionCreatedMessageTest < ActiveSupport::TestCase
     )
     event_type = EventType.create!(name: "Point Event", category: "org", point_value: 100)
     event = Event.create!(name: "Points Event", event_date: Time.current, event_type: event_type, created_by: @admin)
-    EventLog.create!(user: @mentee_user, event: event, points_awarded: 100)
+    EventLog.create!(user: @mentee_user, event: event, points_awarded: 100, log_type: "arrived")
 
     # Create a new redemption (the setup one already exists and deducts 25 points)
     # With 100 points earned - 25 points spent (from setup redemption) = 75 points
