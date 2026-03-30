@@ -19,7 +19,7 @@ class RedemptionsSystemTest < ApplicationSystemTestCase
     )
     event_type = EventType.create!(name: "Test Event", category: "org", point_value: 100)
     event = Event.create!(name: "Points Event", event_date: Time.current, event_type: event_type, created_by: @admin)
-    EventLog.create!(user: @mentee_user, event: event, points_awarded: 100)
+    EventLog.create!(user: @mentee_user, event: event, points_awarded: 100, log_type: "arrived")
 
     @incentive = Incentive.create!(
       name: "Test Gift Card",

@@ -25,7 +25,6 @@
         <% end %>
       </div>
     </div>
-
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="px-4 py-5 sm:px-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900">User Information</h3>
@@ -82,556 +81,865 @@
                 <% end %>
               </dd>
             </div>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">Points</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-4">
+                    <span class="text-lg font-bold text-gray-900"><%= @user.mentee.total_points %></span>
+                    <%= link_to point_history_user_path(@user), class: "text-sm text-indigo-600 hover:text-indigo-900" do %>
+                      <svg class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                      History
+                    <% end %>
+                  </div>
+                  <% if current_user.can?(:manage_points, :users) %>
+                    <button type="button"
+                            data-controller="modal"
+                            data-action="click->modal#open"
+                      data-modal-target="manage-points-modal"
+                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-xs font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50">
+                      Manage Points
+                    </button>
+                  <% end %>
+                </div>
+              </dd>
+            </div>
           <% end %>
         </dl>
       </div>
     </div>
-
+    <% if @user.mentee.present? && current_user.can?(:manage_points, :users) %>
+      <!-- Manage Points Modal -->
+      <div id="manage-points-modal" data-controller="modal points-manager" class="hidden fixed inset-0 z-50" data-modal-target="dialog">
+        <div data-modal-target="backdrop" data-action="click->modal#closeOnBackdrop" class="fixed inset-0 bg-black/50 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+              <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Manage Points</h3>
+                <p class="mt-1 text-sm text-gray-500">Add, or subtract points</p>
+                <%= form_with url: adjust_points_user_path(@user), method: :post, class: "mt-4 space-y-4", data: { controller: "points-manager" } do |f| %>
+                  <div class="flex items-center justify-center space-x-4">
+                    <button type="button" data-action="click->points-manager#decrement" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
+                      <svg class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <span data-points-manager-target="pointsDisplay" class="text-4xl font-bold text-gray-900">0</span>
+                    <button type="button" data-action="click->points-manager#increment" class="p-2 rounded-full bg-indigo-100 hover:bg-indigo-200">
+                      <svg class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                  <%= f.hidden_field :points, value: 0, data: { "points-manager-target": "pointsInput" } %>
+                  <div class="flex items-center justify-between border-t border-gray-200 pt-4">
+                    <div class="text-center">
+                      <span class="text-2xl font-bold text-gray-900"><%= @user.mentee.total_points %>pts</span>
+                      <p class="text-xs text-gray-500">Current points</p>
+                    </div>
+                    <div class="flex items-center text-gray-400">
+                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                      </svg>
+                    </div>
+                    <div class="text-center">
+                      <span data-points-manager-target="resultDisplay" class="text-2xl font-bold text-indigo-600"><%= @user.mentee.total_points %>pts</span>
+                      <p class="text-xs text-gray-500">Points after adjustment</p>
+                    </div>
+                  </div>
+                  <div>
+                    <%= f.label :reason, "Reason", class: "block text-sm font-medium text-gray-700" %>
+                    <%= f.text_field :reason, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder: "Enter reason for point adjustment..." %>
+                  </div>
+                  <div>
+                    <label class="flex items-center">
+                      <%= f.check_box :send_message, { class: "h-4 w-4 text-indigo-600 border-gray-300 rounded", data: { action: "change->points-manager#toggleMessage" } }, "1", nil %>
+                      <span class="ml-2 text-sm text-gray-700">Send message with points modification</span>
+                    </label>
+                  </div>
+                  <div data-points-manager-target="messageArea" class="hidden">
+                    <%= f.label :message_text, "Message", class: "block text-sm font-medium text-gray-700" %>
+                    <%= f.text_area :message_text, rows: 3, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder: "Enter optional message..." %>
+                  </div>
+                  <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                    <%= f.submit "Save", class: "inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:col-start-2 cursor-pointer" %>
+                    <button type="button" data-action="click->modal#close" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">Cancel</button>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
     <!-- Redemptions (only for mentees) -->
     <% if @user.mentee.present? %>
-    <div class="mt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Redemptions
-          <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @redemptions&.count || 0 %></span>
-        </h3>
-      </div>
-
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Incentive
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Redeemed on
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Approved by
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @redemptions&.any? %>
-                    <% @redemptions.each do |redemption| %>
-                      <tr data-controller="modal redemption-form">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="flex items-center">
-                            <% if redemption.incentive.image.present? %>
-                              <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="<%= redemption.incentive.name %>" class="h-10 w-10 object-cover rounded">
-                            <% else %>
-                              <div class="h-10 w-10 rounded bg-gray-100 flex items-center justify-center">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                              </div>
-                            <% end %>
-                            <div class="ml-4">
-                              <div class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></div>
-                              <div class="text-sm text-gray-500"><%= redemption.incentive.description %></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <%= redemption.created_at.strftime("%B %d, %Y") %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <% if redemption.pending? %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              Awaiting Approval
-                            </span>
-                          <% elsif redemption.approved? %>
-                            <span class="text-sm text-gray-900"><%= redemption.approved_by&.email %></span>
-                          <% end %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <% if @can_manage_redemptions %>
-                            <% if redemption.pending? %>
-                              <button type="button"
-                                      data-action="click->modal#open"
-                                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50">
-                                Redeem Incentive
-                              </button>
-
-                              <!-- Redeem/Deny Modal -->
-                              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
-                                <div data-modal-target="backdrop"
-                                     data-action="click->modal#closeOnBackdrop"
-                                     class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
-                                <div class="fixed inset-0 z-10 overflow-y-auto">
-                                  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                                    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                                        <!-- Redeem View -->
-                                        <div data-redemption-form-target="redeemView">
-                                          <h3 class="text-lg font-medium leading-6 text-gray-900">Redeem Incentive</h3>
-                                          <p class="mt-1 text-sm text-gray-500">Redeem an incentive for a mentee</p>
-
-                                          <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
-                                            <% if redemption.incentive.image.present? %>
-                                              <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
-                                            <% else %>
-                                              <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                                              </div>
-                                            <% end %>
-                                            <div class="ml-4">
-                                              <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
-                                              <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
-                                            </div>
-                                          </div>
-
-                                          <%= form_with url: redeem_incentive_user_path(@user), method: :post, class: "mt-4" do %>
-                                            <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
-
-                                            <div class="flex items-center">
-                                              <input type="checkbox" name="send_message" value="1" id="send_message_redeem_<%= redemption.id %>"
-                                                     data-action="change->redemption-form#toggleMessage"
-                                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                              <label for="send_message_redeem_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Send message with redemption</label>
-                                            </div>
-
-                                            <div data-redemption-form-target="messageArea" class="hidden mt-3">
-                                              <textarea name="message_text" rows="3"
-                                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                        placeholder="Message"></textarea>
-                                            </div>
-
-                                            <div class="mt-5 flex items-center justify-between">
-                                              <button type="button"
-                                                      data-action="click->redemption-form#showDeny"
-                                                      class="text-sm font-medium text-red-600 hover:text-red-500">
-                                                Deny Redemption
-                                              </button>
-                                              <div class="flex space-x-3">
-                                                <button type="button"
-                                                        data-action="click->modal#close"
-                                                        class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                                                  Cancel
-                                                </button>
-                                                <button type="submit"
-                                                        class="inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer">
-                                                  Redeem
-                                                </button>
-                                              </div>
-                                            </div>
-                                          <% end %>
-                                        </div>
-
-                                        <!-- Deny View -->
-                                        <div data-redemption-form-target="denyView" class="hidden">
-                                          <h3 class="text-lg font-medium leading-6 text-gray-900">Deny Redemption</h3>
-                                          <p class="mt-1 text-sm text-gray-500">Deny this incentive redemption request</p>
-
-                                          <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
-                                            <% if redemption.incentive.image.present? %>
-                                              <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
-                                            <% else %>
-                                              <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                                              </div>
-                                            <% end %>
-                                            <div class="ml-4">
-                                              <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
-                                              <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
-                                            </div>
-                                          </div>
-
-                                          <%= form_with url: deny_redemption_user_path(@user), method: :post, class: "mt-4" do %>
-                                            <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
-
-                                            <div>
-                                              <label class="block text-sm font-medium text-gray-700">Reason for denial</label>
-                                              <textarea name="notes" rows="3" required
-                                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                                                        placeholder="Please explain why this redemption is being denied..."></textarea>
-                                            </div>
-
-                                            <div class="mt-5 flex items-center justify-between">
-                                              <button type="button"
-                                                      data-action="click->redemption-form#showRedeem"
-                                                      class="text-sm font-medium text-gray-600 hover:text-gray-500">
-                                                Back
-                                              </button>
-                                              <div class="flex space-x-3">
-                                                <button type="button"
-                                                        data-action="click->modal#close"
-                                                        class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                                                  Cancel
-                                                </button>
-                                                <button type="submit"
-                                                        class="inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 cursor-pointer">
-                                                  Deny
-                                                </button>
-                                              </div>
-                                            </div>
-                                          <% end %>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                            <% elsif redemption.approved? %>
-                              <button type="button"
-                                      data-action="click->modal#open"
-                                      class="text-gray-400 hover:text-red-600">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-                              </button>
-
-                              <!-- Delete Modal -->
-                              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
-                                <div data-modal-target="backdrop"
-                                     data-action="click->modal#closeOnBackdrop"
-                                     class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
-                                <div class="fixed inset-0 z-10 overflow-y-auto">
-                                  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                                    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                                        <h3 class="text-lg font-medium leading-6 text-gray-900">Delete Redemption</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Delete and refund redeemed incentive</p>
-
-                                        <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
-                                          <% if redemption.incentive.image.present? %>
-                                            <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
-                                          <% else %>
-                                            <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                              <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                                            </div>
-                                          <% end %>
-                                          <div class="ml-4">
-                                            <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
-                                            <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
-                                          </div>
-                                        </div>
-
-                                        <%= form_with url: delete_redemption_user_path(@user), method: :delete, data: { controller: "redemption-form" }, class: "mt-4 space-y-4" do %>
-                                          <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
-
-                                          <div>
-                                            <label class="block text-sm font-medium text-gray-700">Reason</label>
-                                            <textarea name="reason" rows="2" required
-                                                      class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                                                      placeholder="Reason for deletion..."></textarea>
-                                          </div>
-
-                                          <div class="flex items-center">
-                                            <input type="checkbox" name="refund_points" value="1" id="refund_points_<%= redemption.id %>"
-                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            <label for="refund_points_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Refund Points</label>
-                                          </div>
-
-                                          <div class="flex items-center">
-                                            <input type="checkbox" name="send_message" value="1" id="send_message_delete_<%= redemption.id %>"
-                                                   data-action="change->redemption-form#toggleMessage"
-                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            <label for="send_message_delete_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Send message with deletion</label>
-                                          </div>
-
-                                          <div data-redemption-form-target="messageArea" class="hidden">
-                                            <textarea name="message_text" rows="3"
-                                                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                      placeholder="Message"></textarea>
-                                          </div>
-
-                                          <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                                            <button type="submit"
-                                                    class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer">
-                                              Delete
-                                            </button>
-                                            <button type="button"
-                                                    data-action="click->modal#close"
-                                                    class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        <% end %>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            <% end %>
-                          <% end %>
-                        </td>
-                      </tr>
-                    <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
-                        No redemptions
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div class="mt-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Redemptions
+            <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @redemptions&.count || 0 %></span>
+          </h3>
         </div>
-      </div>
-    </div>
-    <% end %>
-
-    <!-- SEAS Self Evaluations (only for mentees) -->
-    <% if @user.mentee.present? %>
-    <div class="mt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-          SEAS Self Evaluations
-          <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @seas_evaluations&.count || 0 %></span>
-        </h3>
-        <% if current_user.can?(:send, :seas_evaluations) %>
-          <%= button_to "Send SEAS Evaluation", send_seas_evaluation_user_path(@user), method: :post, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700", data: { turbo_confirm: "Send a SEAS evaluation email to #{@user.email}?" } %>
-        <% end %>
-      </div>
-
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evaluation Date</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <% if current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations) %>
-                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                    <% end %>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @seas_evaluations&.any? %>
-                    <% @seas_evaluations.each do |evaluation| %>
-                      <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <%= (evaluation.completed_at || evaluation.created_at).strftime("%B %d, %Y") %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <% if evaluation.status == "reviewed" %>
-                            <%= evaluation.final_total_score %>
-                          <% end %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <% case evaluation.status %>
-                          <% when "pending" %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
-                          <% when "in_progress" %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">In Progress</span>
-                          <% when "submitted" %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Awaiting Review</span>
-                          <% when "in_review" %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Review</span>
-                          <% when "reviewed" %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Reviewed</span>
-                          <% end %>
-                        </td>
-                        <% if current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations) %>
-                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <% if current_user.can?(:review, :seas_evaluations) %>
-                              <% case evaluation.status %>
-                              <% when "submitted" %>
-                                <%= link_to "Review", review_seas_evaluation_path(evaluation), class: "text-indigo-600 hover:text-indigo-900" %>
-                              <% when "in_review" %>
-                                <% if evaluation.reviewer == current_user %>
-                                  <%= link_to "Continue Review", review_seas_evaluation_path(evaluation), class: "text-indigo-600 hover:text-indigo-900" %>
-                                <% else %>
-                                  <%= link_to "View", review_seas_evaluation_path(evaluation), class: "text-gray-600 hover:text-gray-900" %>
-                                <% end %>
-                              <% when "reviewed" %>
-                                <%= link_to "View", review_seas_evaluation_path(evaluation), class: "text-gray-600 hover:text-gray-900" %>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Incentive
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Redeemed on
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Approved by
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <% if @redemptions&.any? %>
+                      <% @redemptions.each do |redemption| %>
+                        <tr data-controller="modal redemption-form">
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                              <% if redemption.incentive.image.present? %>
+                                <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="<%= redemption.incentive.name %>" class="h-10 w-10 object-cover rounded">
+                              <% else %>
+                                <div class="h-10 w-10 rounded bg-gray-100 flex items-center justify-center">
+                                  <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
+                                </div>
                               <% end %>
-                            <% end %>
-                            <% if current_user.can?(:delete, :seas_evaluations) %>
-                              <%= button_to "Delete", delete_seas_evaluation_path(evaluation), method: :delete, class: "text-red-600 hover:text-red-900 ml-3", data: { turbo_confirm: "Are you sure you want to delete this SEAS evaluation? This cannot be undone." }, form: { class: "inline" } %>
+                              <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></div>
+                                <div class="text-sm text-gray-500"><%= redemption.incentive.description %></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= redemption.created_at.strftime("%B %d, %Y") %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <% if redemption.pending? %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Awaiting Approval
+                              </span>
+                            <% elsif redemption.approved? %>
+                              <span class="text-sm text-gray-900"><%= redemption.approved_by&.email %></span>
                             <% end %>
                           </td>
-                        <% end %>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <% if @can_manage_redemptions %>
+                              <% if redemption.pending? %>
+                                <button type="button"
+                                      data-action="click->modal#open"
+                                  class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50">
+                                  Redeem Incentive
+                                </button>
+                                <!-- Redeem/Deny Modal -->
+                                <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                                  <div data-modal-target="backdrop"
+                                     data-action="click->modal#closeOnBackdrop"
+                                    class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                                  <div class="fixed inset-0 z-10 overflow-y-auto">
+                                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                      <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                          <!-- Redeem View -->
+                                          <div data-redemption-form-target="redeemView">
+                                            <h3 class="text-lg font-medium leading-6 text-gray-900">Redeem Incentive</h3>
+                                            <p class="mt-1 text-sm text-gray-500">Redeem an incentive for a mentee</p>
+                                            <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
+                                              <% if redemption.incentive.image.present? %>
+                                                <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
+                                              <% else %>
+                                                <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                                  <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
+                                                </div>
+                                              <% end %>
+                                              <div class="ml-4">
+                                                <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
+                                                <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
+                                              </div>
+                                            </div>
+                                            <%= form_with url: redeem_incentive_user_path(@user), method: :post, class: "mt-4" do %>
+                                              <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
+                                              <div class="flex items-center">
+                                                <input type="checkbox" name="send_message" value="1" id="send_message_redeem_<%= redemption.id %>"
+                                                     data-action="change->redemption-form#toggleMessage"
+                                                class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                <label for="send_message_redeem_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Send message with redemption</label>
+                                              </div>
+                                              <div data-redemption-form-target="messageArea" class="hidden mt-3">
+                                                <textarea name="message_text" rows="3"
+                                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                        placeholder="Message"></textarea>
+                                              </div>
+                                              <div class="mt-5 flex items-center justify-between">
+                                                <button type="button"
+                                                      data-action="click->redemption-form#showDeny"
+                                                  class="text-sm font-medium text-red-600 hover:text-red-500">
+                                                  Deny Redemption
+                                                </button>
+                                                <div class="flex space-x-3">
+                                                  <button type="button"
+                                                        data-action="click->modal#close"
+                                                    class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                                    Cancel
+                                                  </button>
+                                                  <button type="submit"
+                                                        class="inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 cursor-pointer">
+                                                    Redeem
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            <% end %>
+                                          </div>
+                                          <!-- Deny View -->
+                                          <div data-redemption-form-target="denyView" class="hidden">
+                                            <h3 class="text-lg font-medium leading-6 text-gray-900">Deny Redemption</h3>
+                                            <p class="mt-1 text-sm text-gray-500">Deny this incentive redemption request</p>
+                                            <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
+                                              <% if redemption.incentive.image.present? %>
+                                                <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
+                                              <% else %>
+                                                <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                                  <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
+                                                </div>
+                                              <% end %>
+                                              <div class="ml-4">
+                                                <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
+                                                <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
+                                              </div>
+                                            </div>
+                                            <%= form_with url: deny_redemption_user_path(@user), method: :post, class: "mt-4" do %>
+                                              <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
+                                              <div>
+                                                <label class="block text-sm font-medium text-gray-700">Reason for denial</label>
+                                                <textarea name="notes" rows="3" required
+                                                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                                                        placeholder="Please explain why this redemption is being denied..."></textarea>
+                                              </div>
+                                              <div class="mt-5 flex items-center justify-between">
+                                                <button type="button"
+                                                      data-action="click->redemption-form#showRedeem"
+                                                  class="text-sm font-medium text-gray-600 hover:text-gray-500">
+                                                  Back
+                                                </button>
+                                                <div class="flex space-x-3">
+                                                  <button type="button"
+                                                        data-action="click->modal#close"
+                                                    class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                                    Cancel
+                                                  </button>
+                                                  <button type="submit"
+                                                        class="inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 cursor-pointer">
+                                                    Deny
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            <% end %>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              <% elsif redemption.approved? %>
+                                <button type="button"
+                                      data-action="click->modal#open"
+                                  class="text-gray-400 hover:text-red-600">
+                                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                </button>
+                                <!-- Delete Modal -->
+                                <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                                  <div data-modal-target="backdrop"
+                                     data-action="click->modal#closeOnBackdrop"
+                                    class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                                  <div class="fixed inset-0 z-10 overflow-y-auto">
+                                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                      <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                          <h3 class="text-lg font-medium leading-6 text-gray-900">Delete Redemption</h3>
+                                          <p class="mt-1 text-sm text-gray-500">Delete and refund redeemed incentive</p>
+                                          <div class="mt-4 flex items-center border-b border-gray-200 pb-4">
+                                            <% if redemption.incentive.image.present? %>
+                                              <img src="<%= redemption.incentive.image.thumbnail_url %>" alt="" class="h-14 w-14 object-cover rounded border border-gray-200">
+                                            <% else %>
+                                              <div class="h-14 w-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
+                                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
+                                              </div>
+                                            <% end %>
+                                            <div class="ml-4">
+                                              <p class="text-sm font-medium text-gray-900"><%= redemption.incentive.name %></p>
+                                              <p class="text-lg font-bold text-indigo-600"><%= redemption.points_spent %>pts</p>
+                                            </div>
+                                          </div>
+                                          <%= form_with url: delete_redemption_user_path(@user), method: :delete, data: { controller: "redemption-form" }, class: "mt-4 space-y-4" do %>
+                                            <input type="hidden" name="redemption_id" value="<%= redemption.id %>">
+                                            <div>
+                                              <label class="block text-sm font-medium text-gray-700">Reason</label>
+                                              <textarea name="reason" rows="2" required
+                                                      class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                                                      placeholder="Reason for deletion..."></textarea>
+                                            </div>
+                                            <div class="flex items-center">
+                                              <input type="checkbox" name="refund_points" value="1" id="refund_points_<%= redemption.id %>"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                              <label for="refund_points_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Refund Points</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                              <input type="checkbox" name="send_message" value="1" id="send_message_delete_<%= redemption.id %>"
+                                                   data-action="change->redemption-form#toggleMessage"
+                                              class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                              <label for="send_message_delete_<%= redemption.id %>" class="ml-2 text-sm text-gray-700">Send message with deletion</label>
+                                            </div>
+                                            <div data-redemption-form-target="messageArea" class="hidden">
+                                              <textarea name="message_text" rows="3"
+                                                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                      placeholder="Message"></textarea>
+                                            </div>
+                                            <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                              <button type="submit"
+                                                    class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer">
+                                                Delete
+                                              </button>
+                                              <button type="button"
+                                                    data-action="click->modal#close"
+                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          <% end %>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              <% end %>
+                            <% end %>
+                          </td>
+                        </tr>
+                      <% end %>
+                    <% else %>
+                      <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                          No redemptions
+                        </td>
                       </tr>
                     <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="<%= (current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations)) ? 4 : 3 %>" class="px-6 py-4 text-center text-sm text-gray-500">No SEAS evaluations</td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     <% end %>
-
+    <!-- SEAS Self Evaluations (only for mentees) -->
+    <% if @user.mentee.present? %>
+      <div class="mt-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            SEAS Self Evaluations
+            <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @seas_evaluations&.count || 0 %></span>
+          </h3>
+          <% if current_user.can?(:send, :seas_evaluations) %>
+            <%= button_to "Send SEAS Evaluation", send_seas_evaluation_user_path(@user), method: :post, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700", data: { turbo_confirm: "Send a SEAS evaluation email to #{@user.email}?" } %>
+          <% end %>
+        </div>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evaluation Date</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <% if current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations) %>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      <% end %>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <% if @seas_evaluations&.any? %>
+                      <% @seas_evaluations.each do |evaluation| %>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <%= (evaluation.completed_at || evaluation.created_at).strftime("%B %d, %Y") %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <% if evaluation.status == "reviewed" %>
+                              <%= evaluation.final_total_score %>
+                            <% end %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <% case evaluation.status %>
+                            <% when "pending" %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
+                            <% when "in_progress" %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">In Progress</span>
+                            <% when "submitted" %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Awaiting Review</span>
+                            <% when "in_review" %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Review</span>
+                            <% when "reviewed" %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Reviewed</span>
+                            <% end %>
+                          </td>
+                          <% if current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations) %>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <% if current_user.can?(:review, :seas_evaluations) %>
+                                <% case evaluation.status %>
+                                <% when "submitted" %>
+                                  <%= link_to "Review", review_seas_evaluation_path(evaluation), class: "text-indigo-600 hover:text-indigo-900" %>
+                                <% when "in_review" %>
+                                  <% if evaluation.reviewer == current_user %>
+                                    <%= link_to "Continue Review", review_seas_evaluation_path(evaluation), class: "text-indigo-600 hover:text-indigo-900" %>
+                                  <% else %>
+                                    <%= link_to "View", review_seas_evaluation_path(evaluation), class: "text-gray-600 hover:text-gray-900" %>
+                                  <% end %>
+                                <% when "reviewed" %>
+                                  <%= link_to "View", review_seas_evaluation_path(evaluation), class: "text-gray-600 hover:text-gray-900" %>
+                                <% end %>
+                              <% end %>
+                              <% if current_user.can?(:delete, :seas_evaluations) %>
+                                <%= button_to "Delete", delete_seas_evaluation_path(evaluation), method: :delete, class: "text-red-600 hover:text-red-900 ml-3", data: { turbo_confirm: "Are you sure you want to delete this SEAS evaluation? This cannot be undone." }, form: { class: "inline" } %>
+                              <% end %>
+                            </td>
+                          <% end %>
+                        </tr>
+                      <% end %>
+                    <% else %>
+                      <tr>
+                        <td colspan="<%= (current_user.can?(:review, :seas_evaluations) || current_user.can?(:delete, :seas_evaluations)) ? 4 : 3 %>" class="px-6 py-4 text-center text-sm text-gray-500">No SEAS evaluations</td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
     <!-- Mentees (only for mentors) -->
     <% if @user.mentor.present? %>
-    <div class="mt-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-        Mentees (<%= @user.mentor.mentees.count %>)
-      </h3>
-
-      <!-- Add Mentee Form -->
-      <% if @can_manage_mentees %>
-        <div class="mb-4 bg-white shadow sm:rounded-lg p-4">
-          <h4 class="text-sm font-medium text-gray-700 mb-3">Add Mentee</h4>
-          <% if @available_mentees_for_mentor.any? %>
-            <%= form_with url: add_mentee_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
-              <div class="flex-grow">
-                <%= render "shared/combobox",
+      <div class="mt-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+          Mentees (<%= @user.mentor.mentees.count %>)
+        </h3>
+        <!-- Add Mentee Form -->
+        <% if @can_manage_mentees %>
+          <div class="mb-4 bg-white shadow sm:rounded-lg p-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Add Mentee</h4>
+            <% if @available_mentees_for_mentor.any? %>
+              <%= form_with url: add_mentee_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
+                <div class="flex-grow">
+                  <%= render "shared/combobox",
                     name: "mentee_id",
                     options: @available_mentees_for_mentor.map { |m| ["#{m.user.first_name} #{m.user.last_name} (#{m.user.email})", m.id] },
                     placeholder: "Search mentees..." %>
-              </div>
-              <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+                </div>
+                <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+              <% end %>
+            <% else %>
+              <p class="text-sm text-gray-500">No unassigned mentees available.</p>
             <% end %>
-          <% else %>
-            <p class="text-sm text-gray-500">No unassigned mentees available.</p>
-          <% end %>
-        </div>
-      <% end %>
-
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mentee
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Team
-                    </th>
-                    <% if @can_manage_mentees %>
-                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+          </div>
+        <% end %>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Mentee
                       </th>
-                    <% end %>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @user.mentor.mentees.any? %>
-                    <% @user.mentor.mentees.includes(:user, :team).each do |mentee| %>
-                      <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <%= link_to user_path(mentee.user), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
-                            <%= mentee.user.first_name %> <%= mentee.user.last_name %>
-                          <% end %>
-                          <div class="text-sm text-gray-500"><%= mentee.user.email %></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <% if mentee.team.present? %>
-                            <%= team_color_badge(mentee.team) %>
-                          <% else %>
-                            <span class="text-sm text-gray-500">Unassigned</span>
-                          <% end %>
-                        </td>
-                        <% if @can_manage_mentees %>
-                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <%= button_to "Remove", remove_mentee_user_path(@user, mentee_id: mentee.id), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure you want to remove this mentee from this mentor?" } %>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Team
+                      </th>
+                      <% if @can_manage_mentees %>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      <% end %>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <% if @user.mentor.mentees.any? %>
+                      <% @user.mentor.mentees.includes(:user, :team).each do |mentee| %>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <%= link_to user_path(mentee.user), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" do %>
+                              <%= mentee.user.first_name %> <%= mentee.user.last_name %>
+                            <% end %>
+                            <div class="text-sm text-gray-500"><%= mentee.user.email %></div>
                           </td>
-                        <% end %>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <% if mentee.team.present? %>
+                              <%= team_color_badge(mentee.team) %>
+                            <% else %>
+                              <span class="text-sm text-gray-500">Unassigned</span>
+                            <% end %>
+                          </td>
+                          <% if @can_manage_mentees %>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <%= button_to "Remove", remove_mentee_user_path(@user, mentee_id: mentee.id), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure you want to remove this mentee from this mentor?" } %>
+                            </td>
+                          <% end %>
+                        </tr>
+                      <% end %>
+                    <% else %>
+                      <tr>
+                        <td colspan="<%= @can_manage_mentees ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No mentees assigned</td>
                       </tr>
                     <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="<%= @can_manage_mentees ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No mentees assigned</td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     <% end %>
-
     <!-- Family Members (only for mentees) -->
     <% if @user.mentee.present? %>
-    <div class="mt-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-        Guardians (<%= @user.mentee.guardians.count %>)
-      </h3>
-
-      <!-- Add Guardian Form -->
-      <% if @can_manage_family_members %>
-        <div class="mb-4 bg-white shadow sm:rounded-lg p-4" data-controller="modal">
-          <div class="flex justify-between items-center mb-3">
-            <h4 class="text-sm font-medium text-gray-700">Add Guardian</h4>
-            <button type="button"
+      <div class="mt-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+          Guardians (<%= @user.mentee.guardians.count %>)
+        </h3>
+        <!-- Add Guardian Form -->
+        <% if @can_manage_family_members %>
+          <div class="mb-4 bg-white shadow sm:rounded-lg p-4" data-controller="modal">
+            <div class="flex justify-between items-center mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Add Guardian</h4>
+              <button type="button"
                     data-action="click->modal#open"
-                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-              + Create New Guardian
-            </button>
-          </div>
-          <% if @available_guardians_for_family.any? %>
-            <%= form_with url: add_family_member_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
-              <div class="flex-grow">
-                <%= render "shared/combobox",
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                + Create New Guardian
+              </button>
+            </div>
+            <% if @available_guardians_for_family.any? %>
+              <%= form_with url: add_family_member_user_path(@user), method: :post, class: "flex items-end space-x-4" do |f| %>
+                <div class="flex-grow">
+                  <%= render "shared/combobox",
                     name: "guardian_user_id",
                     label: "Select Guardian",
                     options: @available_guardians_for_family.map { |g| ["#{g.user.first_name} #{g.user.last_name} (#{g.user.email})", g.user.id] },
                     placeholder: "Search guardians..." %>
-              </div>
-              <div class="w-48">
-                <%= label_tag :relationship_type, "Relationship", class: "block text-sm font-medium text-gray-700" %>
-                <%= select_tag :relationship_type, options_for_select(@allowed_relationship_types), class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-              </div>
-              <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+                </div>
+                <div class="w-48">
+                  <%= label_tag :relationship_type, "Relationship", class: "block text-sm font-medium text-gray-700" %>
+                  <%= select_tag :relationship_type, options_for_select(@allowed_relationship_types), class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                </div>
+                <%= f.submit "Add", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 cursor-pointer" %>
+              <% end %>
+            <% else %>
+              <p class="text-sm text-gray-500">No existing guardians available. Create a new guardian using the button above.</p>
             <% end %>
-          <% else %>
-            <p class="text-sm text-gray-500">No existing guardians available. Create a new guardian using the button above.</p>
+            <!-- New Guardian Modal -->
+            <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+              <div data-modal-target="backdrop"
+                 data-action="click->modal#closeOnBackdrop"
+                class="fixed inset-0 bg-black/50 transition-opacity"></div>
+              <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                  <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                      <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Guardian</h3>
+                      <p class="text-sm text-gray-500 mb-4">The guardian will receive an email to confirm their account and set a password.</p>
+                      <%= form_with url: create_guardian_user_path(@user), method: :post, class: "space-y-4", data: { turbo: false } do |f| %>
+                        <div>
+                          <%= f.label :email, class: "block text-sm font-medium text-gray-700" %>
+                          <%= f.email_field :email, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder: "guardian@example.com" %>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                          <div>
+                            <%= f.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
+                            <%= f.text_field :first_name, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                          </div>
+                          <div>
+                            <%= f.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
+                            <%= f.text_field :last_name, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                          </div>
+                        </div>
+                        <div>
+                          <%= f.label :relationship_type, "Relationship to Child", class: "block text-sm font-medium text-gray-700" %>
+                          <%= f.select :relationship_type, @allowed_relationship_types, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                        </div>
+                        <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                          <%= f.submit "Create Guardian", class: "inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:col-start-2 cursor-pointer" %>
+                          <button type="button"
+                                data-action="click->modal#close"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                            Cancel
+                          </button>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Guardian
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Relationship
+                      </th>
+                      <% if @can_manage_family_members %>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      <% end %>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <% if @user.mentee.family_members.any? %>
+                      <% @user.mentee.family_members.includes(guardian: :user).each do |family_member| %>
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <%= link_to family_member.guardian.user.email, user_path(family_member.guardian.user), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" %>
+                            <div class="text-sm text-gray-500">
+                              <%= family_member.guardian.user.first_name %> <%= family_member.guardian.user.last_name %>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              <%= family_member.relationship_type.titleize %>
+                            </span>
+                          </td>
+                          <% if @can_manage_family_members %>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <%= button_to "Remove", remove_family_member_user_path(@user, family_member_id: family_member.id), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure you want to remove this guardian?" } %>
+                            </td>
+                          <% end %>
+                        </tr>
+                      <% end %>
+                    <% else %>
+                      <tr>
+                        <td colspan="<%= @can_manage_family_members ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No guardians</td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <!-- Community Service (only for mentees) -->
+    <% if @user.mentee.present? %>
+      <div class="mt-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Community Service
+            <% if @current_season %>
+              <span class="ml-2 text-sm font-normal text-gray-500">(<%= @current_season.name %> Season)</span>
+            <% end %>
+          </h3>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-pink-600"><%= @total_community_service_hours || 0 %></div>
+            <div class="text-xs text-gray-500">Total Hours</div>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Activity
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Hours
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <% if @can_manage_community_service %>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      <% end %>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <% if @community_service_records&.any? %>
+                      <% @community_service_records.each do |record| %>
+                        <tr data-controller="modal">
+                          <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900"><%= record.event %></div>
+                            <% if record.description.present? %>
+                              <div class="text-sm text-gray-500 truncate max-w-xs"><%= record.description %></div>
+                            <% end %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= record.event_date.strftime("%b %d, %Y") %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <%= record.hours %>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                            <% if record.approved? %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Approved
+                              </span>
+                            <% else %>
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Denied
+                              </span>
+                            <% end %>
+                          </td>
+                          <% if @can_manage_community_service %>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <% if record.approved? %>
+                                <button type="button"
+                                      data-action="click->modal#open"
+                                  class="text-red-600 hover:text-red-900">
+                                  Deny
+                                </button>
+                                <!-- Deny Modal -->
+                                <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                                  <div data-modal-target="backdrop"
+                                     data-action="click->modal#closeOnBackdrop"
+                                    class="fixed inset-0 bg-black/50 transition-opacity"></div>
+                                  <div class="fixed inset-0 z-10 overflow-y-auto">
+                                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                      <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                          <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Deny Community Service Record</h3>
+                                          <p class="text-sm text-gray-500 mb-4">
+                                            You are denying <strong><%= record.event %></strong> (<%= number_with_precision(record.hours, precision: 1) %> hours) for <%= @user.first_name %> <%= @user.last_name %>.
+                                          </p>
+                                          <%= form_with url: community_service_record_path(record), method: :patch, class: "space-y-4" do |f| %>
+                                            <%= hidden_field_tag :redirect_to, user_path(@user) %>
+                                            <input type="hidden" name="community_service_record[approved]" value="false">
+                                            <div>
+                                              <%= label_tag :denial_reason, "Reason for denial", class: "block text-sm font-medium text-gray-700" %>
+                                              <%= text_area_tag :denial_reason, nil, rows: 3, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm", placeholder: "Please explain why this record is being denied..." %>
+                                              <p class="mt-1 text-xs text-gray-500">This message will be sent to <%= @user.first_name %>.</p>
+                                            </div>
+                                            <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                              <%= f.submit "Deny Record", class: "inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer" %>
+                                              <button type="button"
+                                                    data-action="click->modal#close"
+                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          <% end %>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              <% else %>
+                                <%= button_to "Approve", community_service_record_path(record), method: :patch, params: { community_service_record: { approved: true }, redirect_to: user_path(@user) }, class: "text-green-600 hover:text-green-900" %>
+                              <% end %>
+                            </td>
+                          <% end %>
+                        </tr>
+                      <% end %>
+                    <% else %>
+                      <tr>
+                        <td colspan="<%= @can_manage_community_service ? 5 : 4 %>" class="px-6 py-4 text-center text-sm text-gray-500">
+                          <% if @current_season %>
+                            No community service records for this season
+                          <% else %>
+                            No current season configured
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <!-- Grade Cards (only for mentees) -->
+    <% if @user.mentee.present? %>
+      <div class="mt-6" data-controller="modal">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Grade Cards
+            <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @grade_cards&.count || 0 %></span>
+            <% if @current_season %>
+              <span class="ml-2 text-sm font-normal text-gray-500">(<%= @current_season.name %> Season)</span>
+            <% end %>
+          </h3>
+          <% if @can_upload_grade_cards %>
+            <button type="button"
+                  data-action="click->modal#open"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+              + Add Grade Card
+            </button>
           <% end %>
-
-          <!-- New Guardian Modal -->
+        </div>
+        <!-- Add Grade Card Modal -->
+        <% if @can_upload_grade_cards %>
           <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
             <div data-modal-target="backdrop"
-                 data-action="click->modal#closeOnBackdrop"
-                 class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
+               data-action="click->modal#closeOnBackdrop"
+              class="fixed inset-0 bg-black/50 transition-opacity"></div>
             <div class="fixed inset-0 z-10 overflow-y-auto">
               <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                  <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Guardian</h3>
-                    <p class="text-sm text-gray-500 mb-4">The guardian will receive an email to confirm their account and set a password.</p>
-
-                    <%= form_with url: create_guardian_user_path(@user), method: :post, class: "space-y-4", data: { turbo: false } do |f| %>
+                  <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4" data-controller="upload-form">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add Grade Card</h3>
+                    <p class="text-sm text-gray-500 mb-4">Upload an image of <%= @user.first_name %>'s grade card.</p>
+                    <%= form_with url: add_grade_card_user_path(@user), method: :post, multipart: true, class: "space-y-4", data: { upload_form_target: "form" } do |f| %>
                       <div>
-                        <%= f.label :email, class: "block text-sm font-medium text-gray-700" %>
-                        <%= f.email_field :email, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm", placeholder: "guardian@example.com" %>
+                        <%= label_tag :file, "Grade Card Image", class: "block text-sm font-medium text-gray-700" %>
+                        <%= file_field_tag :file, accept: "image/*", required: true, class: "mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %>
+                        <p class="mt-1 text-xs text-gray-500">Accepted formats: JPG, PNG, GIF</p>
                       </div>
-
-                      <div class="grid grid-cols-2 gap-4">
-                        <div>
-                          <%= f.label :first_name, "First Name", class: "block text-sm font-medium text-gray-700" %>
-                          <%= f.text_field :first_name, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-                        </div>
-                        <div>
-                          <%= f.label :last_name, "Last Name", class: "block text-sm font-medium text-gray-700" %>
-                          <%= f.text_field :last_name, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-                        </div>
-                      </div>
-
                       <div>
-                        <%= f.label :relationship_type, "Relationship to Child", class: "block text-sm font-medium text-gray-700" %>
-                        <%= f.select :relationship_type, @allowed_relationship_types, {}, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                        <%= label_tag :description, "Description (optional)", class: "block text-sm font-medium text-gray-700" %>
+                        <%= text_field_tag :description, nil, placeholder: "e.g., Fall 2025 semester grades", class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
                       </div>
-
+                      <!-- Upload Progress -->
+                      <div data-upload-form-target="progress" class="hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                          <div data-upload-form-target="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p data-upload-form-target="progressText" class="mt-2 text-sm text-gray-600 text-center">Uploading...</p>
+                      </div>
                       <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                        <%= f.submit "Create Guardian", class: "inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:col-start-2 cursor-pointer" %>
+                        <%= f.submit "Upload Grade Card", data: { upload_form_target: "submit" }, class: "inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:col-start-2 cursor-pointer" %>
                         <button type="button"
-                                data-action="click->modal#close"
-                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
+                              data-action="click->modal#close"
+                          class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
                           Cancel
                         </button>
                       </div>
@@ -641,321 +949,46 @@
               </div>
             </div>
           </div>
-        </div>
-      <% end %>
-
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Guardian
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Relationship
-                    </th>
-                    <% if @can_manage_family_members %>
-                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    <% end %>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @user.mentee.family_members.any? %>
-                    <% @user.mentee.family_members.includes(guardian: :user).each do |family_member| %>
-                      <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <%= link_to family_member.guardian.user.email, user_path(family_member.guardian.user), class: "text-sm font-medium text-indigo-600 hover:text-indigo-900" %>
-                          <div class="text-sm text-gray-500">
-                            <%= family_member.guardian.user.first_name %> <%= family_member.guardian.user.last_name %>
-                          </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            <%= family_member.relationship_type.titleize %>
-                          </span>
-                        </td>
-                        <% if @can_manage_family_members %>
-                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <%= button_to "Remove", remove_family_member_user_path(@user, family_member_id: family_member.id), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure you want to remove this guardian?" } %>
-                          </td>
-                        <% end %>
-                      </tr>
-                    <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="<%= @can_manage_family_members ? 3 : 2 %>" class="px-6 py-4 text-center text-sm text-gray-500">No guardians</td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <% end %>
-
-    <!-- Community Service (only for mentees) -->
-    <% if @user.mentee.present? %>
-    <div class="mt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Community Service
-          <% if @current_season %>
-            <span class="ml-2 text-sm font-normal text-gray-500">(<%= @current_season.name %> Season)</span>
-          <% end %>
-        </h3>
-        <div class="text-right">
-          <div class="text-2xl font-bold text-pink-600"><%= @total_community_service_hours || 0 %></div>
-          <div class="text-xs text-gray-500">Total Hours</div>
-        </div>
-      </div>
-
-
-      <div class="flex flex-col">
-        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Activity
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hours
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <% if @can_manage_community_service %>
-                      <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    <% end %>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <% if @community_service_records&.any? %>
-                    <% @community_service_records.each do |record| %>
-                      <tr data-controller="modal">
-                        <td class="px-6 py-4">
-                          <div class="text-sm font-medium text-gray-900"><%= record.event %></div>
-                          <% if record.description.present? %>
-                            <div class="text-sm text-gray-500 truncate max-w-xs"><%= record.description %></div>
-                          <% end %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <%= record.event_date.strftime("%b %d, %Y") %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <%= record.hours %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <% if record.approved? %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Approved
-                            </span>
-                          <% else %>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Denied
-                            </span>
-                          <% end %>
-                        </td>
-                        <% if @can_manage_community_service %>
-                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <% if record.approved? %>
-                              <button type="button"
-                                      data-action="click->modal#open"
-                                      class="text-red-600 hover:text-red-900">
-                                Deny
-                              </button>
-
-                              <!-- Deny Modal -->
-                              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
-                                <div data-modal-target="backdrop"
-                                     data-action="click->modal#closeOnBackdrop"
-                                     class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
-                                <div class="fixed inset-0 z-10 overflow-y-auto">
-                                  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                                    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                                        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Deny Community Service Record</h3>
-                                        <p class="text-sm text-gray-500 mb-4">
-                                          You are denying <strong><%= record.event %></strong> (<%= number_with_precision(record.hours, precision: 1) %> hours) for <%= @user.first_name %> <%= @user.last_name %>.
-                                        </p>
-
-                                        <%= form_with url: community_service_record_path(record), method: :patch, class: "space-y-4" do |f| %>
-                                          <%= hidden_field_tag :redirect_to, user_path(@user) %>
-                                          <input type="hidden" name="community_service_record[approved]" value="false">
-
-                                          <div>
-                                            <%= label_tag :denial_reason, "Reason for denial", class: "block text-sm font-medium text-gray-700" %>
-                                            <%= text_area_tag :denial_reason, nil, rows: 3, required: true, class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm", placeholder: "Please explain why this record is being denied..." %>
-                                            <p class="mt-1 text-xs text-gray-500">This message will be sent to <%= @user.first_name %>.</p>
-                                          </div>
-
-                                          <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                                            <%= f.submit "Deny Record", class: "inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:col-start-2 cursor-pointer" %>
-                                            <button type="button"
-                                                    data-action="click->modal#close"
-                                                    class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        <% end %>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            <% else %>
-                              <%= button_to "Approve", community_service_record_path(record), method: :patch, params: { community_service_record: { approved: true }, redirect_to: user_path(@user) }, class: "text-green-600 hover:text-green-900" %>
-                            <% end %>
-                          </td>
-                        <% end %>
-                      </tr>
-                    <% end %>
-                  <% else %>
-                    <tr>
-                      <td colspan="<%= @can_manage_community_service ? 5 : 4 %>" class="px-6 py-4 text-center text-sm text-gray-500">
-                        <% if @current_season %>
-                          No community service records for this season
-                        <% else %>
-                          No current season configured
-                        <% end %>
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <% end %>
-
-    <!-- Grade Cards (only for mentees) -->
-    <% if @user.mentee.present? %>
-    <div class="mt-6" data-controller="modal">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Grade Cards
-          <span class="ml-2 px-2 py-0.5 text-sm font-normal text-gray-600 bg-gray-100 rounded-full"><%= @grade_cards&.count || 0 %></span>
-          <% if @current_season %>
-            <span class="ml-2 text-sm font-normal text-gray-500">(<%= @current_season.name %> Season)</span>
-          <% end %>
-        </h3>
-        <% if @can_upload_grade_cards %>
-          <button type="button"
-                  data-action="click->modal#open"
-                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-            + Add Grade Card
-          </button>
         <% end %>
-      </div>
-
-      <!-- Add Grade Card Modal -->
-      <% if @can_upload_grade_cards %>
-        <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
-          <div data-modal-target="backdrop"
-               data-action="click->modal#closeOnBackdrop"
-               class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
-          <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4" data-controller="upload-form">
-                  <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add Grade Card</h3>
-                  <p class="text-sm text-gray-500 mb-4">Upload an image of <%= @user.first_name %>'s grade card.</p>
-
-                  <%= form_with url: add_grade_card_user_path(@user), method: :post, multipart: true, class: "space-y-4", data: { upload_form_target: "form" } do |f| %>
-                    <div>
-                      <%= label_tag :file, "Grade Card Image", class: "block text-sm font-medium text-gray-700" %>
-                      <%= file_field_tag :file, accept: "image/*", required: true, class: "mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %>
-                      <p class="mt-1 text-xs text-gray-500">Accepted formats: JPG, PNG, GIF</p>
-                    </div>
-
-                    <div>
-                      <%= label_tag :description, "Description (optional)", class: "block text-sm font-medium text-gray-700" %>
-                      <%= text_field_tag :description, nil, placeholder: "e.g., Fall 2025 semester grades", class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
-                    </div>
-
-                    <!-- Upload Progress -->
-                    <div data-upload-form-target="progress" class="hidden">
-                      <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div data-upload-form-target="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-                      </div>
-                      <p data-upload-form-target="progressText" class="mt-2 text-sm text-gray-600 text-center">Uploading...</p>
-                    </div>
-
-                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                      <%= f.submit "Upload Grade Card", data: { upload_form_target: "submit" }, class: "inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:col-start-2 cursor-pointer" %>
-                      <button type="button"
-                              data-action="click->modal#close"
-                              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">
-                        Cancel
-                      </button>
-                    </div>
+        <!-- Grade Cards Grid -->
+        <% if @grade_cards&.any? %>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <% @grade_cards.each do |grade_card| %>
+              <div class="bg-white shadow sm:rounded-lg overflow-hidden" data-controller="modal">
+                <button type="button" data-action="click->modal#open" class="w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <img src="<%= grade_card.thumbnail_url %>" alt="Grade card" class="w-full h-40 object-cover">
+                </button>
+                <div class="p-3">
+                  <% if grade_card.description.present? %>
+                    <p class="text-sm text-gray-900 truncate"><%= grade_card.description %></p>
                   <% end %>
+                  <p class="text-xs text-gray-500 mt-1"><%= grade_card.created_at.strftime("%b %d, %Y") %></p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      <% end %>
-
-      <!-- Grade Cards Grid -->
-      <% if @grade_cards&.any? %>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <% @grade_cards.each do |grade_card| %>
-            <div class="bg-white shadow sm:rounded-lg overflow-hidden" data-controller="modal">
-              <button type="button" data-action="click->modal#open" class="w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <img src="<%= grade_card.thumbnail_url %>" alt="Grade card" class="w-full h-40 object-cover">
-              </button>
-              <div class="p-3">
-                <% if grade_card.description.present? %>
-                  <p class="text-sm text-gray-900 truncate"><%= grade_card.description %></p>
-                <% end %>
-                <p class="text-xs text-gray-500 mt-1"><%= grade_card.created_at.strftime("%b %d, %Y") %></p>
-              </div>
-
-              <!-- Full Size Modal -->
-              <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
-                <div data-modal-target="backdrop"
+                <!-- Full Size Modal -->
+                <div data-modal-target="dialog" class="hidden fixed inset-0 z-50">
+                  <div data-modal-target="backdrop"
                      data-action="click->modal#closeOnBackdrop"
-                     class="fixed inset-0 bg-black/75 transition-opacity"></div>
-
-                <div class="fixed inset-0 z-10 overflow-y-auto">
-                  <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:max-w-3xl w-full">
-                      <div class="bg-white">
-                        <img src="<%= grade_card.url %>" alt="Grade card" class="w-full">
-                        <div class="p-4 border-t">
-                          <% if grade_card.description.present? %>
-                            <p class="text-sm text-gray-900"><%= grade_card.description %></p>
-                          <% end %>
-                          <p class="text-xs text-gray-500 mt-1">Uploaded <%= grade_card.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
-
-                          <div class="mt-4 flex justify-end space-x-3">
-                            <% if @can_delete_grade_cards %>
-                              <%= button_to "Delete", remove_grade_card_user_path(@user, grade_card_id: grade_card.id), method: :delete, class: "inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500", data: { turbo_confirm: "Are you sure you want to delete this grade card?" } %>
+                    class="fixed inset-0 bg-black/75 transition-opacity"></div>
+                  <div class="fixed inset-0 z-10 overflow-y-auto">
+                    <div class="flex min-h-full items-center justify-center p-4">
+                      <div class="relative transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:max-w-3xl w-full">
+                        <div class="bg-white">
+                          <img src="<%= grade_card.url %>" alt="Grade card" class="w-full">
+                          <div class="p-4 border-t">
+                            <% if grade_card.description.present? %>
+                              <p class="text-sm text-gray-900"><%= grade_card.description %></p>
                             <% end %>
-                            <button type="button"
+                            <p class="text-xs text-gray-500 mt-1">Uploaded <%= grade_card.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+                            <div class="mt-4 flex justify-end space-x-3">
+                              <% if @can_delete_grade_cards %>
+                                <%= button_to "Delete", remove_grade_card_user_path(@user, grade_card_id: grade_card.id), method: :delete, class: "inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500", data: { turbo_confirm: "Are you sure you want to delete this grade card?" } %>
+                              <% end %>
+                              <button type="button"
                                     data-action="click->modal#close"
-                                    class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                              Close
-                            </button>
+                                class="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                Close
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -963,23 +996,21 @@
                   </div>
                 </div>
               </div>
-            </div>
-          <% end %>
-        </div>
-      <% else %>
-        <div class="bg-white shadow sm:rounded-lg p-6 text-center">
-          <p class="text-sm text-gray-500">
-            <% if @current_season %>
-              No grade cards uploaded for this season
-            <% else %>
-              No grade cards uploaded
             <% end %>
-          </p>
-        </div>
-      <% end %>
-    </div>
+          </div>
+        <% else %>
+          <div class="bg-white shadow sm:rounded-lg p-6 text-center">
+            <p class="text-sm text-gray-500">
+              <% if @current_season %>
+                No grade cards uploaded for this season
+              <% else %>
+                No grade cards uploaded
+              <% end %>
+            </p>
+          </div>
+        <% end %>
+      </div>
     <% end %>
-
     <!-- Event Attendance -->
     <div class="mt-6">
       <div class="flex justify-between items-center mb-4">
@@ -998,7 +1029,6 @@
           </div>
         <% end %>
       </div>
-
       <!-- Add Event Log Form -->
       <% if @can_manage_event_logs && @available_events&.any? %>
         <div class="mb-4 bg-white shadow sm:rounded-lg p-4">
@@ -1022,7 +1052,6 @@
           <p class="text-sm text-gray-500">No more events available to add for this season.</p>
         </div>
       <% end %>
-
       <div class="flex flex-col">
         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">

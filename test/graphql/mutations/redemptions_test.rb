@@ -29,7 +29,7 @@ class RedemptionsMutationsTest < ActiveSupport::TestCase
 
     event_type = EventType.create!(name: "GQL Event Type", category: "org", point_value: 50)
     event = Event.create!(name: "GQL Event", event_date: Time.current, event_type: event_type, created_by: @admin)
-    EventLog.create!(user: @mentee_user, event: event, points_awarded: 50)
+    EventLog.create!(user: @mentee_user, event: event, points_awarded: 50, log_type: "arrived")
   end
 
   CREATE_REDEMPTION = <<~GQL

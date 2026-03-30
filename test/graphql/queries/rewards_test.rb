@@ -45,7 +45,7 @@ class RewardsQueryTest < ActiveSupport::TestCase
 
     event_type = EventType.create!(name: "Rewards Event Type", category: "org", point_value: 50)
     event = Event.create!(name: "Rewards Event", event_date: Time.current, event_type: event_type, created_by: @admin)
-    EventLog.create!(user: @mentee_user, event: event, points_awarded: 50)
+    EventLog.create!(user: @mentee_user, event: event, points_awarded: 50, log_type: "arrived")
 
     # Create some redemptions
     @pending = Redemption.create!(mentee: @mentee, incentive: @individual_incentive, points_spent: 25, status: "pending")
@@ -100,7 +100,7 @@ class RewardsQueryTest < ActiveSupport::TestCase
     result = execute_graphql(REWARDS_QUERY, context: { current_user: @mentee_user })
 
     all_names = result.dig("data", "rewards", "individualIncentives").map { |i| i["name"] } +
-                result.dig("data", "rewards", "teamIncentives").map { |i| i["name"] }
+      result.dig("data", "rewards", "teamIncentives").map { |i| i["name"] }
     assert_not_includes all_names, "Inactive Reward"
   end
 
