@@ -73,9 +73,16 @@ class RedemptionsMutationsTest < ActiveSupport::TestCase
   end
 
   test "cannot create redemption with insufficient points" do
-    # Create a redemption that uses most points
-    Redemption.create!(mentee: @mentee, incentive: @incentive, points_spent: 40, status: "pending")
+    # Create a redemption that uses all points
+    expensive_incentive = Incentive.create!(
+      name: "Expensive Item",
+      point_cost: 50,
+      incentive_type: "individual",
+      created_by: @admin
+    )
+    Redemption.create!(mentee: @mentee, incentive: expensive_incentive, points_spent: 50, status: "pending")
 
+    # Try to create redemption for original incentive (25 points) - should fail with insufficient points
     result = execute_graphql(CREATE_REDEMPTION,
       variables: { incentiveId: @incentive.id.to_s },
       context: { current_user: @mentee_user })
@@ -90,7 +97,9 @@ class RedemptionsMutationsTest < ActiveSupport::TestCase
       variables: { incentiveId: @incentive.id.to_s },
       context: { current_user: @mentor_user })
 
-    assert result["errors"].present?
+    data = result.dig("data", "createRedemption")
+    assert_nil data["redemption"]
+    assert_includes data["errors"].first, "Only mentees can create redemptions"
   end
 
   test "unauthenticated user cannot create redemption" do

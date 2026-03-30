@@ -219,4 +219,75 @@ class PointLogTest < ActiveSupport::TestCase
     logs = @mentee.point_logs.to_a
     assert_equal [30, 20, 10], logs.map(&:points)
   end
+
+  # Pointable scope tests
+  test "pointable scope includes attendance logs" do
+    attendance_log = PointLog.create!(
+      mentee: @mentee,
+      points: 10,
+      reason: "Event attendance",
+      awarded_by: @staff_user,
+      log_type: "attendance"
+    )
+
+    assert_includes PointLog.pointable, attendance_log
+  end
+
+  test "pointable scope includes adjustment logs" do
+    adjustment_log = PointLog.create!(
+      mentee: @mentee,
+      points: 25,
+      reason: "Manual adjustment",
+      awarded_by: @staff_user,
+      log_type: "adjustment"
+    )
+
+    assert_includes PointLog.pointable, adjustment_log
+  end
+
+  test "pointable scope includes redemption logs for pending redemptions" do
+    incentive = Incentive.create!(name: "Test", point_cost: 50, incentive_type: "individual", created_by: @staff_user)
+    redemption = Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 50, status: "pending")
+    redemption_log = redemption.point_logs.first
+
+    assert_includes PointLog.pointable, redemption_log
+  end
+
+  test "pointable scope includes redemption logs for approved redemptions" do
+    incentive = Incentive.create!(name: "Test", point_cost: 50, incentive_type: "individual", created_by: @staff_user)
+    redemption = Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 50, status: "approved")
+    redemption_log = redemption.point_logs.first
+
+    assert_includes PointLog.pointable, redemption_log
+  end
+
+  test "pointable scope includes redemption logs for deleted_no_refund redemptions" do
+    incentive = Incentive.create!(name: "Test", point_cost: 50, incentive_type: "individual", created_by: @staff_user)
+    redemption = Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 50, status: "deleted_no_refund")
+    redemption_log = redemption.point_logs.first
+
+    assert_includes PointLog.pointable, redemption_log
+  end
+
+  test "pointable scope excludes redemption logs for denied redemptions" do
+    incentive = Incentive.create!(name: "Test", point_cost: 50, incentive_type: "individual", created_by: @staff_user)
+    redemption = Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 50, status: "pending")
+    redemption_log = redemption.point_logs.first
+
+    # Deny the redemption
+    redemption.update!(status: "denied")
+
+    assert_not_includes PointLog.pointable, redemption_log
+  end
+
+  test "pointable scope excludes redemption logs for deleted redemptions" do
+    incentive = Incentive.create!(name: "Test", point_cost: 50, incentive_type: "individual", created_by: @staff_user)
+    redemption = Redemption.create!(mentee: @mentee, incentive: incentive, points_spent: 50, status: "pending")
+    redemption_log = redemption.point_logs.first
+
+    # Delete the redemption with refund
+    redemption.update!(status: "deleted")
+
+    assert_not_includes PointLog.pointable, redemption_log
+  end
 end

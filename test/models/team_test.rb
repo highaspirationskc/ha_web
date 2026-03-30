@@ -248,4 +248,222 @@ class TeamTest < ActiveSupport::TestCase
     week_range = 1.week.ago.to_date..Date.current
     assert_equal 2.0, @team.total_community_service_hours(week_range)
   end
+
+  # Team Points Tests
+  test "total_points returns 0 when team has no mentees" do
+    @team.save!
+    assert_equal 0, @team.total_points
+  end
+
+  test "total_points returns 0 when no current season exists" do
+    @team.save!
+    OlympicSeason.delete_all
+
+    assert_equal 0, @team.total_points
+  end
+
+  test "total_points sums individual mentee totals for all team members" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user1 = User.create!(email: "mentee1@example.com", password: "Password123!")
+    user2 = User.create!(email: "mentee2@example.com", password: "Password123!")
+    mentee1 = Mentee.create!(user: user1, team: @team)
+    mentee2 = Mentee.create!(user: user2, team: @team)
+
+    # Give each mentee 50 points
+    PointLog.create!(mentee: mentee1, points: 50, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+    PointLog.create!(mentee: mentee2, points: 50, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    assert_equal 100, @team.total_points
+  end
+
+  test "total_points deducts approved redemptions from all mentees" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    # Give mentee 100 points
+    PointLog.create!(mentee: mentee, points: 100, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    # Create approved redemption for 30 points
+    incentive = Incentive.create!(name: "Test", point_cost: 30, incentive_type: "individual", created_by: admin)
+    Redemption.create!(mentee: mentee, incentive: incentive, points_spent: 30, status: "approved")
+
+    assert_equal 70, @team.total_points
+  end
+
+  test "total_points does not deduct denied redemptions (pointable scope)" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    # Give mentee 100 points
+    PointLog.create!(mentee: mentee, points: 100, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    # Create denied redemption - points should be restored
+    incentive = Incentive.create!(name: "Test", point_cost: 30, incentive_type: "individual", created_by: admin)
+    Redemption.create!(mentee: mentee, incentive: incentive, points_spent: 30, status: "denied")
+
+    assert_equal 100, @team.total_points
+  end
+
+  test "total_points does not deduct deleted redemptions (pointable scope)" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    # Give mentee 100 points
+    PointLog.create!(mentee: mentee, points: 100, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    # Create deleted redemption (with refund) - points should be restored
+    incentive = Incentive.create!(name: "Test", point_cost: 30, incentive_type: "individual", created_by: admin)
+    Redemption.create!(mentee: mentee, incentive: incentive, points_spent: 30, status: "deleted")
+
+    assert_equal 100, @team.total_points
+  end
+
+  test "total_points still deducts deleted_no_refund redemptions" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    # Give mentee 100 points
+    PointLog.create!(mentee: mentee, points: 100, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    # Create deleted_no_refund redemption - points should still be deducted
+    incentive = Incentive.create!(name: "Test", point_cost: 30, incentive_type: "individual", created_by: admin)
+    Redemption.create!(mentee: mentee, incentive: incentive, points_spent: 30, status: "deleted_no_refund")
+
+    assert_equal 70, @team.total_points
+  end
+
+  test "total_points handles mentees with mixed redemption statuses" do
+    @team.save!
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    # Give mentee 100 points
+    PointLog.create!(mentee: mentee, points: 100, reason: "Attendance", awarded_by: admin, log_type: "attendance")
+
+    # Multiple redemptions with different statuses
+    incentive1 = Incentive.create!(name: "Approved Item", point_cost: 10, incentive_type: "individual", created_by: admin)
+    incentive2 = Incentive.create!(name: "Denied Item", point_cost: 15, incentive_type: "individual", created_by: admin)
+    incentive3 = Incentive.create!(name: "Deleted Item", point_cost: 20, incentive_type: "individual", created_by: admin)
+    incentive4 = Incentive.create!(name: "No Refund Item", point_cost: 5, incentive_type: "individual", created_by: admin)
+
+    Redemption.create!(mentee: mentee, incentive: incentive1, points_spent: 10, status: "approved")
+    Redemption.create!(mentee: mentee, incentive: incentive2, points_spent: 15, status: "denied")
+    Redemption.create!(mentee: mentee, incentive: incentive3, points_spent: 20, status: "deleted")
+    Redemption.create!(mentee: mentee, incentive: incentive4, points_spent: 5, status: "deleted_no_refund")
+
+    # Only approved (10) and deleted_no_refund (5) should deduct = 15 total deducted
+    # 100 - 15 = 85
+    assert_equal 85, @team.total_points
+  end
+
+  test "total_points accepts custom date range" do
+    @team.save!
+
+    user = User.create!(email: "mentee@example.com", password: "Password123!")
+    mentee = Mentee.create!(user: user, team: @team)
+
+    admin = create_user(email: "admin@test.com")
+
+    # Point logs in different time periods
+    PointLog.create!(mentee: mentee, points: 50, reason: "Recent", awarded_by: admin, log_type: "attendance", created_at: 2.days.ago)
+    PointLog.create!(mentee: mentee, points: 30, reason: "Old", awarded_by: admin, log_type: "attendance", created_at: 10.days.ago)
+
+    week_range = 1.week.ago.to_date.beginning_of_day..Date.current.end_of_day
+    assert_equal 50, @team.total_points(week_range)
+  end
+
+  test "total_points excludes points from mentees on other teams" do
+    @team.save!
+    other_team = Team.create!(name: "Other Team", color: "#E11D48")
+
+    today = Date.current
+    OlympicSeason.create!(
+      name: "Test Season",
+      start_month: (today - 1.month).month,
+      start_day: (today - 1.month).day,
+      end_month: (today + 1.month).month,
+      end_day: (today + 1.month).day
+    )
+
+    admin = create_user(email: "admin@test.com")
+    user1 = User.create!(email: "mentee1@example.com", password: "Password123!")
+    user2 = User.create!(email: "mentee2@example.com", password: "Password123!")
+    mentee1 = Mentee.create!(user: user1, team: @team)
+    mentee2 = Mentee.create!(user: user2, team: other_team)
+
+    PointLog.create!(mentee: mentee1, points: 50, reason: "My Team", awarded_by: admin, log_type: "attendance")
+    PointLog.create!(mentee: mentee2, points: 100, reason: "Other Team", awarded_by: admin, log_type: "attendance")
+
+    assert_equal 50, @team.total_points
+  end
 end

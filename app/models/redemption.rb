@@ -20,9 +20,6 @@ class Redemption < ApplicationRecord
   # Create point log when redemption is created (pending or approved)
   after_create :create_deduction_point_log, if: :should_deduct_points?
 
-  # Create refund point log when redemption is deleted
-  after_update :create_refund_point_log, if: :saved_change_to_deleted?
-
   def pending? = status == "pending"
   def approved? = status == "approved"
   def denied? = status == "denied"
@@ -41,21 +38,6 @@ class Redemption < ApplicationRecord
       reason: "Redeemed: #{incentive.name}",
       awarded_by: approved_by, # May be nil for pending redemptions
       log_type: "redemption",
-      source: self
-    )
-  end
-
-  def saved_change_to_deleted?
-    saved_change_to_status? && status == "deleted"
-  end
-
-  def create_refund_point_log
-    PointLog.create!(
-      mentee: mentee,
-      points: points_spent,
-      reason: "Refund for deleted redemption: #{incentive.name}",
-      awarded_by: approved_by, # May be nil
-      log_type: "adjustment",
       source: self
     )
   end

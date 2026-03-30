@@ -12,6 +12,21 @@ class PointLog < ApplicationRecord
 
   default_scope { order(created_at: :desc) }
 
+  # Scope to exclude point logs from denied or deleted (with refund) redemptions
+  # This ensures that when a redemption is denied or deleted with refund, the points
+  # are effectively "restored" to the mentee's balance for calculation purposes
+  scope :pointable, -> {
+    # Subquery to find redemption IDs that should be excluded (denied or deleted)
+    excluded_redemption_ids = Redemption.where(status: ["denied", "deleted"]).select(:id)
+
+    # Exclude redemption logs where source is a denied/deleted redemption
+    where.not(
+      log_type: "redemption",
+      source_type: "Redemption",
+      source_id: excluded_redemption_ids
+    )
+  }
+
   # Badge color for UI based on log type
   def badge_color
     case log_type

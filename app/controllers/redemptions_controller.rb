@@ -6,39 +6,23 @@ class RedemptionsController < ApplicationController
   before_action :set_incentive, only: [:create]
 
   def create
-    # Check if incentive is active
-    unless @incentive.active?
-      redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "This incentive is no longer available."
-      return
-    end
+    result = CreateRedemptionService.new(current_user).create(incentive_id: @incentive.id)
 
-    # Check if mentee can afford it
-    unless @mentee.can_afford?(@incentive.point_cost)
-      redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "Insufficient points. You need #{@incentive.point_cost} points but only have #{@mentee.total_points}."
-      return
-    end
-
-    # Check for existing pending redemption for same incentive
-    existing_pending = @mentee.redemptions.pending.find_by(incentive: @incentive)
-    if existing_pending
-      redirect_to rewards_path(tab: "my-redemptions"), notice: "You already have a pending redemption for this incentive."
-      return
-    end
-
-    # Create the redemption
-    @redemption = @mentee.redemptions.new(
-      incentive: @incentive,
-      points_spent: @incentive.point_cost,
-      status: "pending"
-    )
-
-    if @redemption.save
-      # Notify staff
-      RedemptionCreatedMessage.new(@redemption).deliver
-
+    if result.success?
       redirect_to rewards_path(tab: "my-redemptions"), notice: "Redemption request submitted! Awaiting approval."
     else
-      redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "Could not create redemption: #{@redemption.errors.full_messages.join(", ")}"
+      # Map service errors to appropriate flash messages
+      error_message = result.errors.first
+
+      if error_message == "Incentive not found or inactive"
+        redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "This incentive is no longer available."
+      elsif error_message&.start_with?("Not enough points")
+        redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "Insufficient points. You need #{@incentive.point_cost} points but only have #{@mentee.total_points}."
+      elsif error_message == "You already have a pending redemption for this incentive"
+        redirect_to rewards_path(tab: "my-redemptions"), notice: "You already have a pending redemption for this incentive."
+      else
+        redirect_to rewards_path(tab: params[:tab] || "individual"), alert: "Could not create redemption: #{error_message}"
+      end
     end
   end
 

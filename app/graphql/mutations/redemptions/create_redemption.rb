@@ -11,30 +11,12 @@ module Mutations
       field :errors, [String], null: false
 
       def resolve(incentive_id:)
-        unless current_user.mentee
-          raise GraphQL::ExecutionError, "Only mentees can create redemptions"
-        end
+        result = CreateRedemptionService.new(context[:current_user]).create(incentive_id: incentive_id)
 
-        incentive = Incentive.active.find_by(id: incentive_id)
-        unless incentive
-          return { redemption: nil, errors: ["Incentive not found or inactive"] }
-        end
-
-        mentee = current_user.mentee
-        if mentee.total_points < incentive.point_cost
-          return { redemption: nil, errors: ["Not enough points (#{mentee.total_points} available, #{incentive.point_cost} required)"] }
-        end
-
-        redemption = mentee.redemptions.build(
-          incentive: incentive,
-          points_spent: incentive.point_cost,
-          status: "pending"
-        )
-
-        if redemption.save
-          { redemption: redemption, errors: [] }
+        if result.success?
+          { redemption: result.redemption, errors: [] }
         else
-          { redemption: nil, errors: redemption.errors.full_messages }
+          { redemption: nil, errors: result.errors }
         end
       end
     end
