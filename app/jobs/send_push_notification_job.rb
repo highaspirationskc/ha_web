@@ -25,7 +25,7 @@ class SendPushNotificationJob < ApplicationJob
   end
 
   def build_body(message)
-    preview = message.message.truncate(100)
+    preview = ActionController::Base.helpers.strip_tags(message.message).squish.truncate(100)
     "#{message.subject}: #{preview}"
   end
 

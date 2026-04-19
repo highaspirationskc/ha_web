@@ -86,6 +86,17 @@ class SendPushNotificationJobTest < ActiveSupport::TestCase
     end
   end
 
+  test "notification body strips HTML tags from message" do
+    @message.update!(message: 'SEAS is <a href="/seas/abc">ready to complete</a>.')
+
+    SendPushNotificationJob.perform_now(@message.id)
+
+    assert_requested(:post, %r{fcm\.googleapis\.com}) do |req|
+      body = JSON.parse(req.body).dig("message", "notification", "body")
+      body.include?("ready to complete") && !body.include?("<a") && !body.include?("href=")
+    end
+  end
+
   test "handles firebase errors gracefully" do
     stub_request(:post, %r{fcm\.googleapis\.com})
       .to_return(status: 500, body: { error: "Server error" }.to_json)
