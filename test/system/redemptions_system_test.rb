@@ -98,6 +98,65 @@ class RedemptionsSystemTest < ApplicationSystemTestCase
     assert_includes ["deleted", "deleted_no_refund"], approved_redemption.status
   end
 
+  test "redeem incentive with message sends message end-to-end" do
+    Redemption.create!(
+      mentee: @mentee,
+      incentive: @incentive,
+      points_spent: 25,
+      status: "pending"
+    )
+
+    login_as(@admin)
+    visit user_path(@mentee_user)
+
+    click_button "Redeem Incentive", match: :first
+    assert_text "Redeem Incentive", wait: 5
+
+    check "Send message with redemption"
+    find("textarea[name='message_text']", match: :first).set("Your gift card is ready!")
+
+    assert_difference "Message.count", 1 do
+      click_button "Redeem"
+      assert_no_text "Awaiting Approval", wait: 5
+    end
+
+    message = Message.last
+    assert_equal @admin, message.author
+    assert_includes message.recipients, @mentee_user
+    assert_includes message.message, "Your gift card is ready!"
+  end
+
+  test "delete redemption with message sends message end-to-end" do
+    Redemption.create!(
+      mentee: @mentee,
+      incentive: @incentive,
+      points_spent: 25,
+      status: "approved",
+      approved_by: @admin,
+      approved_at: Time.current
+    )
+
+    login_as(@admin)
+    visit user_path(@mentee_user)
+
+    find("button.text-gray-400", match: :first).click
+    assert_selector "h3", text: "Delete Redemption", wait: 5
+
+    fill_in "reason", with: "Issued by mistake"
+    check "Send message with deletion"
+    find("textarea[name='message_text']", match: :first).set("Sorry, we removed this by mistake.")
+
+    assert_difference "Message.count", 1 do
+      click_button "Delete"
+      sleep 0.5
+    end
+
+    message = Message.last
+    assert_equal @admin, message.author
+    assert_includes message.recipients, @mentee_user
+    assert_includes message.message, "Sorry, we removed this by mistake."
+  end
+
   test "mentor cannot see redeem buttons" do
     Redemption.create!(
       mentee: @mentee,

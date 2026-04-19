@@ -1,6 +1,8 @@
 require "test_helper"
 
 class UsersControllerRedemptionsTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   def setup
     @admin = create_user(email: "red_admin@example.com")
     @staff = create_staff_user(email: "red_staff@example.com")
@@ -141,12 +143,18 @@ class UsersControllerRedemptionsTest < ActionDispatch::IntegrationTest
   test "redeem_incentive sends message when requested" do
     login_as(@admin)
     assert_difference "Message.count", 1 do
-      post redeem_incentive_user_path(@mentee_user), params: {
-        redemption_id: @pending_redemption.id,
-        send_message: "1",
-        message_text: "Your gift card is ready!"
-      }
+      assert_enqueued_with(job: SendPushNotificationJob) do
+        post redeem_incentive_user_path(@mentee_user), params: {
+          redemption_id: @pending_redemption.id,
+          send_message: "1",
+          message_text: "Your gift card is ready!"
+        }
+      end
     end
+
+    message = Message.last
+    assert_equal @admin, message.author
+    assert_includes message.recipients, @mentee_user
   end
 
   test "redeem_incentive does not send message when not requested" do
@@ -176,11 +184,17 @@ class UsersControllerRedemptionsTest < ActionDispatch::IntegrationTest
   test "deny_redemption sends denial message" do
     login_as(@admin)
     assert_difference "Message.count", 1 do
-      post deny_redemption_user_path(@mentee_user), params: {
-        redemption_id: @pending_redemption.id,
-        notes: "Denied for testing"
-      }
+      assert_enqueued_with(job: SendPushNotificationJob) do
+        post deny_redemption_user_path(@mentee_user), params: {
+          redemption_id: @pending_redemption.id,
+          notes: "Denied for testing"
+        }
+      end
     end
+
+    message = Message.last
+    assert_equal @admin, message.author
+    assert_includes message.recipients, @mentee_user
   end
 
   test "deny_redemption fails for non-pending redemption" do
@@ -222,14 +236,20 @@ class UsersControllerRedemptionsTest < ActionDispatch::IntegrationTest
   test "delete_redemption sends message when requested" do
     login_as(@admin)
     assert_difference "Message.count", 1 do
-      delete delete_redemption_user_path(@mentee_user), params: {
-        redemption_id: @approved_redemption.id,
-        reason: "Error",
-        refund_points: "1",
-        send_message: "1",
-        message_text: "We removed this by mistake"
-      }
+      assert_enqueued_with(job: SendPushNotificationJob) do
+        delete delete_redemption_user_path(@mentee_user), params: {
+          redemption_id: @approved_redemption.id,
+          reason: "Error",
+          refund_points: "1",
+          send_message: "1",
+          message_text: "We removed this by mistake"
+        }
+      end
     end
+
+    message = Message.last
+    assert_equal @admin, message.author
+    assert_includes message.recipients, @mentee_user
   end
 
   test "delete_redemption does not send message when not requested" do

@@ -792,15 +792,21 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference "PointLog.count", 1 do
       assert_difference "Message.count", 1 do
-        post adjust_points_user_path(mentee_user), params: {
-          points: 10,
-          reason: "Good job!",
-          send_message: "1",
-          message_text: "Keep up the great work!"
-        }
+        assert_enqueued_with(job: SendPushNotificationJob) do
+          post adjust_points_user_path(mentee_user), params: {
+            points: 10,
+            reason: "Good job!",
+            send_message: "1",
+            message_text: "Keep up the great work!"
+          }
+        end
       end
     end
 
     assert_redirected_to user_path(mentee_user)
+
+    message = Message.last
+    assert_equal @user, message.author
+    assert_includes message.recipients, mentee_user
   end
 end
