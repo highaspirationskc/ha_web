@@ -346,7 +346,7 @@ GEM
     ruby2_keywords (0.0.5)
     rubyzip (3.4.0)
     securerandom (0.4.1)
-    selenium-webdriver (4.44.0)
+    selenium-webdriver (4.45.0)
       base64 (~> 0.2)
       logger (~> 1.4)
       rexml (~> 3.2, >= 3.2.5)
@@ -605,7 +605,7 @@ CHECKSUMS
   ruby2_keywords (0.0.5) sha256=ffd13740c573b7301cf7a2e61fc857b2a8e3d3aff32545d6f8300d8bae10e3ef
   rubyzip (3.4.0) sha256=6de39bc9eba302b635a476d16c9e16b0872ad24517c2f98f2b3a7ea23caff57b
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
-  selenium-webdriver (4.44.0) sha256=6f1df072529af369589c46f0e01132952aabb250cfd683c274d74dc1eb5d8477
+  selenium-webdriver (4.45.0) sha256=ecac65a4df86ac6f7d707e6dcbacaa9c08b6cf2b966babecfb9653c5aa13e2d1
   signet (0.22.0) sha256=b76d495ccb07ad35dbc89f3e920665a9d8ed717141955034005d7843dcfe4780
   simple_calendar (3.1.0) sha256=56764606c3804c70e6facb47b6571ec79d7ce941e77b6bd3678869c1350a720c
   solid_cable (4.0.0) sha256=8379680ef6bf36e195eb876a6306ea290f87d5fa10bc4a757bc2a918f83229b5
