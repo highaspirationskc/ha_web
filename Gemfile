@@ -64,7 +64,7 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "graphql", "~> 2.5"
+gem "graphql", "~> 2.6"
 gem "graphiql-rails", "~> 1.10"
 
 gem "bcrypt", "~> 3.1"
@@ -73,7 +73,7 @@ gem "kaminari", "~> 1.2"
 
 gem "simple_calendar", "~> 3.0"
 
-gem "googleauth", "~> 1.11"
+gem "googleauth", "~> 1.17"
 
 gem "webmock", "~> 3.26", group: :test
 
