@@ -43,10 +43,11 @@ jobs:
     # Enable checklist (do not skip):
     # 1. Replace 0.0.0.0 in config/deploy.dev.yml with the real QA VPS IP (required before enable).
     # 2. Confirm proxy.host DNS points at that host.
-    # 3. Prefer a separate RAILS_MASTER_KEY + credentials for QA — reusing production's
-    #    master key decrypts the same secrets (API keys, etc.) on the QA box.
-    # 4. Prefer a deploy SSH key limited to the QA host (not the prod key).
-    # 5. Then set DEV_DEPLOY_ENABLED=true.
+    # 3. Create QA-only Actions secrets (no production fallbacks):
+    #      DEV_RAILS_MASTER_KEY  — master key for QA credentials, not production's
+    #      HA_DEV_DEPLOY_KEY     — SSH key limited to the QA host
+    #      KAMAL_REGISTRY_PASSWORD may be shared if the same registry namespace is fine
+    # 4. Then set DEV_DEPLOY_ENABLED=true.
     if: ${{ vars.DEV_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
 
@@ -63,17 +64,18 @@ jobs:
     - name: Setup SSH 🔑
       uses: webfactory/ssh-agent@v0.10.0
       with:
-        # Prefer a QA-only key when available; falls back until provisioned.
-        ssh-private-key: ${{ secrets.HA_DEV_DEPLOY_KEY || secrets.HA_DEPLOY_KEY }}
+        # QA host only — never production HA_DEPLOY_KEY.
+        ssh-private-key: ${{ secrets.HA_DEV_DEPLOY_KEY }}
 
     - name: Create Kamal destination secrets file
       # kamal deploy -d dev loads .kamal/secrets-common and .kamal/secrets.dev
       # (not plain .kamal/secrets). See Kamal::Secrets#secrets_filenames.
+      # DEV_RAILS_MASTER_KEY only — never production RAILS_MASTER_KEY.
       run: |
         mkdir -p .kamal
         {
           echo "KAMAL_REGISTRY_PASSWORD=${{ secrets.KAMAL_REGISTRY_PASSWORD }}"
-          echo "RAILS_MASTER_KEY=${{ secrets.DEV_RAILS_MASTER_KEY || secrets.RAILS_MASTER_KEY }}"
+          echo "RAILS_MASTER_KEY=${{ secrets.DEV_RAILS_MASTER_KEY }}"
         } > .kamal/secrets.dev
 
     - name: Deploy with Kamal (dev destination) 🚀
