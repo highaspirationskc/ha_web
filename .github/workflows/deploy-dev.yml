@@ -1,23 +1,23 @@
-name: Deploy to Production
+name: Deploy to Dev
 
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
   workflow_dispatch:
 
-# Serialize production deploys so rapid merges don't race Kamal.
+# Serialize dev deploys so rapid merges don't race Kamal.
 concurrency:
-  group: deploy-production
+  group: deploy-dev
   cancel-in-progress: false
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
-      
+
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -26,7 +26,7 @@ jobs:
 
     - name: Install dependencies
       run: bundle install
-        
+
     - name: Run tests 🧪
       env:
         RAILS_ENV: test
@@ -37,18 +37,21 @@ jobs:
 
   deploy:
     needs: test
+    # Gate until the QA VPS and secrets are ready. Flip via repo variable:
+    # Settings → Secrets and variables → Actions → Variables → DEV_DEPLOY_ENABLED=true
+    if: ${{ vars.DEV_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
-      
+
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4.6
         bundler-cache: true
-        
+
     - name: Setup SSH 🔑
       uses: webfactory/ssh-agent@v0.10.0
       with:
@@ -62,5 +65,5 @@ jobs:
         RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
         EOF
 
-    - name: Deploy with Kamal 🚀
-      run: bundle exec kamal deploy
+    - name: Deploy with Kamal (dev destination) 🚀
+      run: bundle exec kamal deploy -d dev

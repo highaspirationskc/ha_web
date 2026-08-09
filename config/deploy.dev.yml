@@ -1,0 +1,29 @@
+# Destination overrides for the QA/dev environment.
+# Used with: kamal deploy -d dev
+#
+# Prep only — fill in servers and proxy host when the VPS is ready, then enable
+# the deploy job via repo variable DEV_DEPLOY_ENABLED=true
+# (see .github/workflows/deploy-dev.yml).
+
+# Distinct service name so containers never collide with production if they
+# ever share a host.
+service: ha_web-dev
+
+# Deploy to these servers.
+servers:
+  web:
+    # TODO: replace with QA/dev VPS IP when provisioned
+    - 0.0.0.0
+
+proxy:
+  ssl: true
+  # TODO: confirm DNS hostname for the QA box
+  host: api-dev.highaspirationskc.org
+  healthcheck:
+    path: /up
+    interval: 10
+    timeout: 5
+
+# Separate volume from production storage.
+volumes:
+  - "ha_web_dev_storage:/rails/storage"
