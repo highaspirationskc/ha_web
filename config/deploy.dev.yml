@@ -1,18 +1,21 @@
 # Destination overrides for the QA/dev environment.
 # Used with: kamal deploy -d dev
 #
-# Prep only — fill in servers and proxy host when the VPS is ready, then enable
-# the deploy job via repo variable DEV_DEPLOY_ENABLED=true
-# (see .github/workflows/deploy-dev.yml).
-
-# Distinct service name so containers never collide with production if they
-# ever share a host.
-service: ha_web-dev
+# Prep only. Before setting DEV_DEPLOY_ENABLED=true:
+#   1. Replace servers.web with the real QA VPS IP (do not enable while 0.0.0.0 remains).
+#   2. Confirm proxy.host DNS.
+#   3. Prefer a separate Rails master key + credentials for QA (not production's).
+#   4. Prefer a deploy SSH key limited to the QA host.
+# See .github/workflows/deploy-dev.yml enable checklist.
+#
+# Isolation: keep base service name (ha_web). Kamal already suffixes the
+# destination (service_and_destination → ha_web-dev). Volume name stays
+# distinct so storage never collides with production.
 
 # Deploy to these servers.
 servers:
   web:
-    # TODO: replace with QA/dev VPS IP when provisioned
+    # TODO: replace with QA/dev VPS IP when provisioned — required before enabling deploy.
     - 0.0.0.0
 
 proxy:
