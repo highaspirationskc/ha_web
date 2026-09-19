@@ -1,10 +1,13 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+# This file should ensure the existence of records required to run the application in every environment.
+# The code here is idempotent so that it can be executed at any point in every environment.
+# The data can be loaded with bin/rails db:seed (or created alongside the database with db:setup).
 
-puts "Seeding database..."
+puts "Seeding database with realistic High Aspirations KC data..."
 
-# Create Teams
+# ==============================================================================
+# 1. TEAMS
+# ==============================================================================
+puts "\n--- Seeding Teams ---"
 team_definitions = [
   { name: "Blue Team", color: "#3B82F6" },
   { name: "Green Team", color: "#22C55E" },
@@ -33,175 +36,289 @@ all_teams = team_definitions.map do |defn|
     team.color = defn[:color]
   end
 end
-
-puts "Created #{all_teams.size} teams"
-
-# Named references for backward compatibility
-all_teams[0]
-all_teams[1]
-all_teams[2]
-all_teams[3]
+puts "✓ #{all_teams.size} teams ready"
 
 # Helper method to create user with role profile
-def create_user_with_role(email:, first_name:, last_name:, password: "Password1!", active: true, &block)
-  user = User.find_or_create_by!(email: email) do |u|
+def create_user_with_role(email:, first_name:, last_name:, phone_number: nil, password: "Password1!", active: true)
+  user = User.find_or_create_by!(email: email.downcase) do |u|
     u.password = password
     u.first_name = first_name
     u.last_name = last_name
+    u.phone_number = phone_number
   end
-  user.update!(active: active) if active && !user.active?
+  user.update!(
+    active: active,
+    first_name: first_name,
+    last_name: last_name,
+    phone_number: phone_number || user.phone_number
+  )
   yield(user) if block_given?
   user
 end
 
-# Create admin user
-admin_user = create_user_with_role(email: "admin@example.com", first_name: "Admin", last_name: "User") do |user|
+# ==============================================================================
+# 2. STAFF & ADMINS
+# ==============================================================================
+puts "\n--- Seeding Staff & Admin Users ---"
+admin_user = create_user_with_role(
+  email: "admin@example.com",
+  first_name: "Darron",
+  last_name: "Story",
+  phone_number: "(816) 555-0100"
+) do |user|
   Staff.find_or_create_by!(user: user) { |s| s.permission_level = :admin }
 end
 
-# Create staff user
-staff_user = create_user_with_role(email: "staff@example.com", first_name: "Staff", last_name: "User") do |user|
+staff_user = create_user_with_role(
+  email: "staff@example.com",
+  first_name: "Marcus",
+  last_name: "Green",
+  phone_number: "(816) 555-0101"
+) do |user|
   Staff.find_or_create_by!(user: user) { |s| s.permission_level = :standard }
 end
 
-# Create guardians (no team assignment)
-blue_guardian_user = create_user_with_role(email: "blue.parent@example.com", first_name: "Blue", last_name: "Parent") do |user|
-  Guardian.find_or_create_by!(user: user)
+coordinator_user = create_user_with_role(
+  email: "coordinator@example.com",
+  first_name: "David",
+  last_name: "Robinson",
+  phone_number: "(816) 555-0102"
+) do |user|
+  Staff.find_or_create_by!(user: user) { |s| s.permission_level = :standard }
 end
-blue_guardian = blue_guardian_user.guardian
+puts "✓ 3 staff users ready (Darron Story [Admin], Marcus Green, David Robinson)"
 
-green_guardian_user = create_user_with_role(email: "green.parent@example.com", first_name: "Green", last_name: "Parent") do |user|
-  Guardian.find_or_create_by!(user: user)
-end
-green_guardian = green_guardian_user.guardian
+# ==============================================================================
+# 3. MENTORS & MENTEES (Realistic Names & Data)
+# ==============================================================================
+puts "\n--- Seeding Mentors & Mentees ---"
 
-puts "Created 2 guardians"
+# Realistic names pool
+mentor_names = [
+  ["Dr. Anthony", "Harris"], ["Michael", "Vance"], ["Derrick", "Moore"], ["Brandon", "Clark"],
+  ["Terrence", "Wilson"], ["Xavier", "Carter"], ["Kendrick", "Taylor"], ["Darius", "Anderson"],
+  ["Jamal", "Thomas"], ["Cameron", "Jackson"], ["Kenneth", "Washington"], ["Andre", "Bell"],
+  ["Reggie", "White"], ["Curtis", "Brooks"], ["Reginald", "Foster"], ["Dewayne", "Simmons"],
+  ["Keith", "Griffin"], ["Calvin", "Powell"], ["Nathaniel", "Hayes"], ["Cedric", "Bryant"],
+  ["Gerald", "Coleman"], ["Lamont", "Howard"], ["Roderick", "Alexander"], ["Tyrone", "Price"],
+  ["Russell", "Ross"], ["Warren", "Jenkins"], ["Clifton", "Perry"], ["Darnell", "Butler"],
+  ["Byron", "Barnes"], ["Vernon", "Fisher"], ["Maurice", "Henderson"], ["Malcolm", "Patterson"],
+  ["Trevor", "Jordan"], ["Donovan", "Hamilton"], ["Phillip", "Graham"], ["Roland", "Reynolds"],
+  ["Sherman", "Harrison"], ["Victor", "Gibson"], ["Alvin", "McDonald"], ["Franklin", "Cruz"]
+]
 
-# Create mentors and mentees for each team
-teams_data = all_teams.map do |team|
-  { team: team, label: team.name.sub(" Team", "") }
-end
+mentee_names = [
+  ["Jaylen", "Harris"], ["Malik", "Robinson"], ["Deon", "Clark"], ["Kobe", "Lewis"],
+  ["Trey", "Walker"], ["Amari", "Hall"], ["Elijah", "Allen"], ["Zion", "Young"],
+  ["Isaiah", "King"], ["Devon", "Wright"], ["Jaden", "Scott"], ["Dante", "Torres"],
+  ["Marquis", "Nguyen"], ["Tariq", "Hill"], ["Khalil", "Flores"], ["Kameron", "Green"],
+  ["Trevor", "Adams"], ["Darian", "Nelson"], ["Omari", "Baker"], ["Justin", "Hall"],
+  ["Miles", "Rivera"], ["Micah", "Campbell"], ["Caleb", "Mitchell"], ["Christian", "Roberts"],
+  ["Julian", "Carter"], ["Jordan", "Phillips"], ["Corey", "Evans"], ["Bryson", "Turner"],
+  ["Keon", "Diaz"], ["Rashad", "Parker"], ["Deandre", "Cruz"], ["Tyree", "Edwards"],
+  ["Jalen", "Collins"], ["Damian", "Reyes"], ["Kevon", "Stewart"], ["Demetrius", "Morris"],
+  ["Jaquan", "Morales"], ["Tyrese", "Murphy"], ["Donte", "Cook"], ["Tre", "Rogers"],
+  ["Jamar", "Gutierrez"], ["Tyrell", "Ortiz"], ["Kendell", "Morgan"], ["Tevin", "Cooper"],
+  ["Deshawn", "Peterson"], ["Antwan", "Bailey"], ["Devonte", "Reed"], ["Marquise", "Kelly"],
+  ["Raheem", "Howard"], ["Trayvon", "Ramos"], ["Tavon", "Kim"], ["Darius", "Cox"],
+  ["Javon", "Ward"], ["Kadeem", "Richardson"], ["Stephon", "Watson"], ["Akeem", "Brooks"],
+  ["Hakeem", "Chavez"], ["Tremaine", "Wood"], ["Rashaad", "James"], ["Keshawn", "Bennett"],
+  ["Dequan", "Gray"], ["Montrell", "Mendoza"], ["Rico", "Ruiz"], ["Dondre", "Hughes"],
+  ["Savon", "Price"], ["Cortez", "Alvarez"], ["Davion", "Castillo"], ["Tyrik", "Sanders"],
+  ["Dashawn", "Patel"], ["Keyon", "Myers"], ["Jaheim", "Long"], ["Marcellus", "Ross"],
+  ["Trevin", "Foster"], ["Dionte", "Jimenez"], ["Keshon", "Powell"], ["Demarco", "Jenkins"],
+  ["Jovon", "Perry"], ["Ronnell", "Russell"], ["Dayvon", "Sullivan"], ["Jacorey", "Bell"],
+  ["Tyron", "Coleman"], ["Davonte", "Butler"], ["Latrell", "Henderson"], ["Dangelo", "Barnes"],
+  ["Jaleel", "Gonzales"], ["Jordon", "Fisher"], ["Devin", "Vasquez"], ["Kareem", "Simmons"],
+  ["Shamar", "Romero"], ["Trae", "Jordan"], ["Quinton", "Patterson"], ["Daquan", "Alexander"],
+  ["Denzell", "Hamilton"], ["Tyreek", "Graham"], ["Kesean", "Reynolds"], ["Deonte", "Griffin"],
+  ["Jaylon", "Wallace"], ["Darrion", "Moreno"], ["Tray", "West"], ["Montel", "Cole"],
+  ["Rayvon", "Hayes"], ["Dequavious", "Bryant"], ["Jalil", "Herrera"], ["Kyree", "Gibson"],
+  ["Nigel", "Ellis"], ["Tyshawn", "Tran"], ["Zaire", "Medina"], ["Kelvin", "Aguilar"],
+  ["Torrence", "Stevens"], ["Kendall", "Stevenson"], ["Rayshawn", "Dixon"], ["Javen", "Hunt"],
+  ["Trevion", "Silva"], ["Koby", "Pearson"], ["Deondre", "Armstrong"], ["Desean", "Fuller"],
+  ["Trevor", "Sims"], ["Kyler", "Washington"], ["Darius", "Washington"], ["Malik", "Johnson"],
+  ["Jaylen", "Smith"], ["Amari", "Brown"], ["Kobe", "Jones"], ["Elijah", "Davis"],
+  ["Zion", "Miller"], ["Isaiah", "Wilson"], ["Jaden", "Moore"], ["Devon", "Taylor"],
+  ["Dante", "Anderson"], ["Tariq", "Thomas"], ["Khalil", "Jackson"], ["Kameron", "White"],
+  ["Trevor", "Harris"], ["Darian", "Martin"], ["Omari", "Thompson"], ["Miles", "Garcia"],
+  ["Micah", "Martinez"], ["Caleb", "Robinson"], ["Christian", "Clark"], ["Julian", "Rodriguez"]
+]
 
 all_mentors = []
 all_mentees = []
 all_mentee_users = []
 
-teams_data.each do |team_data|
+teams_data = all_teams.map do |team|
+  { team: team, label: team.name.sub(" Team", "") }
+end
+
+teams_data.each_with_index do |team_data, t_idx|
   team = team_data[:team]
   label = team_data[:label]
   prefix = label.downcase.gsub(/\s+/, "-")
 
-  # Create 2 mentors per team
-  2.times do |i|
+  team_mentors = []
+
+  # 2 mentors per team
+  2.times do |m_idx|
+    name_pair = mentor_names[(t_idx * 2 + m_idx) % mentor_names.length]
     mentor_user = create_user_with_role(
-      email: "#{prefix}.mentor#{i + 1}@example.com",
-      first_name: label,
-      last_name: "Mentor #{i + 1}"
+      email: "#{prefix}.mentor#{m_idx + 1}@example.com",
+      first_name: name_pair[0],
+      last_name: name_pair[1],
+      phone_number: "(816) 555-#{sprintf('%04d', 2000 + t_idx * 10 + m_idx)}"
     ) do |user|
       Mentor.find_or_create_by!(user: user)
     end
-    all_mentors << mentor_user.mentor
+    mentor = mentor_user.mentor
+    team_mentors << mentor
+    all_mentors << mentor
   end
 
-  # Create 7 mentees per team
-  7.times do |i|
+  # 7 mentees per team
+  7.times do |m_idx|
+    name_pair = mentee_names[(t_idx * 7 + m_idx) % mentee_names.length]
+    assigned_mentor = team_mentors[m_idx % team_mentors.length]
+
     mentee_user = create_user_with_role(
-      email: "#{prefix}.mentee#{i + 1}@example.com",
-      first_name: label,
-      last_name: "Mentee #{i + 1}"
+      email: "#{prefix}.mentee#{m_idx + 1}@example.com",
+      first_name: name_pair[0],
+      last_name: name_pair[1],
+      phone_number: "(816) 555-#{sprintf('%04d', 3000 + t_idx * 10 + m_idx)}"
     ) do |user|
       mentee = Mentee.find_or_create_by!(user: user)
-      mentee.update!(team: team) if mentee.team != team
+      mentee.update!(
+        team: team,
+        mentor: assigned_mentor,
+        enrollment_date: mentee.enrollment_date || (Date.current - (rand(60..400)).days)
+      )
     end
-    all_mentees << mentee_user.mentee
+    mentee = mentee_user.mentee
+    mentee.update!(mentor: assigned_mentor) if mentee.mentor_id.nil?
+    all_mentees << mentee
     all_mentee_users << mentee_user
   end
 end
+puts "✓ #{all_mentors.count} mentors and #{all_mentees.count} mentees ready with assigned teams and mentors"
 
-# Keep references to first blue and green mentees for backward compatibility with event logs
-blue_mentee_user = User.find_by(email: "blue.mentee1@example.com")
-green_mentee_user = User.find_by(email: "green.mentee1@example.com")
-User.find_by(email: "blue.mentor1@example.com")
-User.find_by(email: "green.mentor1@example.com")
+# ==============================================================================
+# 4. GUARDIANS & FAMILY RELATIONSHIPS
+# ==============================================================================
+puts "\n--- Seeding Guardians & Family Members ---"
+guardian_definitions = [
+  { email: "blue.parent@example.com", first: "Vanessa", last: "Harris", rel: :parent, mentee_email: "blue.mentee1@example.com" },
+  { email: "green.parent@example.com", first: "Keisha", last: "Lewis", rel: :parent, mentee_email: "green.mentee1@example.com" },
+  { email: "yellow.parent@example.com", first: "Patricia", last: "Allen", rel: :parent, mentee_email: "yellow.mentee1@example.com" },
+  { email: "red.parent@example.com", first: "Brenda", last: "Torres", rel: :parent, mentee_email: "red.mentee1@example.com" },
+  { email: "orange.parent@example.com", first: "Carla", last: "Flores", rel: :parent, mentee_email: "orange.mentee1@example.com" },
+  { email: "emerald.parent@example.com", first: "Diane", last: "Nelson", rel: :grandparent, mentee_email: "emerald.mentee1@example.com" },
+  { email: "teal.parent@example.com", first: "Gloria", last: "Rivera", rel: :parent, mentee_email: "teal.mentee1@example.com" },
+  { email: "cyan.parent@example.com", first: "Tanya", last: "Roberts", rel: :parent, mentee_email: "cyan.mentee1@example.com" },
+  { email: "sky.parent@example.com", first: "Wanda", last: "Turner", rel: :aunt_uncle, mentee_email: "sky.mentee1@example.com" },
+  { email: "indigo.parent@example.com", first: "Joyce", last: "Cruz", rel: :parent, mentee_email: "indigo.mentee1@example.com" },
+  { email: "violet.parent@example.com", first: "Angela", last: "Reyes", rel: :parent, mentee_email: "violet.mentee1@example.com" },
+  { email: "purple.parent@example.com", first: "Stephanie", last: "Morales", rel: :parent, mentee_email: "purple.mentee1@example.com" },
+  { email: "fuchsia.parent@example.com", first: "Rhonda", last: "Rogers", rel: :grandparent, mentee_email: "fuchsia.mentee1@example.com" },
+  { email: "pink.parent@example.com", first: "Kimberly", last: "Ortiz", rel: :parent, mentee_email: "pink.mentee1@example.com" },
+  { email: "rose.parent@example.com", first: "Monique", last: "Peterson", rel: :parent, mentee_email: "rose.mentee1@example.com" },
+  { email: "lime.parent@example.com", first: "Denise", last: "Reed", rel: :parent, mentee_email: "lime.mentee1@example.com" },
+  { email: "slate.parent@example.com", first: "Latoya", last: "Ramos", rel: :parent, mentee_email: "slate.mentee1@example.com" },
+  { email: "navy.parent@example.com", first: "Evelyn", last: "Ward", rel: :grandparent, mentee_email: "navy.mentee1@example.com" },
+  { email: "forest.parent@example.com", first: "Sheryl", last: "Watson", rel: :parent, mentee_email: "forest.mentee1@example.com" },
+  { email: "amber.parent@example.com", first: "Cassandra", last: "Wood", rel: :parent, mentee_email: "amber.mentee1@example.com" }
+]
 
-puts "Created test users: 2 guardians, #{all_mentors.count} mentors, #{all_mentees.count} mentees (password: Password1!)"
+guardian_count = 0
+family_member_count = 0
 
-# Create Olympic Seasons
-winter_season = OlympicSeason.find_or_create_by!(name: "Winter") do |season|
-  season.start_month = 12
-  season.start_day = 1
-  season.end_month = 2
-  season.end_day = 28
+guardian_definitions.each_with_index do |defn, idx|
+  guardian_user = create_user_with_role(
+    email: defn[:email],
+    first_name: defn[:first],
+    last_name: defn[:last],
+    phone_number: "(816) 555-#{sprintf('%04d', 4000 + idx)}"
+  ) do |user|
+    Guardian.find_or_create_by!(user: user)
+  end
+  guardian = guardian_user.guardian
+  guardian_count += 1
+
+  mentee_user = User.find_by(email: defn[:mentee_email])
+  if mentee_user&.mentee && guardian
+    FamilyMember.find_or_create_by!(guardian: guardian, mentee: mentee_user.mentee) do |fm|
+      fm.relationship_type = defn[:rel]
+    end
+    family_member_count += 1
+  end
 end
+puts "✓ #{guardian_count} guardians and #{family_member_count} family relationships created"
 
-spring_season = OlympicSeason.find_or_create_by!(name: "Spring") do |season|
-  season.start_month = 3
-  season.start_day = 1
-  season.end_month = 5
-  season.end_day = 31
+# ==============================================================================
+# 5. VOLUNTEERS
+# ==============================================================================
+puts "\n--- Seeding Volunteers ---"
+volunteers_data = [
+  { email: "volunteer.edwards@example.com", first: "James", last: "Edwards" },
+  { email: "volunteer.jenkins@example.com", first: "Robert", last: "Jenkins" },
+  { email: "volunteer.davis@example.com", first: "Corey", last: "Davis" }
+]
+
+volunteers_data.each do |v_data|
+  create_user_with_role(email: v_data[:email], first_name: v_data[:first], last_name: v_data[:last]) do |user|
+    Volunteer.find_or_create_by!(user: user)
+  end
 end
+puts "✓ #{Volunteer.count} volunteers ready"
 
-summer_season = OlympicSeason.find_or_create_by!(name: "Summer") do |season|
-  season.start_month = 6
-  season.start_day = 1
-  season.end_month = 8
-  season.end_day = 31
+# ==============================================================================
+# 6. OLYMPIC SEASONS
+# ==============================================================================
+puts "\n--- Seeding Olympic Seasons ---"
+winter_season = OlympicSeason.find_or_create_by!(name: "Winter") do |s|
+  s.start_month = 12; s.start_day = 1; s.end_month = 2; s.end_day = 28
 end
-
-fall_season = OlympicSeason.find_or_create_by!(name: "Fall") do |season|
-  season.start_month = 9
-  season.start_day = 1
-  season.end_month = 11
-  season.end_day = 30
+spring_season = OlympicSeason.find_or_create_by!(name: "Spring") do |s|
+  s.start_month = 3; s.start_day = 1; s.end_month = 5; s.end_day = 31
 end
-
-puts "Created 4 olympic seasons"
-
-# Create Event Types
-workshop_type = EventType.find_or_create_by!(name: "Workshop") do |type|
-  type.point_value = 1
-  type.category = :org
+summer_season = OlympicSeason.find_or_create_by!(name: "Summer") do |s|
+  s.start_month = 6; s.start_day = 1; s.end_month = 8; s.end_day = 31
 end
-
-mentoring_type = EventType.find_or_create_by!(name: "Mentoring Session") do |type|
-  type.point_value = 1
-  type.category = :user
+fall_season = OlympicSeason.find_or_create_by!(name: "Fall") do |s|
+  s.start_month = 9; s.start_day = 1; s.end_month = 11; s.end_day = 30
 end
+puts "✓ 4 Olympic Seasons configured"
 
-competition_type = EventType.find_or_create_by!(name: "Competition") do |type|
-  type.point_value = 1
-  type.category = :org
+# ==============================================================================
+# 7. EVENT TYPES (Correct point values from the start)
+# ==============================================================================
+puts "\n--- Seeding Event Types ---"
+event_types = {
+  "Workshop" => { point_value: 10, category: :org },
+  "Mentoring Session" => { point_value: 5, category: :user },
+  "Competition" => { point_value: 15, category: :org },
+  "Community Service" => { point_value: 20, category: :org },
+  "Study Session" => { point_value: 5, category: :user }
+}.map do |name, attrs|
+  et = EventType.find_or_create_by!(name: name) do |t|
+    t.point_value = attrs[:point_value]
+    t.category = attrs[:category]
+  end
+  et.update!(point_value: attrs[:point_value], category: attrs[:category]) if et.point_value != attrs[:point_value]
+  et
 end
+puts "✓ #{event_types.size} event types configured with standard point values (5-20 pts)"
 
-community_service_type = EventType.find_or_create_by!(name: "Community Service") do |type|
-  type.point_value = 1
-  type.category = :org
-end
-
-study_session_type = EventType.find_or_create_by!(name: "Study Session") do |type|
-  type.point_value = 1
-  type.category = :user
-end
-
-# Update existing event types to have reasonable point values
-EventType.find_by(name: "Workshop")&.update!(point_value: 10)
-EventType.find_by(name: "Mentoring Session")&.update!(point_value: 5)
-EventType.find_by(name: "Competition")&.update!(point_value: 15)
-EventType.find_by(name: "Community Service")&.update!(point_value: 20)
-EventType.find_by(name: "Study Session")&.update!(point_value: 5)
-
-puts "Updated 5 event types with point values: Workshop (10), Mentoring (5), Competition (15), Community Service (20), Study Session (5)"
-
-# Create Events dynamically - one event every Saturday for each season
+# ==============================================================================
+# 8. EVENTS & ATTENDANCE LOGS
+# ==============================================================================
+puts "\n--- Seeding Saturday Events & Attendance ---"
 today = Date.current
 current_year = today.year
 
-# Helper to find all Saturdays in a date range
 def saturdays_in_range(start_date, end_date)
   saturdays = []
-  current = start_date
-  # Find first Saturday
-  current += (6 - current.wday) % 7
+  current = start_date + ((6 - start_date.wday) % 7)
   while current <= end_date
     saturdays << current
     current += 7.days
@@ -209,55 +326,50 @@ def saturdays_in_range(start_date, end_date)
   saturdays
 end
 
-# Event types array for rotation
-event_types_array = [workshop_type, mentoring_type, competition_type, community_service_type, study_session_type]
-locations = ["Main Lab", "Library", "Community Center", "Meeting Room A", "Meeting Room B", "Competition Hall"]
+locations = [
+  "High Aspirations Center - Main Hall",
+  "Bruce R. Watkins Cultural Center",
+  "UMKC Student Union - Room 302",
+  "Kansas City Public Library - Central",
+  "Penn Valley STEM Lab",
+  "Swope Park Community Pavilion"
+]
+
+all_events = []
 event_counter = 0
 
-seasons = [
+seasons_config = [
   { name: "Winter", season: winter_season, start_month: 12, end_month: 2 },
   { name: "Spring", season: spring_season, start_month: 3, end_month: 5 },
   { name: "Summer", season: summer_season, start_month: 6, end_month: 8 },
   { name: "Fall", season: fall_season, start_month: 9, end_month: 11 }
 ]
 
-all_events = []
-
-seasons.each do |season_data|
-  # Calculate season date range
-  if season_data[:start_month] > season_data[:end_month]
-    # Season spans years (Winter: Dec-Feb)
-    if today.month <= season_data[:end_month]
-      # We're in the end of the season (Jan-Feb)
-      start_date = Date.new(current_year - 1, season_data[:start_month], 1)
-      end_date = Date.new(current_year, season_data[:end_month], -1)
+seasons_config.each do |s_config|
+  if s_config[:start_month] > s_config[:end_month]
+    if today.month <= s_config[:end_month]
+      start_date = Date.new(current_year - 1, s_config[:start_month], 1)
+      end_date = Date.new(current_year, s_config[:end_month], -1)
     else
-      # We're before or in the start of the season
-      start_date = Date.new(current_year, season_data[:start_month], 1)
-      end_date = Date.new(current_year + 1, season_data[:end_month], -1)
+      start_date = Date.new(current_year, s_config[:start_month], 1)
+      end_date = Date.new(current_year + 1, s_config[:end_month], -1)
     end
   else
-    # Season within same year
-    start_date = Date.new(current_year, season_data[:start_month], 1)
-    end_date = Date.new(current_year, season_data[:end_month], -1)
+    start_date = Date.new(current_year, s_config[:start_month], 1)
+    end_date = Date.new(current_year, s_config[:end_month], -1)
   end
 
-  # Find all Saturdays in this season
   saturdays = saturdays_in_range(start_date, end_date)
 
-  # Create an event for each Saturday
-  saturdays.each_with_index do |saturday, index|
-    event_type = event_types_array[event_counter % event_types_array.length]
-    location = locations[event_counter % locations.length]
+  saturdays.each_with_index do |saturday, idx|
+    et = event_types[event_counter % event_types.length]
+    loc = locations[event_counter % locations.length]
 
-    event = Event.find_or_create_by!(
-      event_date: saturday,
-      event_type: event_type
-    ) do |e|
-      e.name = "#{season_data[:name]} #{event_type.name} - Week #{index + 1}"
-      e.description = "#{season_data[:name]} season event - #{event_type.name}"
-      e.location = location
-      e.created_by = [admin_user, staff_user, all_mentors.sample&.user].compact.sample
+    event = Event.find_or_create_by!(event_date: saturday, event_type: et) do |e|
+      e.name = "#{s_config[:name]} #{et.name} - Week #{idx + 1}"
+      e.description = "#{s_config[:name]} Season #{et.name}: Leadership, character development, and team activities."
+      e.location = loc
+      e.created_by = [admin_user, staff_user, coordinator_user].sample
     end
 
     all_events << event
@@ -265,184 +377,77 @@ seasons.each do |season_data|
   end
 end
 
-puts "Created #{all_events.length} events (one per Saturday for each season, current date: #{today})"
-
-# Separate events into past and future, and by season
-past_events = all_events.select { |event| event.event_date < today }
-future_events = all_events.select { |event| event.event_date >= today }
-
-# Get current season events (past)
-current_season_name = @current_season&.name || OlympicSeason.current_season&.name
-current_season_past_events = past_events.select do |event|
-  event.name.start_with?(current_season_name) if current_season_name
-end
-
-# Get other season past events
-other_season_past_events = past_events.reject do |event|
-  event.name.start_with?(current_season_name) if current_season_name
-end
+past_events = all_events.select { |e| e.event_date < today }
+future_events = all_events.select { |e| e.event_date >= today }
 
 registration_count = 0
-event_log_count = 0
+arrival_count = 0
 
-# Helper method to create registration and arrival log if event is in the past
-def create_event_participation(event, user, today, reg_days_before: 5)
-  return nil unless event
-
-  # Create registration log
-  reg_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :registered) do |log|
-    log.logged_at = event.event_date - reg_days_before.days
-    log.points_awarded = 0  # No points for registration
-  end
-
-  # Only create arrival log if event has already happened
-  if event.event_date < today
-    arrival_log = EventLog.find_or_create_by!(event: event, user: user, log_type: :arrived) do |log|
-      log.logged_at = event.event_date
-      log.points_awarded = event.event_type.point_value  # Award points based on event type
-    end
-    { registration: reg_log, arrival: arrival_log, points: event.event_type.point_value }
-  else
-    { registration: reg_log, arrival: nil, points: 0 }
-  end
-end
-
-# Randomize event participation for all mentees
 all_mentee_users.each do |mentee_user|
-  # Each mentee participates in 1 to ALL current season events (allowing perfect participation)
-  if current_season_past_events.any?
-    num_current_events = rand(1..current_season_past_events.length)
-    selected_current_events = current_season_past_events.sample(num_current_events)
+  # Attend 40-80% of past events to accumulate realistic points (50-180 points)
+  attended_events = past_events.sample((past_events.length * rand(0.40..0.85)).round)
 
-    selected_current_events.each do |event|
-      result = create_event_participation(event, mentee_user, today, reg_days_before: rand(3..10))
-      registration_count += 1
-      event_log_count += 1 if result[:arrival]
+  attended_events.each do |event|
+    # Registration
+    EventLog.find_or_create_by!(event: event, user: mentee_user, log_type: :registered) do |l|
+      l.logged_at = event.event_date - rand(3..7).days
+      l.points_awarded = 0
     end
+    registration_count += 1
+
+    # Arrival (awards points and automatically creates PointLog)
+    arrival_log = EventLog.find_or_create_by!(event: event, user: mentee_user, log_type: :arrived) do |l|
+      l.logged_at = event.event_date
+      l.points_awarded = event.event_type.point_value
+    end
+
+    # Ensure PointLog matches correct points
+    if arrival_log.point_log
+      if arrival_log.point_log.points != event.event_type.point_value
+        arrival_log.point_log.update!(points: event.event_type.point_value)
+      end
+    else
+      PointLog.find_or_create_by!(source: arrival_log) do |pl|
+        pl.mentee = mentee_user.mentee
+        pl.points = event.event_type.point_value
+        pl.reason = "Attended #{event.name} on #{event.event_date.strftime("%B %d, %Y")}"
+        pl.log_type = "attendance"
+      end
+    end
+    arrival_count += 1
   end
 
-  # 50% chance to also participate in 1-5 events from other seasons (for variety)
-  if rand < 0.5 && other_season_past_events.any?
-    num_other_events = rand(1..[5, other_season_past_events.length].min)
-    selected_other_events = other_season_past_events.sample(num_other_events)
-
-    selected_other_events.each do |event|
-      result = create_event_participation(event, mentee_user, today, reg_days_before: rand(3..10))
-      registration_count += 1
-      event_log_count += 1 if result[:arrival]
-    end
-  end
-
-  # Register for a few future events (10% chance per future event)
+  # Register for 1-2 upcoming events
   future_events.sample([future_events.length, 2].min).each do |event|
-    next unless rand < 0.1
-
-    EventLog.find_or_create_by!(event: event, user: mentee_user, log_type: :registered) do |log|
-      log.logged_at = [today, event.event_date - 7.days].max
+    next unless rand < 0.35
+    EventLog.find_or_create_by!(event: event, user: mentee_user, log_type: :registered) do |l|
+      l.logged_at = today - rand(1..3).days
+      l.points_awarded = 0
     end
     registration_count += 1
   end
 end
+puts "✓ #{all_events.size} Saturday events created across 4 seasons"
+puts "✓ #{registration_count} event registrations & #{arrival_count} arrival logs with point awards"
 
-puts "Created #{registration_count} event registrations"
-puts "Created #{event_log_count} event logs (only for past events)"
-
-# Create Family Members (guardian-mentee relationships)
-if blue_mentee_user&.mentee && blue_guardian
-  FamilyMember.find_or_create_by!(guardian: blue_guardian, mentee: blue_mentee_user.mentee) do |fm|
-    fm.relationship_type = :parent
-  end
-end
-
-if green_mentee_user&.mentee && green_guardian
-  FamilyMember.find_or_create_by!(guardian: green_guardian, mentee: green_mentee_user.mentee) do |fm|
-    fm.relationship_type = :parent
-  end
-end
-
-puts "Created 2 family member relationships"
-
-# Create SEAS Sections and Questions
-seas_data = {
-  "Social" => {
-    position: 1,
-    questions: [
-      "Employment/job seeking activity",
-      "Participation during sessions",
-      "Respectful communication with mentors and leaders"
-    ]
-  },
-  "Emotional" => {
-    position: 2,
-    questions: [
-      "Managing emotions in difficult situations",
-      "Expressing feelings in healthy ways",
-      "Showing empathy toward others"
-    ]
-  },
-  "Academic" => {
-    position: 3,
-    questions: [
-      "Completing homework and assignments on time",
-      "Setting and working toward academic goals",
-      "Asking for help when needed"
-    ]
-  },
-  "Spiritual" => {
-    position: 4,
-    questions: [
-      "Reflecting on personal values and beliefs",
-      "Making positive choices under pressure",
-      "Being a positive influence on others"
-    ]
-  }
-}
-
-seas_data.each do |domain_name, data|
-  section = SeasDomain.find_or_create_by!(name: domain_name) do |s|
-    s.position = data[:position]
-  end
-
-  data[:questions].each_with_index do |text, index|
-    SeasQuestion.find_or_create_by!(seas_domain: section, text: text) do |q|
-      q.position = index + 1
-    end
-  end
-end
-
-puts "Created #{SeasDomain.count} SEAS domains with #{SeasQuestion.count} questions"
-
-# Backfill enrollment_date on mentees from their user's created_at
-Mentee.where(enrollment_date: nil).find_each do |mentee|
-  mentee.update!(enrollment_date: mentee.user.created_at.to_date)
-end
-
-# Backfill points_awarded for existing event logs based on event type
-EventLog.where(log_type: :arrived).find_each do |log|
-  next unless log.event&.event_type
-  correct_points = log.event.event_type.point_value
-  log.update!(points_awarded: correct_points) if log.points_awarded != correct_points
-end
-
-puts "Backfilled points_awarded for #{EventLog.where(log_type: :arrived).count} arrival logs"
-
-# Create Incentives for Redemption System
-puts "Creating incentives..."
-
+# ==============================================================================
+# 9. INCENTIVES & REDEMPTIONS
+# ==============================================================================
+puts "\n--- Seeding Incentives & Redemptions ---"
 incentives_data = [
-  { name: "Jack Stack Gift Card", description: "$25 BBQ gift card", point_cost: 25, incentive_type: "individual" },
-  { name: "Movie Pass", description: "AMC movie ticket", point_cost: 15, incentive_type: "individual" },
-  { name: "Pizza Voucher", description: "$20 Pizza Hut gift card", point_cost: 20, incentive_type: "individual" },
-  { name: "Book Voucher", description: "$15 Barnes & Noble gift card", point_cost: 15, incentive_type: "individual" },
-  { name: "Sports Equipment", description: "Basketball or soccer ball", point_cost: 30, incentive_type: "individual" },
-  { name: "School Supplies Kit", description: "Backpack with supplies", point_cost: 35, incentive_type: "individual" },
-  { name: "Gaming Card", description: "$20 GameStop gift card", point_cost: 20, incentive_type: "individual" },
-  { name: "Music Subscription", description: "3-month Spotify subscription", point_cost: 25, incentive_type: "individual" },
+  { name: "Jack Stack BBQ Gift Card", description: "$25 gift card for Kansas City BBQ", point_cost: 25, incentive_type: "individual" },
+  { name: "AMC Theatres Movie Pass", description: "Movie ticket + popcorn voucher", point_cost: 15, incentive_type: "individual" },
+  { name: "Minsky's Pizza Voucher", description: "$20 gift card for local gourmet pizza", point_cost: 20, incentive_type: "individual" },
+  { name: "Barnes & Noble Book Card", description: "$15 book & educational supplies voucher", point_cost: 15, incentive_type: "individual" },
+  { name: "Wilson NCAA Basketball", description: "Official size composite leather basketball", point_cost: 30, incentive_type: "individual" },
+  { name: "Under Armour Backpack", description: "Durable school & sports backpack", point_cost: 35, incentive_type: "individual" },
+  { name: "GameStop Gift Card", description: "$25 gaming gift card", point_cost: 25, incentive_type: "individual" },
+  { name: "Spotify Premium (3-Month)", description: "3-month ad-free music subscription", point_cost: 25, incentive_type: "individual" },
   # Team incentives
-  { name: "Team Pizza Party", description: "Pizza party for the entire team", point_cost: 100, incentive_type: "team" },
-  { name: "Team Bowling", description: "Bowling outing for the team", point_cost: 80, incentive_type: "team" },
-  { name: "Team Movie Day", description: "Private movie screening for the team", point_cost: 120, incentive_type: "team" },
-  { name: "Team BBQ", description: "Team cookout at the park", point_cost: 150, incentive_type: "team" }
+  { name: "Team Pizza Celebration", description: "Full team pizza party after Saturday session", point_cost: 100, incentive_type: "team" },
+  { name: "Team Main Event Bowling", description: "2 hours of bowling and arcade passes for the team", point_cost: 80, incentive_type: "team" },
+  { name: "Private Screening Movie Day", description: "Private auditorium movie outing for team", point_cost: 120, incentive_type: "team" },
+  { name: "Swope Park Team BBQ Outing", description: "Catered BBQ cookout and sports day at Swope Park", point_cost: 150, incentive_type: "team" }
 ]
 
 incentives = incentives_data.map do |data|
@@ -451,92 +456,398 @@ incentives = incentives_data.map do |data|
     i.point_cost = data[:point_cost]
     i.incentive_type = data[:incentive_type]
     i.created_by = admin_user
+    i.active = true
   end
 end
 
-individual_count = incentives.count { |i| i.incentive_type == "individual" }
-team_count = incentives.count { |i| i.incentive_type == "team" }
-puts "Created #{incentives.length} incentives (#{individual_count} individual, #{team_count} team)"
-
-# Create sample redemptions for testing
-puts "Creating sample redemptions..."
-
-# Pick a few mentees to have redemptions
-sample_mentees = all_mentees.sample(10)
+# Generate redemptions for mentees with sufficient points
 redemption_count = 0
+sample_mentees = all_mentees.select { |m| m.total_points >= 15 }
 
-sample_mentees.each do |mentee|
-  # Get mentee's total points
-  total_points = mentee.total_points
-  next if total_points < 15 # Skip if mentee doesn't have enough points
-
-  # Create 1-3 redemptions per mentee
+sample_mentees.sample([sample_mentees.length, 30].min).each do |mentee|
+  available_points = mentee.total_points
   num_redemptions = rand(1..3)
 
   num_redemptions.times do
-    # Pick an incentive they can afford
-    affordable_incentives = incentives.select { |i| i.point_cost <= total_points }
-    next if affordable_incentives.empty?
+    affordable = incentives.select { |i| i.individual? && i.point_cost <= available_points }
+    break if affordable.empty?
 
-    incentive = affordable_incentives.sample
-
-    # Randomly assign status with weighted probabilities
+    incentive = affordable.sample
     status = case rand(100)
-    when 0..40 then "approved"     # 40% approved
-    when 41..60 then "pending"      # 20% pending
-    when 61..80 then "denied"       # 20% denied
-    when 81..90 then "deleted"      # 10% deleted (with refund)
-    else "deleted_no_refund"         # 10% deleted_no_refund
-    end
+             when 0..50 then "approved"
+             when 51..75 then "pending"
+             when 76..88 then "denied"
+             when 89..94 then "deleted"
+             else "deleted_no_refund"
+             end
 
-    # Create redemption with appropriate attributes based on status
-    redemption_attrs = {
+    created_time = rand(2..45).days.ago
+
+    redemption = Redemption.find_or_initialize_by(
       mentee: mentee,
       incentive: incentive,
-      points_spent: incentive.point_cost,
-      status: status,
-      created_at: rand(1..30).days.ago
-    }
+      created_at: created_time
+    )
 
-    # Add approved_by and approved_at for approved/denied/deleted statuses
-    if %w[approved denied deleted deleted_no_refund].include?(status)
-      redemption_attrs[:approved_by] = [admin_user, staff_user].sample
-      redemption_attrs[:approved_at] = redemption_attrs[:created_at] + rand(1..3).days
+    if redemption.new_record?
+      redemption.assign_attributes(
+        points_spent: incentive.point_cost,
+        status: status,
+        notes: status == "denied" ? "Session attendance requirements not yet met this month" : nil
+      )
+
+      if %w[approved denied deleted deleted_no_refund].include?(status)
+        redemption.approved_by = [admin_user, staff_user].sample
+        redemption.approved_at = created_time + rand(1..3).days
+      end
+
+      redemption.save!
+      redemption_count += 1
+      available_points -= incentive.point_cost if %w[pending approved deleted_no_refund].include?(status)
     end
+  end
+end
+puts "✓ #{incentives.size} incentives configured"
+puts "✓ #{Redemption.count} sample redemptions seeded (Approved: #{Redemption.approved.count}, Pending: #{Redemption.pending.count}, Denied: #{Redemption.denied.count})"
 
-    # Add notes for denied or deleted redemptions
-    if status == "denied"
-      redemption_attrs[:notes] = ["Insufficient documentation", "Already received this month", "Event not verified"].sample
-    elsif status.in?(%w[deleted deleted_no_refund])
-      redemption_attrs[:notes] = ["Duplicate redemption", "Staff error", "Student request", "Out of stock"].sample
+# ==============================================================================
+# 10. COMMUNITY SERVICE RECORDS
+# ==============================================================================
+puts "\n--- Seeding Community Service Records ---"
+service_activities = [
+  { event: "Harvesters Community Food Network", hours: 4.0, description: "Packed emergency food boxes and organized canned goods for local pantries" },
+  { event: "Swope Park Trail Clean-Up", hours: 3.5, description: "Cleared brush, collected debris, and beautified walking trails with city parks team" },
+  { event: "Urban League Youth Literacy Day", hours: 2.5, description: "Read children's books and helped tutor 2nd and 3rd grade students" },
+  { event: "Linwood YMCA Youth Basketball Clinic", hours: 3.0, description: "Assisted coaches with drills and scoreboard operation for youth league" },
+  { event: "Kansas City Community Garden Planting", hours: 4.5, description: "Prepared raised garden beds, spread organic compost, and planted vegetables" },
+  { event: "Morningstar Senior Center Companion Visit", hours: 2.0, description: "Served breakfast, played chess, and engaged in conversation with seniors" },
+  { event: "Back-to-School Backpack Drive", hours: 5.0, description: "Filled and distributed 250 backpacks with essential school supplies for students" },
+  { event: "Operation Breakthrough Toy Drive", hours: 3.0, description: "Sorted, wrapped, and categorized holiday gifts for underserved children" }
+]
+
+service_count = 0
+all_mentees.sample(40).each do |mentee|
+  rand(1..3).times do
+    activity = service_activities.sample
+    event_date = rand(10..120).days.ago.to_date
+
+    CommunityServiceRecord.find_or_create_by!(
+      mentee: mentee,
+      event: activity[:event],
+      event_date: event_date
+    ) do |csr|
+      csr.hours = activity[:hours]
+      csr.description = activity[:description]
+      csr.approved = rand < 0.90 # 90% approved, 10% pending/unapproved
     end
+    service_count += 1
+  end
+end
+puts "✓ #{CommunityServiceRecord.count} community service records seeded (Approved: #{CommunityServiceRecord.approved.count})"
 
-    Redemption.find_or_create_by!(mentee: mentee, incentive: incentive, created_at: redemption_attrs[:created_at]) do |r|
-      r.assign_attributes(redemption_attrs)
-    end
-
-    redemption_count += 1
-
-    # Deduct points from available total so they can't redeem more than they have
-    total_points -= incentive.point_cost if status.in?(%w[pending approved deleted_no_refund])
+# ==============================================================================
+# 11. MEDIA & GRADE CARDS
+# ==============================================================================
+puts "\n--- Seeding Media & Grade Cards ---"
+# Sample Cloudflare media entries
+sample_grade_card_media = 6.times.map do |idx|
+  Medium.find_or_create_by!(cloudflare_id: "cf-grade-card-sample-#{idx + 1}") do |m|
+    m.filename = "report_card_2026_q#{idx % 4 + 1}.pdf"
+    m.media_type = "image"
+    m.category = "grade_card"
+    m.uploaded_by = admin_user
+    m.file_size = 245_000 + rand(10_000..50_000)
+    m.content_type = "image/jpeg"
   end
 end
 
-puts "Created #{redemption_count} sample redemptions"
+grade_descriptions = [
+  "Fall 2026 Semester - 3.8 GPA (Honor Roll with Distinction)",
+  "Spring 2026 Final Report Card - 3.5 GPA (Principal's Honor Roll)",
+  "Q1 Progress Report - All A's and B's (Demonstrated notable improvement in Algebra)",
+  "Mid-Year Report Card - 3.4 GPA (Exemplary citizenship and attendance)",
+  "Q2 Academic Summary - 3.7 GPA (Advanced Placement History excellence)"
+]
 
-# Create summary
-puts "\n" + "=" * 60
-puts "Redemption Test Data Summary"
-puts "=" * 60
-puts "Incentives available: #{Incentive.count}"
-puts "  - Individual: #{Incentive.where(incentive_type: "individual").count}"
-puts "  - Team: #{Incentive.where(incentive_type: "team").count}"
-puts "Total redemptions: #{Redemption.count}"
-puts "  - Pending: #{Redemption.pending.count}"
-puts "  - Approved: #{Redemption.approved.count}"
-puts "  - Denied: #{Redemption.denied.count}"
-puts "  - Deleted (refunded): #{Redemption.where(status: "deleted").count}"
-puts "  - Deleted (no refund): #{Redemption.where(status: "deleted_no_refund").count}"
-puts "=" * 60
+grade_card_count = 0
+all_mentees.sample(15).each_with_index do |mentee, idx|
+  medium = sample_grade_card_media[idx % sample_grade_card_media.length]
+  desc = grade_descriptions[idx % grade_descriptions.length]
 
-puts "Seeding completed!"
+  GradeCard.find_or_create_by!(mentee: mentee, medium: medium) do |gc|
+    gc.description = desc
+  end
+  grade_card_count += 1
+end
+puts "✓ #{GradeCard.count} student grade cards seeded"
+
+# ==============================================================================
+# 12. SATURDAY SCOOPS (Announcements & Newsletters)
+# ==============================================================================
+puts "\n--- Seeding Saturday Scoops ---"
+scoops_data = [
+  {
+    title: "Welcome to the Fall 2026 Olympic Season!",
+    author: "Darron Story",
+    publish_on: 3.weeks.ago.to_date,
+    published: true,
+    description: "We are kicking off our Fall 2026 season with exciting competitions, inspiring guest speakers, and college readiness workshops. Remember that attendance every Saturday counts toward your team's Olympic standings!"
+  },
+  {
+    title: "Recap: Financial Literacy Workshop with Commerce Bank",
+    author: "Marcus Green",
+    publish_on: 2.weeks.ago.to_date,
+    published: true,
+    description: "Our young men gained practical knowledge on checking accounts, compound interest, and investment basics. Big congratulations to the Blue and Emerald Teams for winning the financial quiz competition!"
+  },
+  {
+    title: "Upcoming College Campus Tour: UMKC & Rockhurst University",
+    author: "David Robinson",
+    publish_on: 1.week.ago.to_date,
+    published: true,
+    description: "Next Saturday we will be visiting the campuses of UMKC and Rockhurst University. Students will meet admissions officers and tour the engineering and business facilities. Buses depart from the center at 8:30 AM."
+  },
+  {
+    title: "Mentee Academic Honors: 3.5+ GPA Celebrations",
+    author: "Darron Story",
+    publish_on: 3.days.ago.to_date,
+    published: true,
+    description: "Congratulations to all the young men who submitted grade cards showcasing 3.5+ GPAs this semester! Keep striving for academic excellence — scholarships and incentive awards await."
+  },
+  {
+    title: "Annual High Aspirations Olympics Championship Preview",
+    author: "Marcus Green",
+    publish_on: 2.weeks.from_now.to_date,
+    published: false,
+    description: "The end-of-season championship approaches! Teams are neck-and-neck in point totals. Prepare your team cheers, review your workshop notes, and bring your A-game."
+  }
+]
+
+scoops_data.each do |data|
+  SaturdayScoop.find_or_create_by!(title: data[:title]) do |s|
+    s.author = data[:author]
+    s.publish_on = data[:publish_on]
+    s.published = data[:published]
+    s.description = data[:description]
+    s.created_by = admin_user
+  end
+end
+puts "✓ #{SaturdayScoop.count} Saturday Scoops seeded (Published: #{SaturdayScoop.published.count})"
+
+# ==============================================================================
+# 13. IN-APP MESSAGES & THREADS
+# ==============================================================================
+puts "\n--- Seeding Messages & Communications ---"
+# Broadcast announcement from Admin
+announcement = Message.find_or_create_by!(
+  author: admin_user,
+  subject: "Important: Saturday Session Location Update"
+) do |m|
+  m.message = "Good morning everyone! Please note that this Saturday's session will take place at the Bruce R. Watkins Cultural Center Main Hall. Please arrive by 9:00 AM sharp."
+  m.reply_mode = :reply_to_sender
+  m.support = false
+end
+
+# Add sample recipients
+all_mentee_users.first(25).each do |user|
+  MessageRecipient.find_or_create_by!(message: announcement, recipient: user) do |mr|
+    mr.is_read = [true, false].sample
+  end
+end
+
+# Direct Mentor to Mentee check-in with reply
+sample_mentor = all_mentors.first.user
+sample_mentee = all_mentees.first.user
+
+mentor_msg = Message.find_or_create_by!(
+  author: sample_mentor,
+  subject: "Checking in on this week's school goals"
+) do |m|
+  m.message = "Hey #{sample_mentee.first_name}, great job on your presentation last Saturday! How are things going with your math midterm prep this week? Let me know if you need to schedule a study session."
+  m.reply_mode = :reply_to_sender
+  m.support = false
+end
+MessageRecipient.find_or_create_by!(message: mentor_msg, recipient: sample_mentee) { |mr| mr.is_read = true }
+
+# Reply from mentee
+Message.find_or_create_by!(
+  author: sample_mentee,
+  parent: mentor_msg,
+  subject: "Re: Checking in on this week's school goals"
+) do |m|
+  m.message = "Thanks Mr. #{sample_mentor.last_name}! I finished the chapter review and feel ready for Friday's test. Looking forward to Saturday's robotics workshop!"
+  m.reply_mode = :reply_to_sender
+  m.support = false
+end
+MessageRecipient.find_or_create_by!(message: mentor_msg, recipient: sample_mentor) { |mr| mr.is_read = true }
+
+# Guardian to Staff support inquiry
+sample_guardian = Guardian.first.user
+support_msg = Message.find_or_create_by!(
+  author: sample_guardian,
+  subject: "Question about transportation for college tour"
+) do |m|
+  m.message = "Hello High Aspirations team, what time will the buses return from the UMKC tour this Saturday? I want to make sure I am at the center for pickup on time."
+  m.reply_mode = :reply_to_sender
+  m.support = true
+end
+MessageRecipient.find_or_create_by!(message: support_msg, recipient: staff_user) { |mr| mr.is_read = true }
+
+# Staff response
+Message.find_or_create_by!(
+  author: staff_user,
+  parent: support_msg,
+  subject: "Re: Question about transportation for college tour"
+) do |m|
+  m.message = "Hi Ms. #{sample_guardian.last_name}, the buses are scheduled to return to the center by 3:30 PM. We will send out an update if traffic affects that timeline!"
+  m.reply_mode = :reply_to_sender
+  m.support = true
+end
+puts "✓ In-app messaging threads seeded (Announcements, Mentor-Mentee check-ins, Guardian Support)"
+
+# ==============================================================================
+# 14. SEAS EVALUATIONS & RESPONSES
+# ==============================================================================
+puts "\n--- Seeding SEAS Evaluations & Scores ---"
+seas_domains_data = {
+  "Social" => {
+    position: 1,
+    description: "Peer relationships, leadership, and community interaction",
+    questions: [
+      "Actively participates in team activities and Saturday discussions",
+      "Demonstrates respectful communication with mentors, staff, and peers",
+      "Shows constructive problem-solving and conflict resolution skills"
+    ]
+  },
+  "Emotional" => {
+    position: 2,
+    description: "Self-awareness, emotional regulation, and resilience",
+    questions: [
+      "Manages frustration and adversity in positive, productive ways",
+      "Expresses feelings and concerns respectfully and constructively",
+      "Displays empathy, consideration, and encouragement toward others"
+    ]
+  },
+  "Academic" => {
+    position: 3,
+    description: "Scholastic commitment, goal setting, and study habits",
+    questions: [
+      "Submits grade cards on schedule and demonstrates academic effort",
+      "Sets measurable goals for school performance and career exploration",
+      "Proactively seeks tutoring, mentoring, or academic assistance when needed"
+    ]
+  },
+  "Spiritual" => {
+    position: 4,
+    description: "Moral foundation, personal values, and integrity",
+    questions: [
+      "Reflects consistently on personal integrity, values, and purpose",
+      "Makes responsible choices under peer pressure and in difficult situations",
+      "Acts as a positive, uplifting role model for younger students"
+    ]
+  }
+}
+
+all_questions = []
+
+seas_domains_data.each do |domain_name, data|
+  domain = SeasDomain.find_or_create_by!(name: domain_name) do |d|
+    d.position = data[:position]
+    d.description = data[:description]
+  end
+  domain.update!(description: data[:description]) if domain.description.nil?
+
+  data[:questions].each_with_index do |text, q_idx|
+    question = SeasQuestion.find_or_create_by!(seas_domain: domain, position: q_idx + 1) do |q|
+      q.text = text
+    end
+    question.update!(text: text) if question.text != text
+    all_questions << question
+  end
+end
+
+# Seed SEAS evaluations in various stages
+all_mentees.first(20).each_with_index do |mentee, idx|
+  eval_status = case idx % 5
+                when 0 then "reviewed"
+                when 1 then "reviewed"
+                when 2 then "in_review"
+                when 3 then "submitted"
+                else "in_progress"
+                end
+
+  evaluation = SeasEvaluation.find_or_initialize_by(
+    mentee: mentee,
+    evaluation_year: current_year
+  )
+
+  if evaluation.new_record?
+    evaluation.status = eval_status
+    evaluation.sent_at = rand(30..90).days.ago
+
+    if %w[submitted in_review reviewed].include?(eval_status)
+      evaluation.completed_at = evaluation.sent_at + rand(5..15).days
+    end
+
+    if eval_status == "reviewed"
+      evaluation.reviewer = staff_user
+      evaluation.reviewed_at = evaluation.completed_at + rand(2..5).days
+    end
+
+    evaluation.save!
+
+    # Create responses for completed / reviewed evaluations
+    if %w[submitted in_review reviewed].include?(eval_status)
+      all_questions.each do |q|
+        score = rand(2..3)
+        resp = SeasResponse.find_or_create_by!(seas_evaluation: evaluation, seas_question: q) do |r|
+          r.score = score
+          if eval_status == "reviewed"
+            r.review_action = rand < 0.20 ? "adjusted" : "confirmed"
+            r.adjusted_score = r.review_action == "adjusted" ? [score + 1, 3].min : score
+            r.feedback = [
+              "Demonstrates outstanding consistency in this area.",
+              "Continues to show steady growth and positive leadership.",
+              "Active contributor during team reflections.",
+              "Excellent attitude and mentorship to younger peers."
+            ].sample
+          end
+        end
+      end
+      evaluation.update_snapshot_with_scores!
+      evaluation.update_snapshot_with_review_data! if eval_status == "reviewed"
+    end
+  end
+end
+puts "✓ #{SeasDomain.count} SEAS domains & #{SeasQuestion.count} questions verified"
+puts "✓ #{SeasEvaluation.count} SEAS evaluations seeded (Reviewed: #{SeasEvaluation.where(status: 'reviewed').count}, Submitted: #{SeasEvaluation.where(status: 'submitted').count})"
+
+# Set default SEAS settings
+SeasSetting.set("current_evaluation_year", current_year.to_s)
+SeasSetting.set("evaluation_instructions", "Please evaluate each question honestly on a scale of 0 to 3 based on your observations over the current program year.")
+
+# ==============================================================================
+# SUMMARY REPORT
+# ==============================================================================
+puts "\n" + "=" * 65
+puts "🎉 HIGH ASPIRATIONS KC - SEED DATA SUMMARY"
+puts "=" * 65
+puts "Teams:                     #{Team.count}"
+puts "Staff & Admins:            #{Staff.count}"
+puts "Mentors:                   #{Mentor.count}"
+puts "Mentees:                   #{Mentee.count}"
+puts "Guardians:                 #{Guardian.count}"
+puts "Family Relationships:      #{FamilyMember.count}"
+puts "Volunteers:                #{Volunteer.count}"
+puts "Events (4 Seasons):        #{Event.count}"
+puts "Event Attendance Logs:     #{EventLog.where(log_type: :arrived).count}"
+puts "Total Point Logs:          #{PointLog.count}"
+puts "Incentives:                #{Incentive.count}"
+puts "Redemptions:               #{Redemption.count} (Pending: #{Redemption.pending.count}, Approved: #{Redemption.approved.count})"
+puts "Community Service Records: #{CommunityServiceRecord.count} (Approved: #{CommunityServiceRecord.approved.count})"
+puts "Grade Cards:               #{GradeCard.count}"
+puts "Saturday Scoops:           #{SaturdayScoop.count}"
+puts "Messages / Conversations:  #{Message.roots.count} threads (#{Message.count} total messages)"
+puts "SEAS Evaluations:          #{SeasEvaluation.count} (#{SeasEvaluation.where(status: 'reviewed').count} reviewed)"
+puts "=" * 65
+puts "Seeding completed successfully!\n"
