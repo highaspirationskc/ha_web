@@ -474,12 +474,12 @@ sample_mentees.sample([sample_mentees.length, 30].min).each do |mentee|
 
     incentive = affordable.sample
     status = case rand(100)
-             when 0..50 then "approved"
-             when 51..75 then "pending"
-             when 76..88 then "denied"
-             when 89..94 then "deleted"
-             else "deleted_no_refund"
-             end
+    when 0..50 then "approved"
+    when 51..75 then "pending"
+    when 76..88 then "denied"
+    when 89..94 then "deleted"
+    else "deleted_no_refund"
+    end
 
     created_time = rand(2..45).days.ago
 
@@ -1050,12 +1050,12 @@ end
 # Seed SEAS evaluations in various stages
 all_mentees.first(20).each_with_index do |mentee, idx|
   eval_status = case idx % 5
-                when 0 then "reviewed"
-                when 1 then "reviewed"
-                when 2 then "in_review"
-                when 3 then "submitted"
-                else "in_progress"
-                end
+  when 0 then "reviewed"
+  when 1 then "reviewed"
+  when 2 then "in_review"
+  when 3 then "submitted"
+  else "in_progress"
+  end
 
   evaluation = SeasEvaluation.find_or_initialize_by(
     mentee: mentee,

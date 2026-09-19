@@ -32,10 +32,11 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+/config/credentials/*.key
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
-.kamal/secrets
+.kamal/secrets*
 
 .DS_Store
 CLAUDE.md
