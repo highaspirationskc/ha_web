@@ -638,72 +638,353 @@ puts "✓ #{SaturdayScoop.count} Saturday Scoops seeded (Published: #{SaturdaySc
 # 13. IN-APP MESSAGES & THREADS
 # ==============================================================================
 puts "\n--- Seeding Messages & Communications ---"
-# Broadcast announcement from Admin
-announcement = Message.find_or_create_by!(
-  author: admin_user,
-  subject: "Important: Saturday Session Location Update"
-) do |m|
-  m.message = "Good morning everyone! Please note that this Saturday's session will take place at the Bruce R. Watkins Cultural Center Main Hall. Please arrive by 9:00 AM sharp."
-  m.reply_mode = :reply_to_sender
-  m.support = false
-end
 
-# Add sample recipients
-all_mentee_users.first(25).each do |user|
-  MessageRecipient.find_or_create_by!(message: announcement, recipient: user) do |mr|
-    mr.is_read = [true, false].sample
+def seed_message_thread(author:, subject:, message:, created_at:, reply_mode: :reply_to_sender, support: false, recipients: [], replies: [])
+  root = Message.find_or_initialize_by(
+    author: author,
+    parent_id: nil,
+    subject: subject
+  )
+  root.message = message
+  root.reply_mode = reply_mode
+  root.support = support
+  root.created_at = created_at
+  root.updated_at = created_at
+  root.save!
+
+  recipients.each do |r_cfg|
+    user = r_cfg[:user]
+    next unless user
+    mr = MessageRecipient.find_or_initialize_by(message: root, recipient: user)
+    mr.is_read = r_cfg.fetch(:is_read, true)
+    mr.archived = r_cfg.fetch(:archived, false)
+    mr.created_at = created_at
+    mr.updated_at = created_at
+    mr.save!
   end
+
+  replies.each do |reply_cfg|
+    reply_time = reply_cfg[:created_at] || (created_at + 2.hours)
+    reply_msg = Message.find_or_initialize_by(
+      author: reply_cfg[:author],
+      parent: root,
+      subject: reply_cfg[:subject] || "Re: #{subject}"
+    )
+    reply_msg.message = reply_cfg[:message]
+    reply_msg.reply_mode = reply_mode
+    reply_msg.support = support
+    reply_msg.created_at = reply_time
+    reply_msg.updated_at = reply_time
+    reply_msg.save!
+
+    (reply_cfg[:recipients] || []).each do |r_cfg|
+      user = r_cfg[:user]
+      next unless user
+      mr = MessageRecipient.find_or_initialize_by(message: reply_msg, recipient: user)
+      mr.is_read = r_cfg.fetch(:is_read, true)
+      mr.archived = r_cfg.fetch(:archived, false)
+      mr.created_at = reply_time
+      mr.updated_at = reply_time
+      mr.save!
+    end
+  end
+
+  root
 end
 
-# Direct Mentor to Mentee check-in with reply
-sample_mentor = all_mentors.first.user
-sample_mentee = all_mentees.first.user
+blue_parent = User.find_by(email: "blue.parent@example.com")
+green_parent = User.find_by(email: "green.parent@example.com")
+blue_mentor = User.find_by(email: "blue.mentor1@example.com")
+green_mentor = User.find_by(email: "green.mentor1@example.com")
+blue_mentee = User.find_by(email: "blue.mentee1@example.com")
+vol_edwards = User.find_by(email: "volunteer.edwards@example.com")
+vol_jenkins = User.find_by(email: "volunteer.jenkins@example.com")
 
-mentor_msg = Message.find_or_create_by!(
-  author: sample_mentor,
-  subject: "Checking in on this week's school goals"
-) do |m|
-  m.message = "Hey #{sample_mentee.first_name}, great job on your presentation last Saturday! How are things going with your math midterm prep this week? Let me know if you need to schedule a study session."
-  m.reply_mode = :reply_to_sender
-  m.support = false
-end
-MessageRecipient.find_or_create_by!(message: mentor_msg, recipient: sample_mentee) { |mr| mr.is_read = true }
+# --- A. INBOX THREADS (Incoming to Admin / Staff) ---
 
-# Reply from mentee
-Message.find_or_create_by!(
-  author: sample_mentee,
-  parent: mentor_msg,
-  subject: "Re: Checking in on this week's school goals"
-) do |m|
-  m.message = "Thanks Mr. #{sample_mentor.last_name}! I finished the chapter review and feel ready for Friday's test. Looking forward to Saturday's robotics workshop!"
-  m.reply_mode = :reply_to_sender
-  m.support = false
-end
-MessageRecipient.find_or_create_by!(message: mentor_msg, recipient: sample_mentor) { |mr| mr.is_read = true }
+# 1. Unread Support Request from Guardian
+seed_message_thread(
+  author: blue_parent,
+  subject: "Support: Saturday shuttle pickup time at 31st & Troost",
+  message: "Good morning Mr. Story and staff, could you please confirm if the shuttle bus will pick up at 31st & Troost at 8:15 AM this Saturday for the STEM workshop? Jaylen wants to make sure he does not miss the bus. Thank you!",
+  support: true,
+  reply_mode: :reply_to_all,
+  created_at: 2.hours.ago,
+  recipients: [
+    { user: admin_user, is_read: false, archived: false },
+    { user: staff_user, is_read: false, archived: false }
+  ]
+)
 
-# Guardian to Staff support inquiry
-sample_guardian = Guardian.first.user
-support_msg = Message.find_or_create_by!(
-  author: sample_guardian,
-  subject: "Question about transportation for college tour"
-) do |m|
-  m.message = "Hello High Aspirations team, what time will the buses return from the UMKC tour this Saturday? I want to make sure I am at the center for pickup on time."
-  m.reply_mode = :reply_to_sender
-  m.support = true
-end
-MessageRecipient.find_or_create_by!(message: support_msg, recipient: staff_user) { |mr| mr.is_read = true }
+# 2. Unread Mentorship Progress Note
+seed_message_thread(
+  author: blue_mentor,
+  subject: "Monthly Mentor Check-In: Blue Team Progress & Tutoring Goals",
+  message: "Darron, I wanted to provide a quick update on our Blue Team mentees. Jaylen and Marcus have shown tremendous engagement over the last month. We set up bi-weekly tutoring sessions for Algebra II, and their academic confidence has noticeably improved. I will have their complete SEAS review notes ready by next Tuesday.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 5.hours.ago,
+  recipients: [
+    { user: admin_user, is_read: false, archived: false }
+  ]
+)
 
-# Staff response
-Message.find_or_create_by!(
-  author: staff_user,
-  parent: support_msg,
-  subject: "Re: Question about transportation for college tour"
-) do |m|
-  m.message = "Hi Ms. #{sample_guardian.last_name}, the buses are scheduled to return to the center by 3:30 PM. We will send out an update if traffic affects that timeline!"
-  m.reply_mode = :reply_to_sender
-  m.support = true
-end
-puts "✓ In-app messaging threads seeded (Announcements, Mentor-Mentee check-ins, Guardian Support)"
+# 3. Read Mentee Inquiry with Admin Reply and Mentee Follow-up
+seed_message_thread(
+  author: blue_mentee,
+  subject: "Submitting Harvesters Community Service Hours",
+  message: "Hi Mr. Story, I completed 4 hours volunteering with the Harvesters Mobile Food Pantry last Saturday. I logged the supervisor confirmation in the portal. Could you please confirm if this qualifies toward the Fall Olympic incentive points?",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 1.day.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: false }
+  ],
+  replies: [
+    {
+      author: admin_user,
+      subject: "Re: Submitting Harvesters Community Service Hours",
+      message: "Excellent work Jaylen! Yes, Harvesters mobile food distribution qualifies for community service points. Your submission has been approved and 20 points have been credited to your account. Keep up the great leadership!",
+      created_at: 18.hours.ago,
+      recipients: [
+        { user: blue_mentee, is_read: true, archived: false }
+      ]
+    },
+    {
+      author: blue_mentee,
+      subject: "Re: Submitting Harvesters Community Service Hours",
+      message: "Thank you so much Mr. Story! Looking forward to Saturday's session.",
+      created_at: 12.hours.ago,
+      recipients: [
+        { user: admin_user, is_read: true, archived: false }
+      ]
+    }
+  ]
+)
+
+# 4. Read Support Ticket from Guardian with Staff Resolution
+seed_message_thread(
+  author: green_parent,
+  subject: "Support: Emergency Contact & Dietary Update for Jordan",
+  message: "Hello Staff, I recently changed my primary work phone number and wanted to ensure Jordan's emergency profile is updated. My new number is (816) 555-0144. Also, Jordan has a mild peanut allergy that should be noted for catered lunch sessions.",
+  support: true,
+  reply_mode: :reply_to_all,
+  created_at: 2.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: false },
+    { user: staff_user, is_read: true, archived: false }
+  ],
+  replies: [
+    {
+      author: staff_user,
+      subject: "Re: Support: Emergency Contact & Dietary Update for Jordan",
+      message: "Thank you Ms. Lewis! I have updated Jordan's emergency contact information in the system and flagged the allergy in our dietary roster for Saturday catering.",
+      created_at: 1.day.ago,
+      recipients: [
+        { user: green_parent, is_read: true, archived: false },
+        { user: admin_user, is_read: true, archived: false }
+      ]
+    }
+  ]
+)
+
+# 5. Read Volunteer Partnership Proposal
+seed_message_thread(
+  author: vol_edwards,
+  subject: "Volunteer Workshop Proposal: STEM & Drone Technology",
+  message: "Good afternoon Mr. Story, Following up on our conversation at the community summit, our engineering team would love to host a 1-hour workshop on drone technology and aviation careers for High Aspirations mentees. Would mid-November work for your Saturday schedule?",
+  support: false,
+  reply_mode: :reply_to_all,
+  created_at: 3.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: false },
+    { user: coordinator_user, is_read: true, archived: false }
+  ]
+)
+
+# 6. Unread Staff Internal Memo
+seed_message_thread(
+  author: coordinator_user,
+  subject: "Staff Memo: October Attendance Metrics & Incentive Eligibility",
+  message: "Darron & Marcus, attached is the high-level summary of attendance across all 20 teams for October. Overall attendance is at 91.4%, with Emerald and Navy teams tied for highest consistency. Let me know if you want to review the redemption requests during tomorrow morning's staff meeting.",
+  support: false,
+  reply_mode: :reply_to_all,
+  created_at: 4.hours.ago,
+  recipients: [
+    { user: admin_user, is_read: false, archived: false },
+    { user: staff_user, is_read: true, archived: false }
+  ]
+)
+
+# 7. Read Mentor Chaperone Availability
+seed_message_thread(
+  author: green_mentor,
+  subject: "Chaperone Availability for UMKC Campus Tour",
+  message: "Darron, I have two Green Team mentors available to chaperone the upcoming UMKC tour next Saturday. Do you need additional drivers or will all students be riding the charter buses?",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 4.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: false }
+  ]
+)
+
+# --- B. SENT THREADS (Authored by Admin) ---
+
+# 8. Broadcast Announcement to Mentees
+seed_message_thread(
+  author: admin_user,
+  subject: "Important: Saturday Session Location Update",
+  message: "Good morning everyone! Please note that this Saturday's session will take place at the Bruce R. Watkins Cultural Center Main Hall. Please arrive by 9:00 AM sharp in your team shirts.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 3.days.ago,
+  recipients: all_mentee_users.first(25).map { |u| { user: u, is_read: [true, false].sample, archived: false } }
+)
+
+# 9. Notice to Mentors regarding SEAS Evaluations
+seed_message_thread(
+  author: admin_user,
+  subject: "Reminder: Fall SEAS Evaluations Due Next Friday",
+  message: "Mentors, please remember to complete the quarterly SEAS evaluations for each of your assigned mentees by next Friday at 5:00 PM. Your thoughtful assessments are vital to measuring growth across Social, Emotional, Academic, and Spiritual development domains.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 5.days.ago,
+  recipients: all_mentors.first(15).map { |m| { user: m.user, is_read: true, archived: false } }
+)
+
+# 10. Letter to Guardians regarding College Tour
+seed_message_thread(
+  author: admin_user,
+  subject: "Upcoming College Campus Tour: UMKC & Rockhurst University",
+  message: "Dear High Aspirations Parents and Guardians, Next Saturday, our young men will visit UMKC and Rockhurst University. Transportation, campus tours, and lunch will be provided. Please make sure your mentee's digital permission slip is submitted by Wednesday evening.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 1.week.ago,
+  recipients: Guardian.first(15).map { |g| { user: g.user, is_read: true, archived: false } }
+)
+
+# 11. Staff Directive regarding Incentive Store
+seed_message_thread(
+  author: admin_user,
+  subject: "Staff Directive: Updated Incentive Point Catalog & Guidelines",
+  message: "Marcus and David, I have finalized the new catalog items including the KC Current and Sporting KC ticket bundles, as well as the STEM robotics kits. Please review the redemption approval workflow so we maintain quick turnaround times for students redeeming rewards.",
+  support: false,
+  reply_mode: :reply_to_all,
+  created_at: 2.weeks.ago,
+  recipients: [
+    { user: staff_user, is_read: true, archived: false },
+    { user: coordinator_user, is_read: true, archived: false }
+  ]
+)
+
+# 12. Recognition to Mentor
+seed_message_thread(
+  author: admin_user,
+  subject: "Thank You: Outstanding Leadership at Career Workshop",
+  message: "Dr. Harris, thank you for leading the medical and healthcare careers roundtable last Saturday. The mentees were thoroughly engaged and several expressed great enthusiasm about biomedical science.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 3.weeks.ago,
+  recipients: [
+    { user: blue_mentor, is_read: true, archived: false }
+  ]
+)
+
+# --- C. ARCHIVED THREADS (Archived by Admin & Staff) ---
+
+# 13. Summer 2026 Olympic Season Wrap-Up & Points Certification
+seed_message_thread(
+  author: coordinator_user,
+  subject: "Summer 2026 Olympic Season Wrap-Up & Trophy Presentation",
+  message: "Mr. Story, all point logs and event attendance for the Summer 2026 season have been certified. The Blue Team finished in first place with 1,420 total points, followed closely by the Emerald Team with 1,380. All trophy engravings are complete and ready for the awards banquet.",
+  support: false,
+  reply_mode: :reply_to_all,
+  created_at: 45.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: true },
+    { user: staff_user, is_read: true, archived: true }
+  ]
+)
+
+# 14. Resolved Support Inquiry: September Shuttle Route Confirmation
+seed_message_thread(
+  author: blue_parent,
+  subject: "Support: September Saturday Shuttle Bus Confirmation",
+  message: "Hello, I wanted to confirm that Jaylen is on the shuttle bus list from the 31st & Troost stop for the September kickoff meeting. Thank you!",
+  support: true,
+  reply_mode: :reply_to_all,
+  created_at: 35.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: true },
+    { user: staff_user, is_read: true, archived: true }
+  ],
+  replies: [
+    {
+      author: staff_user,
+      subject: "Re: Support: September Saturday Shuttle Bus Confirmation",
+      message: "Confirmed! Jaylen is on the list and Coach Vance will be at the stop by 8:15 AM.",
+      created_at: 35.days.ago + 2.hours,
+      recipients: [
+        { user: blue_parent, is_read: true, archived: false },
+        { user: admin_user, is_read: true, archived: true }
+      ]
+    }
+  ]
+)
+
+# 15. Facility Coordination: Swope Park Pavilion Permit
+seed_message_thread(
+  author: vol_jenkins,
+  subject: "Confirmed: Swope Park Pavilion Permit #KC-2026-4412",
+  message: "Darron, KC Parks and Recreation has approved our pavilion reservation for the Annual Fall BBQ and Sports Challenge. The permit copy has been filed in the front office and park rangers have been notified.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 60.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: true }
+  ]
+)
+
+# 16. Fall Volunteer Background Check Clearances
+seed_message_thread(
+  author: coordinator_user,
+  subject: "Fall 2026 Volunteer Background Check Clearances",
+  message: "Darron, all new community volunteers have passed their criminal background screenings and completed the mentor orientation modules. Their profiles are marked active in the system.",
+  support: false,
+  reply_mode: :reply_to_all,
+  created_at: 50.days.ago,
+  recipients: [
+    { user: admin_user, is_read: true, archived: true },
+    { user: staff_user, is_read: true, archived: true }
+  ]
+)
+
+# --- D. DIRECT MENTOR-MENTEE THREAD ---
+seed_message_thread(
+  author: blue_mentor,
+  subject: "Checking in on this week's school goals",
+  message: "Hey Jaylen, great job on your presentation last Saturday! How are things going with your math midterm prep this week? Let me know if you need to schedule a study session.",
+  support: false,
+  reply_mode: :reply_to_sender,
+  created_at: 6.days.ago,
+  recipients: [
+    { user: blue_mentee, is_read: true, archived: false }
+  ],
+  replies: [
+    {
+      author: blue_mentee,
+      subject: "Re: Checking in on this week's school goals",
+      message: "Thanks Dr. Harris! I finished the chapter review and feel ready for Friday's test. Looking forward to Saturday's robotics workshop!",
+      created_at: 5.days.ago,
+      recipients: [
+        { user: blue_mentor, is_read: true, archived: false }
+      ]
+    }
+  ]
+)
+
+puts "✓ In-app messaging threads seeded across Inbox, Sent, and Archived (17 threads, #{Message.count} total messages)"
 
 # ==============================================================================
 # 14. SEAS EVALUATIONS & RESPONSES
