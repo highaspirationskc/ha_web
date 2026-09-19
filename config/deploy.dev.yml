@@ -15,17 +15,19 @@
 # Deploy to these servers.
 servers:
   web:
-    # TODO: replace with QA/dev VPS IP when provisioned — required before enabling deploy.
-    - 0.0.0.0
+    - 2.25.92.121
 
 proxy:
-  ssl: true
-  # TODO: confirm DNS hostname for the QA box
-  host: api-dev.highaspirationskc.org
+  ssl: false
+  host: 2.25.92.121,srv1868594.hstgr.cloud
   healthcheck:
     path: /up
     interval: 10
     timeout: 5
+
+env:
+  clear:
+    RAILS_FORCE_SSL: "false"
 
 # Separate volume from production storage.
 volumes:
