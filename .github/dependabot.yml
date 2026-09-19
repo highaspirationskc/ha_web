@@ -1,12 +1,14 @@
-# Dependabot config - weekly grouped updates
+# Dependabot config - weekly grouped updates targeting the dev branch
 # - Patches and minors grouped
 # - Major versions ignored by default
-# - Last updated: 2025-03-17
+# - PRs open against dev (promote to main via PR when ready for prod)
+# - Last updated: 2026-08-09
 
 version: 2
 updates:
   - package-ecosystem: "bundler"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -27,12 +29,14 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
 
   - package-ecosystem: "docker"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2

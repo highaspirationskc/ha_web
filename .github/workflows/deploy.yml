@@ -2,8 +2,14 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+# Serialize production deploys so rapid merges don't race Kamal.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   test:
