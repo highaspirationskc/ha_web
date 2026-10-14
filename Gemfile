@@ -75,7 +75,7 @@ gem "simple_calendar", "~> 3.0"
 
 gem "googleauth", "~> 1.17"
 
-gem "webmock", "~> 3.26", group: :test
+gem "webmock", "~> 3.29", group: :test
 
 gem "mocha", "~> 3.0", group: :test
 
