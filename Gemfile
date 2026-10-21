@@ -71,7 +71,7 @@ gem "bcrypt", "~> 3.1"
 
 gem "kaminari", "~> 1.2"
 
-gem "simple_calendar", "~> 3.0"
+gem "simple_calendar", "~> 3.1"
 
 gem "googleauth", "~> 1.17"
 
