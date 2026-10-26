@@ -21,7 +21,7 @@ jobs:
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4.6
+        ruby-version: .ruby-version
         bundler-cache: true
 
     - name: Install dependencies
@@ -58,7 +58,7 @@ jobs:
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4.6
+        ruby-version: .ruby-version
         bundler-cache: true
 
     - name: Setup SSH 🔑
