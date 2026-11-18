@@ -69,7 +69,7 @@ gem "graphiql-rails", "~> 1.10"
 
 gem "bcrypt", "~> 3.1"
 
-gem "kaminari", "~> 1.2"
+gem "kaminari", "~> 1.3"
 
 gem "simple_calendar", "~> 3.1"
 
